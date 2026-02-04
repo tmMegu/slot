@@ -73,7 +73,7 @@ class HallsController < ApplicationController
 
   # Strong Parameters
   def hall_params
-    params.permit(:name, :code, :memo)
+    params.permit(:name, :code, :memo, :data_import_url1, :data_import_url2, :data_import_url3, :data_import_url4, :data_import_url5)
   end
 
   # ホールを検索

@@ -17,6 +17,16 @@
             <textarea name="memo" class="form-control" placeholder="必要に応じてメモを入力してください"><%= @hall.memo %></textarea>
         </div>
 
+        <hr style="margin: 30px 0; border: none; border-top: 2px solid #10b981;">
+        <h3 style="color: #333; margin-bottom: 20px;">📋 データ取込み先URL</h3>
+
+        <% (1..5).each do |i| %>
+        <div class="form-group">
+            <label class="form-label">URL <%= i %></label>
+            <input type="url" name="data_import_url<%= i %>" class="form-control" placeholder="https://example.com/data" value="<%= @hall.send("data_import_url#{i}".to_sym) %>" style="font-size: 13px;">
+        </div>
+        <% end %>
+
         <div class="btn-group">
             <button type="submit" class="btn btn-primary">更新</button>
             <%= link_to "キャンセル", halls_path, class: "btn btn-secondary" %>

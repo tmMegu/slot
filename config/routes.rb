@@ -13,6 +13,9 @@ Rails.application.routes.draw do
     post "dates/:date/update_machine_memo", to: "machine_data#update_machine_memo", as: "update_machine_memo"
     post "dates/:date/update_machine_memos", to: "machine_data#update_machine_memos", as: "update_machine_memos"
 
+    # 手動データインポート
+    post "dates/:date/manual_import", to: "machine_data#manual_import", as: "manual_import_machine_data"
+
     # PDF出力エンドポイント（Prawn版）
     get "dates/:date/export_map_pdf", to: "machine_data#export_map_pdf", as: "export_map_pdf"
 

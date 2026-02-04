@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_03_041015) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_04_023504) do
   create_table "hall_maps", force: :cascade do |t|
     t.text "color_settings"
     t.integer "cols", default: 20, null: false
@@ -27,6 +27,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_03_041015) do
   create_table "halls", force: :cascade do |t|
     t.integer "code"
     t.datetime "created_at", null: false
+    t.text "data_import_url1"
+    t.text "data_import_url2"
+    t.text "data_import_url3"
+    t.text "data_import_url4"
+    t.text "data_import_url5"
     t.text "memo"
     t.string "name"
     t.datetime "updated_at", null: false

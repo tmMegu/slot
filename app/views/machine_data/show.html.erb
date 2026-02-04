@@ -2,6 +2,131 @@
 <link rel="stylesheet" href="/stylesheets/common.css">
 <script src="/javascripts/machine_data.js"></script>
 
+<style>
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        padding: 30px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #10b981;
+        padding-bottom: 15px;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        color: #333;
+        font-size: 20px;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .form-group textarea {
+        min-height: 200px;
+        resize: vertical;
+    }
+
+    .modal-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        border-top: 1px solid #eee;
+        padding-top: 20px;
+    }
+
+    .btn-submit {
+        padding: 8px 20px;
+        background-color: #10b981;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .btn-submit:hover {
+        background-color: #059669;
+    }
+
+    .btn-cancel {
+        padding: 8px 20px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-cancel:hover {
+        background-color: #5a6268;
+    }
+
+    .format-hint {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+        padding: 10px;
+        background-color: #f0f9ff;
+        border-left: 3px solid #10b981;
+        border-radius: 3px;
+    }
+</style>
+
 <div class="container">
     <div class="flex-between mb-20">
         <%= link_to "← 日付一覧に戻る", hall_path(@hall), class: "btn btn-secondary btn-small" %>
@@ -12,13 +137,165 @@
     <% if !@data_exists && @reference_date %>
     <div class="alert alert-info">
         ⚠️ この日のデータは存在しません。<%= @reference_date.strftime('%Y年%m月%d日') %>のデータから台番号と機種名を表示しています。
+        <a href="javascript:void(0);" onclick="openManualImportModal()" style="color: #10b981; font-weight: bold; text-decoration: underline; margin-left: 10px;">手動で追加</a>
     </div>
     <% elsif !@data_exists %>
     <div class="alert alert-danger">
         ⚠️ この日およびそれ以前のデータが存在しません。
+        <a href="javascript:void(0);" onclick="openManualImportModal()" style="color: #dc3545; font-weight: bold; text-decoration: underline; margin-left: 10px;">手動で追加</a>
     </div>
     <% end %>
 
     <!-- タブ群 -->
     <%= render 'tabs' %>
 </div>
+
+<!-- 手動データ追加モーダル -->
+<div id="manualImportModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>データを手動で追加</h2>
+            <button type="button" class="modal-close" onclick="closeManualImportModal()">×</button>
+        </div>
+
+        <form id="manualImportForm">
+            <input type="hidden" name="hall_id" value="<%= @hall.id %>">
+            <input type="hidden" name="date" value="<%= @date %>">
+
+            <div class="form-group">
+                <label for="importFormat">データ形式を選択:</label>
+                <select id="importFormat" name="format" onchange="updateFormatHint()">
+                    <option value="tab_separated">タブ区切り形式（ヘッダー混在対応）</option>
+                </select>
+                <div class="format-hint">
+                    <strong>形式:</strong> タブで区切られたテキスト。機種、台番、差枚、G数の列を含むコピペデータに対応します。
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="importData">データを貼り付け:</label>
+                <textarea id="importData" name="data" placeholder="機種	台番	差枚	G数
+L東京喰種	1477	15,845	8,624
+..."></textarea>
+            </div>
+
+            <!-- データ取込み先URL表示 -->
+            <div class="form-group">
+                <label style="font-weight: bold; color: #666; margin-bottom: 10px; display: block;">📋 データ取込み先URL</label>
+                <div style="background-color: #f0f9ff; padding: 12px; border-left: 3px solid #10b981; border-radius: 3px;">
+                    <% (1..5).each do |i| %>
+                    <% url_attr = "data_import_url#{i}".to_sym %>
+                    <% url_value = @hall.send(url_attr) %>
+                    <% if url_value.present? %>
+                    <div style="margin-bottom: 8px; padding: 8px; background-color: white; border-radius: 3px;">
+                        <strong style="color: #10b981;">URL <%= i %>:</strong>
+                        <a href="<%= url_value %>" target="_blank" style="color: #0066cc; text-decoration: none; word-break: break-all; font-size: 12px;">
+                            <%= truncate(url_value, length: 80) %>
+                        </a>
+                        <button type="button" onclick="copyToClipboard('<%= url_value %>')" style="margin-left: 8px; padding: 2px 8px; background-color: #10b981; color: white; border: none; border-radius: 3px; font-size: 11px; cursor: pointer;">コピー</button>
+                    </div>
+                    <% end %>
+                    <% end %>
+                    <% if (1..5).all? { |i| @hall.send("data_import_url#{i}".to_sym).blank? } %>
+                    <p style="color: #999; font-size: 12px; margin: 0;">取込み先URLが設定されていません</p>
+                    <% end %>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" onclick="closeManualImportModal()">キャンセル</button>
+                <button type="button" class="btn-submit" onclick="submitManualImport()">データを追加</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openManualImportModal() {
+        document.getElementById('manualImportModal').classList.add('active');
+    }
+
+    function closeManualImportModal() {
+        document.getElementById('manualImportModal').classList.remove('active');
+        document.getElementById('manualImportForm').reset();
+    }
+
+    function updateFormatHint() {
+        const format = document.getElementById('importFormat').value;
+        const hints = {
+            'tab_separated': 'タブで区切られたテキスト。機種、台番、差枚、G数の列を含むコピペデータに対応します。'
+        };
+        const hintEl = document.querySelector('.format-hint');
+        if (hintEl) {
+            hintEl.textContent = hints[format] || '';
+        }
+    }
+
+    function submitManualImport() {
+        const form = document.getElementById('manualImportForm');
+        const hallId = form.querySelector('input[name="hall_id"]').value;
+        const date = form.querySelector('input[name="date"]').value;
+        const format = document.getElementById('importFormat').value;
+        const data = document.getElementById('importData').value;
+
+        if (!data.trim()) {
+            alert('データを入力してください');
+            return;
+        }
+
+        // ローディング表示
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '処理中...';
+
+        fetch(`/halls/<%= @hall.id %>/dates/${date}/manual_import`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    hall_id: hallId,
+                    date: date,
+                    format: format,
+                    data: data
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(`${result.count}件のデータを追加しました`);
+                    closeManualImportModal();
+                    location.reload();
+                } else {
+                    alert('エラー: ' + (result.error || 'データの追加に失敗しました'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('通信エラーが発生しました');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            });
+    }
+
+    // モーダル外をクリックで閉じる
+    document.getElementById('manualImportModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeManualImportModal();
+        }
+    });
+
+    // URLをクリップボードにコピー
+    function copyToClipboard(url) {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('URLをコピーしました');
+        }).catch(err => {
+            console.error('コピー失敗:', err);
+            alert('コピーに失敗しました');
+        });
+    }
+</script>

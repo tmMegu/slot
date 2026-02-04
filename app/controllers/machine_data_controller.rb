@@ -182,6 +182,33 @@ class MachineDataController < ApplicationController
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end
 
+  # 手動データインポート（Json/Ajax用）
+  def manual_import
+    hall_id = params[:hall_id]
+    date = Date.parse(params[:date])
+    format = params[:format] || "tab_separated"
+    data_text = params[:data]
+
+    hall = Hall.find_by(id: hall_id)
+    return render json: { success: false, error: "ホールが見つかりません" }, status: :not_found unless hall
+
+    case format
+    when "tab_separated"
+      parser = TabSeparatedDataParser.new
+      result = parser.parse_and_import(data_text, hall, date)
+    else
+      return render json: { success: false, error: "不明な形式です" }, status: :unprocessable_entity
+    end
+
+    if result[:success]
+      render json: { success: true, count: result[:count] }
+    else
+      render json: { success: false, error: result[:error] }, status: :unprocessable_entity
+    end
+  rescue => e
+    render json: { success: false, error: e.message }, status: :unprocessable_entity
+  end
+
   private
 
   # ============================================================
