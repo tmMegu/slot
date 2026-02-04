@@ -1,20 +1,20 @@
 <!-- 日付範囲選択 -->
-<div class="date-range-selector" style="margin: 20px 0; padding: 10px 15px; background-color: #f8f9fa; border-radius: 5px;">
-    <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+<div class="date-range-selector" style="margin: 5px 0; padding: 5px 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <div style="display: flex; align-items: center; gap: 2px; flex-wrap: wrap;">
         <label style="font-weight: bold;">📅 集計期間の選択方法:</label>
-        <label style="display: flex; align-items: center; cursor: pointer;">
-            <input type="radio" name="date_selection_mode" value="preset" <%= 'checked' if params[:date_range] != 'custom' %> onchange="toggleDateSelectionMode('preset')" style="margin-right: 5px;">
+        <label style="display: flex; align-items: center; cursor: pointer; margin-right: 5px;">
+            <input type="radio" name="date_selection_mode" value="preset" <%= 'checked' if params[:date_range] != 'custom' %> onchange="toggleDateSelectionMode('preset')" style="margin-right: 2px;">
             プリセット期間から選択
         </label>
-        <label style="display: flex; align-items: center; cursor: pointer;">
-            <input type="radio" name="date_selection_mode" value="custom" <%= 'checked' if params[:date_range] == 'custom' %> onchange="toggleDateSelectionMode('custom')" style="margin-right: 5px;">
+        <label style="display: flex; align-items: center; cursor: pointer; margin-right: 5px;">
+            <input type="radio" name="date_selection_mode" value="custom" <%= 'checked' if params[:date_range] == 'custom' %> onchange="toggleDateSelectionMode('custom')" style="margin-right: 2px;">
             日付を任意で選択
         </label>
 
         <!-- プリセット期間選択 -->
-        <div id="preset-selector" style="display: flex; align-items: center; gap: 10px; <%= 'display: none;' if params[:date_range] == 'custom' %>">
+        <div id="preset-selector" style="padding: 0px 0px 0px 5px; display: flex; align-items: center; gap: 5px; <%= 'display: none;' if params[:date_range] == 'custom' %>">
             <label style="font-weight: bold;">集計期間:</label>
-            <select id="date-range-select" onchange="changeDateRange(this.value)" style="padding: 6px 10px; font-size: 14px;">
+            <select id="date-range-select" onchange="changeDateRange(this.value)" style="padding: 2px 5px; font-size: 14px;">
                 <option value="7" <%= 'selected' if params[:date_range] == '7' || params[:date_range].blank? %>>過去7日間</option>
                 <option value="14" <%= 'selected' if params[:date_range] == '14' %>>過去14日間</option>
                 <option value="30" <%= 'selected' if params[:date_range] == '30' %>>過去30日間</option>
@@ -24,19 +24,17 @@
                 <option value="day_8" <%= 'selected' if params[:date_range] == 'day_8' %>>8のつく日</option>
             </select>
         </div>
-
-        <span style="color: #666; font-size: 12px;">※ 現在の検索条件でフィルタリングした台のみで集計</span>
     </div>
 </div>
 
 <!-- カスタム日付選択パネル -->
-<div id="custom-date-selector" class="collapsible-panel" style="margin-bottom: 20px; <%= params[:date_range] == 'custom' ? '' : 'display: none;' %>">
+<div id="custom-date-selector" class="collapsible-panel" style="margin-bottom: 2px; <%= params[:date_range] == 'custom' ? '' : 'display: none;' %>">
     <div class="collapsible-header" onclick="togglePanel('custom-date-content')" style="background-color: #6c757d; color: white; cursor: pointer;">
         <h3>📌 表示する日付を選択</h3>
         <span class="collapsible-toggle">▼</span>
     </div>
     <div id="custom-date-content" class="collapsible-content">
-        <div class="collapsible-inner" style="background-color: #f8f9fa; padding: 20px;">
+        <div class="collapsible-inner" style="background-color: #f8f9fa; padding: 5px;">
             <form id="custom-date-form" method="get">
                 <!-- 既存のパラメータを保持 -->
                 <input type="hidden" name="hall_id" value="<%= params[:hall_id] %>">
@@ -63,7 +61,7 @@
                     <button type="submit" style="padding: 5px 15px; background-color: #0066cc; color: white; border: none; border-radius: 3px; cursor: pointer;">選択した日付で表示</button>
                 </div>
 
-                <div style="max-height: 400px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+                <div style="max-height: 400px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 2px;">
                     <% 
                       selected_dates = params[:custom_dates] || []
                       # 現在の日付から前後1ヶ月の範囲を設定
@@ -73,7 +71,7 @@
                       available_dates = @hall.machine_data.where(date: start_date..end_date).select(:date).distinct.order(date: :desc).pluck(:date)
                     %>
                     <% available_dates.each do |date| %>
-                    <label style="display: flex; align-items: center; padding: 5px;">
+                    <label style="display: flex; align-items: center; padding: 2px;">
                         <input type="checkbox" name="custom_dates[]" value="<%= date %>" class="custom-date-checkbox" <%= 'checked' if selected_dates.include?(date.to_s) %> style="margin-right: 5px;">
                         <%= date.strftime('%Y/%m/%d') %>
                         <span style="font-size: 11px; color: #666; margin-left: 3px;">(<%= %w[日 月 火 水 木 金 土][date.wday] %>)</span>
@@ -119,23 +117,28 @@
     }
 </script>
 
+<!-- 注意文言 -->
+<div style="margin-top: 2px; margin-bottom: 2px; padding-left: 2px;">
+    <span style="color: #666; font-size: 9px;">※ 現在の検索条件でフィルタリングした台のみで集計</span>
+</div>
+
 <!-- 日別集計テーブル -->
-<div style="margin-top: 20px; overflow-x: auto;">
+<div class="table-wrapper" style="margin-top: 1px;">
     <% if @daily_summary_data.present? %>
-    <table border="1" style="border-collapse: collapse; width: 100%;">
+    <table border="1" style="border-collapse: collapse; width: auto; table-layout: auto;">
         <thead>
             <tr>
-                <th style="padding: 8px; background-color: #d1f5e8;">日付</th>
-                <th style="padding: 8px; background-color: #d1f5e8;">総差枚</th>
-                <th style="padding: 8px; background-color: #d1f5e8;">勝率</th>
-                <th style="padding: 8px; background-color: #d1f5e8;">平均G数</th>
-                <th style="padding: 8px; background-color: #d1f5e8;">平均差枚</th>
+                <th style="padding: 2px 6px; background-color: #d1f5e8; white-space: nowrap;">日付</th>
+                <th style="padding: 2px 6px; background-color: #d1f5e8; white-space: nowrap;">総差枚</th>
+                <th style="padding: 2px 6px; background-color: #d1f5e8; white-space: nowrap;">勝率</th>
+                <th style="padding: 2px 6px; background-color: #d1f5e8; white-space: nowrap;">平均G数</th>
+                <th style="padding: 2px 6px; background-color: #d1f5e8; white-space: nowrap;">平均差枚</th>
             </tr>
         </thead>
         <tbody>
             <% @daily_summary_data.each do |day_data| %>
             <tr>
-                <td style="padding: 8px; text-align: center;">
+                <td style="padding: 2px 6px; text-align: center; white-space: nowrap;">
                     <a href="<%= url_for(
                         controller: 'machine_data',
                         action: 'show',
@@ -158,15 +161,15 @@
                         <span style="font-size: 11px; color: #666;">(<%= %w[日 月 火 水 木 金 土][day_data[:date].wday] %>)</span>
                     </a>
                 </td>
-                <td style="padding: 8px; text-align: right; <%= day_data[:total_difference] >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %> font-weight: bold;">
+                <td style="padding: 2px 6px; text-align: right; <%= day_data[:total_difference] >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %> font-weight: bold; white-space: nowrap;">
                     <%= number_with_delimiter(day_data[:total_difference]) %>
                 </td>
-                <td style="padding: 8px; text-align: right;">
+                <td style="padding: 2px 6px; text-align: right; white-space: nowrap;">
                     <%= sprintf('%.1f', day_data[:win_rate]) %>%
                     (<%= day_data[:win_count] %>/<%= day_data[:machine_count] %>)
                 </td>
-                <td style="padding: 8px; text-align: right;"><%= number_with_delimiter(day_data[:avg_games].to_i) %>G</td>
-                <td style="padding: 8px; text-align: right; <%= day_data[:avg_difference] >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %>">
+                <td style="padding: 2px 6px; text-align: right; white-space: nowrap;"><%= number_with_delimiter(day_data[:avg_games].to_i) %>G</td>
+                <td style="padding: 2px 6px; text-align: right; <%= day_data[:avg_difference] >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %> white-space: nowrap;">
                     <%= number_with_delimiter(day_data[:avg_difference].to_i) %>
                 </td>
             </tr>

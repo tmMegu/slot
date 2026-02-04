@@ -127,6 +127,50 @@ body {
   color: #495057;
 }
 
+/* Input要素とSelect要素の統一スタイル */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+select {
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  line-height: 1.5;
+  height: 34px;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+select:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+textarea {
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  line-height: 1.5;
+  min-height: 80px;
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
 .form-control {
   width: 100%;
   padding: 10px 12px;
@@ -306,31 +350,147 @@ a:hover {
   align-items: center;
 }
 
-/* レスポンシブ */
+/* レスポンシブ (スマホ対応: iPhone 13以降 390px幅を想定) */
 @media (max-width: 768px) {
+  body {
+    font-size: 11px;
+  }
+
+  /* Input/Select要素の高さを文字サイズに合わせて縮小 */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="email"],
+  input[type="password"],
+  select {
+    padding: 3px 5px !important;
+    font-size: 10px !important;
+    height: 20px !important;
+    line-height: 1.4 !important;
+  }
+
+  textarea {
+    padding: 4px 5px !important;
+    font-size: 10px !important;
+    min-height: 30px !important;
+  }
+
   .container {
-    padding: 15px;
+    padding: 6px;
+    max-width: 100%;
+  }
+
+  .page-header {
+    padding: 8px 0;
+    margin-bottom: 8px;
   }
 
   .page-header h1 {
-    font-size: 24px;
+    font-size: 14px;
+    padding: 0 6px;
+  }
+
+  .card {
+    padding: 6px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+  }
+
+  .card-header {
+    font-size: 11px;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
   }
 
   .btn {
-    padding: 8px 16px;
-    font-size: 13px;
+    padding: 5px 8px;
+    font-size: 10px;
+    border-radius: 3px;
+  }
+
+  .btn-small {
+    padding: 4px 6px;
+    font-size: 9px;
+  }
+
+  .btn-group {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .form-group {
+    margin-bottom: 4px;
+  }
+
+  .form-label {
+    font-size: 10px;
+    margin-bottom: 2px;
+  }
+
+  .form-control {
+    padding: 4px 5px;
+    font-size: 10px;
+    border-radius: 3px;
   }
 
   .form-row {
     flex-direction: column;
+    gap: 4px;
+  }
+
+  /* テーブルを横スクロール可能に */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -12px;
   }
 
   .table {
-    font-size: 13px;
+    font-size: 10px;
+    min-width: 500px;
   }
 
   .table th,
   .table td {
-    padding: 8px;
+    padding: 4px 3px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .table-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 3px;
+    min-width: auto;
+    white-space: nowrap;
+  }
+
+  .table-actions .btn {
+    padding: 3px 5px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  .alert {
+    padding: 4px 6px;
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+
+  /* ユーティリティ */
+  .mt-10 {
+    margin-top: 3px;
+  }
+
+  .mt-20 {
+    margin-top: 6px;
+  }
+
+  .mb-10 {
+    margin-bottom: 3px;
+  }
+
+  .mb-20 {
+    margin-bottom: 6px;
   }
 }

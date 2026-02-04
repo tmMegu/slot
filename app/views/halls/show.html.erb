@@ -1,7 +1,7 @@
 <div class="container">
     <!-- 戻るボタンとタイトル -->
     <div class="flex-between mb-20">
-        <%= link_to "← ホール一覧に戻る", halls_path, class: "btn btn-secondary btn-small" %>
+        <%= link_to "← 戻る", halls_path, class: "btn btn-secondary btn-small" %>
         <h2 style="margin: 0; color: #333;"><%= @hall.name %> - 日付一覧</h2>
         <div></div>
     </div>
@@ -30,70 +30,72 @@
         <!-- 日付一覧テーブル -->
         <form id="memos-form">
             <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th style="width: 180px; font-size: 15px;">日付</th>
-                        <th style="width: 120px; font-size: 15px;">平均差枚</th>
-                        <th style="width: 120px; font-size: 15px;">平均回転数</th>
-                        <th style="width: 120px; font-size: 15px;">総差枚</th>
-                        <th style="width: 150px; font-size: 15px;">勝率</th>
-                        <th style="font-size: 15px;">メモ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% @dates.each do |date| %>
-                    <% stats = @date_stats[date] %>
-                    <% has_data = @existing_dates.include?(date) %>
-                    <% date_memo = @date_memos[date] %>
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 180px;">日付</th>
+                            <th style="width: 90px;">平均差枚</th>
+                            <th style="width: 90px;">平均回転数</th>
+                            <th style="width: 90px;">総差枚</th>
+                            <th style="width: 110px;">勝率</th>
+                            <th style="min-width: 150px;">メモ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% @dates.each do |date| %>
+                        <% stats = @date_stats[date] %>
+                        <% has_data = @existing_dates.include?(date) %>
+                        <% date_memo = @date_memos[date] %>
 
-                    <tr class="<%= 'no-data-row' unless has_data %>">
-                        <!-- 日付 -->
-                        <td>
-                            <% wday_ja = ['日', '月', '火', '水', '木', '金', '土'][date.wday] %>
-                            <%= link_to date.strftime('%Y年%m月%d日') + "(#{wday_ja})", 
+                        <tr class="<%= 'no-data-row' unless has_data %>">
+                            <!-- 日付 -->
+                            <td>
+                                <% wday_ja = ['日', '月', '火', '水', '木', '金', '土'][date.wday] %>
+                                <%= link_to date.strftime('%Y年%m月%d日') + "(#{wday_ja})", 
                                 hall_machine_data_path(@hall, date), 
-                                style: "font-weight: 600; color: #10b981; font-size: 15px;" %>
-                        </td>
+                                style: "font-weight: 600; color: #10b981;" %>
+                            </td>
 
-                        <% if stats %>
-                        <!-- 平均差枚 -->
-                        <td>
-                            <span class="<%= stats[:avg_diff] >= 0 ? 'positive-value' : 'negative-value' %>" style="font-size: 15px;">
-                                <%= stats[:avg_diff] >= 0 ? '+' : '' %><%= number_with_delimiter(stats[:avg_diff]) %>
-                            </span>
-                        </td>
+                            <% if stats %>
+                            <!-- 平均差枚 -->
+                            <td>
+                                <span class="<%= stats[:avg_diff] >= 0 ? 'positive-value' : 'negative-value' %>">
+                                    <%= stats[:avg_diff] >= 0 ? '+' : '' %><%= number_with_delimiter(stats[:avg_diff]) %>
+                                </span>
+                            </td>
 
-                        <!-- 平均回転数 -->
-                        <td style="font-size: 15px;"><%= number_with_delimiter(stats[:avg_games]) %>G</td>
+                            <!-- 平均回転数 -->
+                            <td><%= number_with_delimiter(stats[:avg_games]) %>G</td>
 
-                        <!-- 総差枚 -->
-                        <td>
-                            <span class="<%= stats[:total_diff] >= 0 ? 'positive-value' : 'negative-value' %>" style="font-size: 15px;">
-                                <%= stats[:total_diff] >= 0 ? '+' : '' %><%= number_with_delimiter(stats[:total_diff]) %>
-                            </span>
-                        </td>
+                            <!-- 総差枚 -->
+                            <td>
+                                <span class="<%= stats[:total_diff] >= 0 ? 'positive-value' : 'negative-value' %>">
+                                    <%= stats[:total_diff] >= 0 ? '+' : '' %><%= number_with_delimiter(stats[:total_diff]) %>
+                                </span>
+                            </td>
 
-                        <!-- 勝率（台数含む） -->
-                        <td style="font-size: 15px;">
-                            <span class="<%= stats[:win_rate] >= 40 ? 'positive-value' : 'negative-value' %>">
-                                <%= stats[:win_rate] %>%
-                            </span>
-                            (<%= stats[:plus_machines] %>/<%= stats[:total_machines] %>)
-                        </td>
-                        <% else %>
-                        <!-- データなし -->
-                        <td colspan="4" style="color: #999; text-align: center; font-size: 15px;">データなし</td>
+                            <!-- 勝率（台数含む） -->
+                            <td>
+                                <span class="<%= stats[:win_rate] >= 40 ? 'positive-value' : 'negative-value' %>">
+                                    <%= stats[:win_rate] %>%
+                                </span>
+                                (<%= stats[:plus_machines] %>/<%= stats[:total_machines] %>)
+                            </td>
+                            <% else %>
+                            <!-- データなし -->
+                            <td colspan="4" style="color: #999; text-align: center;">データなし</td>
+                            <% end %>
+
+                            <!-- メモ入力 -->
+                            <td style="padding: 3px;">
+                                <input type="text" name="memos[<%= date %>]" class="form-control" style="width: 100%; padding: 4px 6px; font-size: 12px;" value="<%= date_memo %>">
+                            </td>
+                        </tr>
                         <% end %>
-
-                        <!-- メモ入力 -->
-                        <td style="padding: 5px;">
-                            <input type="text" name="memos[<%= date %>]" class="form-control" style="width: 100%; padding: 8px; font-size: 15px;" value="<%= date_memo %>">
-                        </td>
-                    </tr>
-                    <% end %>
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </form>
     </div>
 </div>

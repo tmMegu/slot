@@ -1002,3 +1002,502 @@
   border-top: 1px solid #e5e7eb;
 }
 
+/* ========================================
+   スマホ対応 (iPhone 13以降 390px幅を想定)
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* マップタブコンテナ */
+  .map-tab-container {
+    padding: 8px;
+  }
+
+  .map-toolbar {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+
+  .map-selector {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .map-selector label {
+    font-size: 11px;
+    margin: 0;
+  }
+
+  .map-selector select {
+    width: auto;
+    max-width: 200px;
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+
+  /* ツールバーボタン */
+  .map-toolbar > div:last-child {
+    flex-direction: row;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .map-toolbar .btn-primary,
+  .map-toolbar .btn-secondary {
+    padding: 5px 10px;
+    font-size: 11px;
+    flex: 1;
+  }
+
+  /* 色設定・表示設定パネル */
+  .collapsible-panel {
+    margin-bottom: 4px;
+  }
+
+  .collapsible-header {
+    padding: 4px 6px;
+  }
+
+  .collapsible-header h3 {
+    font-size: 11px;
+    margin: 0;
+  }
+
+  .collapsible-inner {
+    padding: 3px !important;
+  }
+
+  .collapsible-inner label {
+    font-size: 9px;
+    margin-bottom: 1px;
+  }
+
+  .collapsible-inner select,
+  .collapsible-inner input {
+    font-size: 9px;
+    padding: 2px 3px;
+  }
+
+  .collapsible-inner > div {
+    margin-bottom: 2px !important;
+  }
+
+  .collapsible-inner > div:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  /* インラインスタイルの余白をオーバーライド */
+  .collapsible-inner div[style*="margin-bottom: 20px"] {
+    margin-bottom: 3px !important;
+  }
+
+  .collapsible-inner div[style*="margin-bottom: 10px"] {
+    margin-bottom: 2px !important;
+  }
+
+  .collapsible-inner div[style*="padding-bottom: 20px"] {
+    padding-bottom: 3px !important;
+  }
+
+  .collapsible-inner div[style*="gap: 10px"] {
+    gap: 3px !important;
+  }
+
+  /* 説明文 */
+  .collapsible-inner div[style*="background-color: #fff3cd"] {
+    padding: 2px !important;
+    font-size: 8px !important;
+    margin-top: 2px !important;
+    line-height: 1.1;
+  }
+
+  .collapsible-inner div[style*="background-color: #fff3cd"] br {
+    line-height: 1.1;
+  }
+
+  /* チェックボックスとラベルの間隔 */
+  .collapsible-inner label[style*="display: flex"] {
+    margin-bottom: 2px;
+  }
+
+  /* セレクトボックスの調整 */
+  .collapsible-inner select[style*="width: 100%"] {
+    max-width: 100%;
+  }
+
+  /* 色設定・表示設定の各セクション */
+  .collapsible-inner > div[style*="margin-bottom"] {
+    margin-bottom: 4px !important;
+  }
+
+  /* 開閉トグルのサイズ */
+  .collapsible-toggle {
+    font-size: 11px;
+  }
+
+  /* マップコンテナ */
+  .map-container {
+    padding: 10px;
+    border-radius: 6px;
+  }
+
+  .map-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  .map-header h3 {
+    font-size: 15px;
+  }
+
+  .map-info {
+    font-size: 11px;
+  }
+
+  .map-scroll-container {
+    max-height: 60vh;
+    border-radius: 4px;
+  }
+
+  /* マップセルサイズをスマホ用に縮小 */
+  .hall-map-table .map-cell,
+  .map-table .map-cell,
+  .hall-map-table.size-medium .map-cell,
+  .map-table.size-medium .map-cell {
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+    height: 60px;
+    font-size: 8px;
+    padding: 2px;
+  }
+
+  .hall-map-table.size-small .map-cell,
+  .map-table.size-small .map-cell {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+    height: 45px;
+    font-size: 7px;
+    padding: 1px;
+  }
+
+  .hall-map-table.size-large .map-cell,
+  .map-table.size-large .map-cell {
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+    height: 80px;
+    font-size: 9px;
+    padding: 3px;
+  }
+
+  /* セル内テキストサイズ */
+  .machine-name {
+    font-size: 8px;
+  }
+
+  .machine-number {
+    font-size: 9px;
+  }
+
+  .machine-stats {
+    font-size: 8px;
+  }
+
+  .stat-diff {
+    font-size: 10px;
+  }
+
+  .stat-games,
+  .stat-bb {
+    font-size: 9px;
+  }
+
+  /* 凡例 */
+  .map-legend {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    margin-top: 12px;
+  }
+
+  .legend-title {
+    font-size: 12px;
+  }
+
+  .legend-items {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .legend-item {
+    font-size: 11px;
+  }
+
+  .legend-color {
+    width: 20px;
+    height: 15px;
+  }
+
+  /* マップエディター */
+  .map-editor-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .editor-header {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .editor-title h1 {
+    font-size: 18px;
+  }
+
+  .editor-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .editor-actions .btn {
+    width: 100%;
+  }
+
+  /* ツールパレット */
+  .tool-palette-top {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+
+  .tool-buttons-horizontal {
+    gap: 6px;
+  }
+
+  .tool-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+    min-width: 70px;
+    flex: 1;
+  }
+
+  /* 操作パネル */
+  .editor-control-panel {
+    padding: 10px;
+    gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .control-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .control-label {
+    font-size: 12px;
+  }
+
+  .control-input {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  /* ラジオボタンオプション */
+  .auto-increment-options {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .radio-option {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* 行列編集ボタン */
+  #row-col-edit-panel {
+    width: 100%;
+  }
+
+  #row-col-edit-panel .btn {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  /* エディターグリッド */
+  .editor-grid-container {
+    padding: 10px;
+  }
+
+  .grid-scroll-area {
+    padding: 5px;
+    max-height: 50vh;
+  }
+
+  .editor-cell {
+    width: 80px !important;
+    height: 35px !important;
+    padding: 3px;
+    font-size: 10px;
+  }
+
+  .cell-content {
+    font-size: 10px;
+  }
+
+  /* グリッドコントロール */
+  .grid-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .control-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    flex: 1;
+    min-width: 80px;
+  }
+
+  /* マップ管理画面 */
+  .maps-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .map-card {
+    border-radius: 6px;
+  }
+
+  .map-card-header {
+    padding: 12px;
+  }
+
+  .map-card-title h3 {
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+
+  .map-dimensions {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .map-card-body {
+    padding: 12px;
+  }
+
+  .map-stats {
+    gap: 10px;
+  }
+
+  .stat-item {
+    padding: 8px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+  }
+
+  .stat-value {
+    font-size: 14px;
+  }
+
+  .map-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-action {
+    padding: 10px;
+    font-size: 12px;
+    border-right: none !important;
+  }
+
+  .btn-action:not(:last-child) {
+    border-bottom: 1px solid #d1d5db;
+  }
+
+  /* 新規作成フォーム */
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-label {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .form-control {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .form-text {
+    font-size: 11px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .form-preview {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+
+  .form-preview h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+  }
+
+  /* ボタン類 */
+  .btn-primary,
+  .btn-secondary,
+  .btn-success {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .btn-preset {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .btn-size {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  /* 空状態 */
+  .empty-state {
+    padding: 40px 15px;
+  }
+
+  .empty-state h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  .empty-state .btn-new {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}

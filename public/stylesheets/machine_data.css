@@ -234,6 +234,13 @@ th.machine-name-header {
   white-space: nowrap;
   padding: 8px 12px !important;
   min-width: 150px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+td.machine-name-cell {
+  max-width: 15em;
 }
 
 td,
@@ -387,4 +394,401 @@ th {
 /* ワーストランキング部分のラベルも調整 */
 .filter-controls .collapsible-inner .filter-row label[style*="color: #fff"] {
   color: #10b981 !important;
+}
+/* ========================================
+   スマホ対応 (iPhone 13以降 390px幅を想定)
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* タブボタン */
+  .tab-buttons {
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-bottom: 6px;
+  }
+
+  .tab-button {
+    padding: 5px 8px;
+    font-size: 10px;
+    flex: 1;
+    min-width: calc(50% - 2px);
+    text-align: center;
+  }
+
+  /* 開閉パネル */
+  .collapsible-header {
+    padding: 5px 6px;
+  }
+
+  .collapsible-header h3 {
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .collapsible-toggle {
+    font-size: 11px;
+  }
+
+  .collapsible-inner {
+    padding: 6px;
+  }
+
+  /* ソートコントロール */
+  .sort-controls {
+    padding: 4px 6px;
+    gap: 3px;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 4px 0;
+  }
+
+  .sort-controls > div {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+
+  .sort-controls > div > div {
+    display: none;
+  }
+
+  .sort-controls label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+    font-size: 9px;
+    margin: 0;
+    flex: 0 1 auto;
+    white-space: nowrap;
+  }
+
+  .sort-controls label strong {
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  .sort-controls select {
+    padding: 3px 3px;
+    font-size: 9px;
+    min-width: 60px;
+  }
+
+  .sort-controls button {
+    width: auto;
+    padding: 4px 6px;
+    font-size: 9px;
+    border: 1px solid #ccc;
+    background: white;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .sort-controls .btn-success {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    color: white !important;
+  }
+
+  /* フィルターコントロール */
+  .filter-controls {
+    margin: 4px 0;
+  }
+
+  .filter-row {
+    flex-direction: row;
+    gap: 3px;
+    margin-bottom: 3px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .filter-row-inline {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    margin-bottom: 3px;
+  }
+
+  .filter-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .filter-group label {
+    font-size: 10px;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  .filter-group input[type="number"],
+  .filter-group input[type="text"] {
+    width: 70px;
+    padding: 3px 4px;
+    font-size: 10px;
+  }
+
+  .filter-group select {
+    width: auto;
+    max-width: 100px;
+    padding: 3px 4px;
+    font-size: 10px;
+  }
+
+  .filter-buttons {
+    flex-direction: row;
+    gap: 3px;
+    width: 100%;
+  }
+
+  .filter-buttons button {
+    flex: 1;
+    padding: 5px 6px;
+    font-size: 10px;
+  }
+
+  /* 日数選択 */
+  .display-days-selector {
+    margin: 12px 0;
+  }
+
+  .display-days-selector h3 {
+    font-size: 14px;
+  }
+
+  .day-checkboxes {
+    gap: 8px;
+    max-height: 100px;
+    padding: 8px;
+  }
+
+  .day-checkbox-group {
+    min-width: 70px;
+    font-size: 12px;
+  }
+
+  .preset-buttons {
+    gap: 6px;
+  }
+
+  .preset-buttons button {
+    padding: 6px 10px;
+    font-size: 11px;
+    flex: 1;
+    min-width: calc(50% - 3px);
+  }
+
+  /* 結果情報 */
+  .result-info {
+    padding: 8px;
+    margin: 8px 0;
+    font-size: 12px;
+  }
+
+  /* ランクチェックボックス */
+  .rank-checkbox-group {
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  /* テーブル */
+  table {
+    font-size: 10px;
+    width: auto;
+    table-layout: auto;
+  }
+
+  td,
+  th {
+    font-size: 9px;
+    padding: 2px 4px !important;
+    line-height: 1.1;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  td.machine-name-cell,
+  th.machine-name-header {
+    min-width: 100px;
+    padding: 2px 4px !important;
+    font-size: 10px;
+  }
+
+  /* メモ入力欄を小さく */
+  .memo-input {
+    padding: 1px 3px !important;
+    font-size: 9px !important;
+    height: 20px;
+    line-height: 1.1;
+    border: 1px solid #ccc;
+  }
+
+  th.sortable::after {
+    font-size: 9px;
+  }
+
+  /* 色付けクラス */
+  .worst-1,
+  .worst-2,
+  .worst-3,
+  .worst-4 {
+    font-size: 10px;
+  }
+
+  /* 絵文字による行高さの問題を修正 */
+  td span[style*="font-size: 18px"] {
+    font-size: 14px !important;
+    line-height: 1 !important;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* 順位セル */
+  td[style*="text-align: center"] {
+    line-height: 1.2 !important;
+  }
+
+  /* 日付選択 */
+  .date-range-selector {
+    padding: 4px 6px;
+    margin: 3px 0;
+  }
+
+  .date-range-selector > div {
+    gap: 3px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .date-range-selector label {
+    font-size: 10px;
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .date-range-selector select {
+    font-size: 10px;
+    padding: 3px 4px;
+    max-width: 150px;
+  }
+
+  .date-range-selector span {
+    font-size: 9px;
+  }
+
+  /* プリセット選択を横並びに */
+  #preset-selector {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+  }
+
+  #preset-selector label {
+    white-space: nowrap;
+  }
+
+  #preset-selector select {
+    flex: 0 1 auto;
+    min-width: 100px;
+    max-width: 120px;
+  }
+
+  /* カスタム日付選択 */
+  #custom-date-selector {
+    margin-bottom: 3px;
+    margin-top: 3px;
+  }
+
+  #custom-date-selector .collapsible-inner {
+    padding: 6px;
+  }
+
+  #custom-date-selector button {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  /* ボタンサイズを統一 */
+  #custom-date-selector > div > div > div:first-child {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+
+  #custom-date-selector > div > div > div:first-child button {
+    flex: 1;
+    padding: 5px 8px;
+    font-size: 10px;
+    margin: 0;
+    border: 1px solid #ccc;
+    background: white;
+  }
+
+  #custom-date-selector > div > div > div:last-child {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    max-height: 200px;
+  }
+
+  #custom-date-selector label {
+    font-size: 9px;
+    padding: 2px;
+  }
+
+  /* 集計情報ボックス */
+  div[style*="background-color: #e8f9f3"] {
+    padding: 10px !important;
+  }
+
+  div[style*="background-color: #e8f9f3"] h4 {
+    font-size: 14px;
+  }
+
+  div[style*="background-color: #e8f9f3"] ul {
+    font-size: 12px;
+  }
+
+  /* モーダル */
+  .modal-content {
+    width: 95%;
+    padding: 20px;
+    max-height: 90vh;
+  }
+
+  .modal-header h2 {
+    font-size: 16px;
+  }
+
+  .modal-close {
+    font-size: 20px;
+  }
+
+  .modal-content .form-group label {
+    font-size: 12px;
+  }
+
+  .modal-content .form-group select,
+  .modal-content .form-group textarea {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .modal-content .form-group textarea {
+    min-height: 150px;
+  }
+
+  .modal-buttons {
+    padding-top: 15px;
+  }
+
+  .btn-submit {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
 }

@@ -1,7 +1,7 @@
 <h1><%= @hall.name %> - 台番号 <%= @machine_number %></h1>
 <h2><%= @machine_name %></h2>
 
-<%= link_to "台データ一覧に戻る", "/halls/#{@hall.id}/dates/#{@current_date}", style: "margin-bottom: 20px; display: inline-block;" %>
+<%= link_to "← 戻る", "/halls/#{@hall.id}/dates/#{@current_date}", style: "margin-bottom: 20px; display: inline-block;" %>
 
 <div style="margin-top: 20px;">
     <% if @machine_history.empty? %>

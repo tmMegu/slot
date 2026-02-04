@@ -1,4 +1,4 @@
-<div class="collapsible-panel" style="margin-bottom: 20px;">
+<div class="collapsible-panel" style="margin-bottom: 6px;">
     <div class="collapsible-header" onclick="togglePanel('map-display-settings')" style="background-color: #17a2b8; color: white;">
         <h3>⚙️ 表示設定</h3>
         <span class="collapsible-toggle">▼</span>
@@ -7,9 +7,9 @@
         <div class="collapsible-inner" style="background-color: #e8f4f8; padding: 20px;">
 
             <!-- 表示項目選択 -->
-            <div style="margin-bottom: 20px;">
-                <label style="font-weight: bold; display: block; margin-bottom: 10px;">📋 表示する情報:</label>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+            <div style="margin-bottom: 5px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 2px;">📋 表示する情報:</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(55px, 1fr)); gap: 5px;">
                     <label class="checkbox-label" style="cursor: pointer;">
                         <input type="checkbox" id="show-machine-name" checked style="cursor: pointer;">
                         機種名
@@ -34,10 +34,10 @@
             </div>
 
             <!-- セルサイズ調整 -->
-            <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px dashed #0066cc;">
-                <label style="font-weight: bold; display: block; margin-bottom: 10px;">📏 セルサイズ:</label>
+            <div style="margin-bottom: 5px; padding-bottom: 5px; border-bottom: 2px dashed #0066cc;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">📏 セルサイズ:</label>
                 <!-- 横幅 -->
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                     <span style="font-size: 12px; color: #666; min-width: 50px;">横幅:</span>
                     <span style="font-size: 12px; color: #666;">小</span>
                     <input type="range" id="cell-width-slider" min="20" max="200" step="5" value="80" style="flex: 1; max-width: 300px;" oninput="updateCellSize()">
@@ -55,8 +55,8 @@
             </div>
 
             <!-- フォントサイズ調整 -->
-            <div style="margin-bottom: 20px;">
-                <label style="font-weight: bold; display: block; margin-bottom: 10px;">📝 文字サイズ:</label>
+            <div style="margin-bottom: 5px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">📝 文字サイズ:</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <input type="range" id="font-size-slider" min="5" max="50" step="0.5" value="18" style="flex: 1; max-width: 300px;" oninput="updateFontSize(this.value)">
                     <span id="font-size-display" style="margin-left: 10px; font-weight: bold;">18px</span>
