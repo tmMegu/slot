@@ -1,0 +1,73 @@
+<div class="tabs-container">
+    <!-- タブボタン -->
+    <div class="tab-buttons">
+        <button class="tab-button <%= 'active' if params[:active_tab] == 'list' || params[:active_tab].blank? %>" onclick="switchTab('list')" data-tab="list">📋 一覧</button>
+        <button class="tab-button <%= 'active' if params[:active_tab] == 'machine-stats' %>" onclick="switchTab('machine-stats')" data-tab="machine-stats">📊 機種単位</button>
+        <button class="tab-button <%= 'active' if params[:active_tab] == 'daily-summary' %>" onclick="switchTab('daily-summary')" data-tab="daily-summary">📅 日別集計</button>
+        <button class="tab-button <%= 'active' if params[:active_tab] == 'map' %>" onclick="switchTab('map')" data-tab="map">🗺️ マップ</button>
+    </div>
+
+    <!-- 一覧タブ -->
+    <div id="tab-list" class="tab-content <%= 'active' if params[:active_tab] == 'list' || params[:active_tab].blank? %>">
+        <%= render 'tab_list' %>
+    </div>
+
+    <!-- 機種単位タブ -->
+    <div id="tab-machine-stats" class="tab-content <%= 'active' if params[:active_tab] == 'machine-stats' %>">
+        <%= render 'tab_machine_stats' %>
+    </div>
+
+    <!-- 日別集計タブ -->
+    <div id="tab-daily-summary" class="tab-content <%= 'active' if params[:active_tab] == 'daily-summary' %>">
+        <%= render 'tab_daily_summary' %>
+    </div>
+
+    <!-- マップタブ -->
+    <div id="tab-map" class="tab-content <%= 'active' if params[:active_tab] == 'map' %>">
+        <%= render 'tab_map' %>
+    </div>
+</div>
+
+<script>
+    // タブ切り替え時にhidden inputの値を更新
+    function switchTab(tabName) {
+        // すべてのタブコンテンツを非表示
+        const contents = document.querySelectorAll(".tab-content");
+        contents.forEach((content) => {
+            content.classList.remove("active");
+        });
+
+        // すべてのタブボタンを非アクティブ
+        const buttons = document.querySelectorAll(".tab-button");
+        buttons.forEach((button) => {
+            button.classList.remove("active");
+        });
+
+        // 選択されたタブを表示
+        const selectedContent = document.getElementById("tab-" + tabName);
+        if (selectedContent) {
+            selectedContent.classList.add("active");
+        }
+
+        // 選択されたボタンをアクティブ
+        const selectedButton = event?.target;
+        if (selectedButton) {
+            selectedButton.classList.add("active");
+        }
+
+        // hidden inputの値を更新（全てのフォームで）
+        const activeTabInputs = document.querySelectorAll('#active-tab');
+        activeTabInputs.forEach(input => {
+            input.value = tabName;
+        });
+
+        // マップタブの場合、初期化を実行
+        if (tabName === "map" && window.currentMapId) {
+            setTimeout(() => {
+                if (typeof initializeMap === 'function') {
+                    initializeMap(window.hallId, window.currentMapId, window.currentDate);
+                }
+            }, 100);
+        }
+    }
+</script>

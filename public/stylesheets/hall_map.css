@@ -1,0 +1,706 @@
+/* ========================================
+   マップタブのスタイル
+   ======================================== */
+
+.map-tab-container {
+  padding: 20px;
+}
+
+.map-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.map-selector {
+  display: flex;
+  align-items: center;
+}
+
+/* ========================================
+   マップグリッドのスタイル
+   ======================================== */
+
+.map-container {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #0066cc;
+}
+
+.map-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.map-info {
+  color: #666;
+  font-size: 14px;
+}
+
+.map-scroll-container {
+  overflow: auto;
+  max-height: 70vh;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f8f9fa;
+}
+
+/* マップグリッドコンテナ */
+.map-grid-container {
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* マップテーブル */
+.hall-map-table, .map-table {
+  border-collapse: collapse;
+  background: white;
+  margin: 0 auto;
+}
+
+.hall-map-table td, .map-table td {
+  border: 1px solid #ddd;
+}
+
+/* グリッド線非表示 */
+.hall-map-table.no-grid td,
+.map-table.no-grid td {
+  border: none !important;
+}
+
+/* セルサイズ - 小 */
+.hall-map-table.size-small .map-cell,
+.map-table.size-small .map-cell {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  height: 70px;
+  font-size: 9px;
+  padding: 3px;
+}
+
+/* セルサイズ - 中（デフォルト） */
+.hall-map-table .map-cell,
+.map-table .map-cell,
+.hall-map-table.size-medium .map-cell,
+.map-table.size-medium .map-cell {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  height: 100px;
+  font-size: 11px;
+  padding: 5px;
+}
+
+/* セルサイズ - 大 */
+.hall-map-table.size-large .map-cell,
+.map-table.size-large .map-cell {
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+  height: 130px;
+  font-size: 13px;
+  padding: 8px;
+}
+  border: none !important;
+}
+
+/* セルの基本スタイル */
+.map-cell {
+  border: 1px solid #ddd;
+  text-align: center;
+  vertical-align: middle;
+  position: relative;
+  transition: all 0.3s;
+  background: white;
+}
+
+/* セルタイプ別のスタイル */
+.map-cell.machine {
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+.map-cell.machine:hover {
+  background-color: #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.map-cell.wall {
+  background-color: #333;
+  color: white;
+}
+
+.map-cell.counter {
+  background-color: #ffc107;
+  color: #333;
+  font-weight: bold;
+}
+
+.map-cell.empty {
+  background-color: white;
+}
+
+/* 色分けスタイル */
+.map-cell.color-red {
+  background-color: #ffcccc !important;
+  border: 2px solid #dc3545 !important;
+}
+
+.map-cell.color-yellow {
+  background-color: #ffffcc !important;
+  border: 2px solid #ffc107 !important;
+}
+
+.map-cell.color-green {
+  background-color: #ccffcc !important;
+  border: 2px solid #28a745 !important;
+}
+
+/* 機種セルの内容 */
+.machine-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  height: 100%;
+  justify-content: center;
+}
+
+.machine-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.machine-name {
+  font-weight: bold;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #333;
+  max-width: 100%;
+  display: block;
+  line-height: 1.1;
+  margin: 0;
+  padding: 1px 0;
+}
+
+.machine-number {
+  font-size: 12px;
+  color: #0066cc;
+  font-weight: bold;
+  line-height: 1.1;
+  margin: 0;
+  padding: 1px 0;
+}
+
+.machine-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.stat-diff {
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 1.1;
+  margin: 0;
+  padding: 1px 0;
+}
+
+.stat-diff.positive {
+  color: #28a745;
+}
+
+.stat-diff.negative {
+  color: #dc3545;
+}
+
+.stat-games {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.1;
+  margin: 0;
+  padding: 1px 0;
+}
+
+.stat-bb {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.1;
+  margin: 0;
+  padding: 1px 0;
+}
+
+/* 旧スタイル（互換性のため残す） */
+.machine-diff {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.machine-diff.positive {
+  color: #28a745;
+}
+
+.machine-diff.negative {
+  color: #dc3545;
+}
+
+.machine-games {
+  font-size: 11px;
+  color: #666;
+}
+
+.machine-bb {
+  font-size: 10px;
+  color: #666;
+}
+
+.no-data {
+  font-size: 10px;
+  color: #999;
+}
+
+.wall-cell,
+.counter-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 12px;
+}
+
+.empty-cell {
+  height: 100%;
+}
+
+/* 凡例 */
+.map-legend {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.legend-title {
+  font-weight: bold;
+  color: #333;
+}
+
+.legend-items {
+  display: flex;
+  gap: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-color {
+  width: 30px;
+  height: 20px;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+}
+
+/* ========================================
+   マップエディターのスタイル
+   ======================================== */
+
+.map-editor-container {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 20px;
+  padding: 20px;
+  height: calc(100vh - 40px);
+}
+
+.editor-header {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.editor-title h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ツールパレット */
+.tool-palette {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+.tool-palette h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  border-bottom: 2px solid #0066cc;
+  padding-bottom: 10px;
+}
+
+.tool-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tool-btn {
+  padding: 12px;
+  border: 2px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.3s;
+  font-size: 14px;
+}
+
+.tool-btn:hover {
+  background: #f0f0f0;
+  border-color: #0066cc;
+}
+
+.tool-btn.active {
+  background: #0066cc;
+  color: white;
+  border-color: #0066cc;
+}
+
+/* 入力パネル */
+.input-panel {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.input-label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.tool-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.btn-apply {
+  width: 100%;
+  padding: 8px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-apply:hover {
+  background: #218838;
+}
+
+/* 選択情報 */
+.selection-info {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  border-left: 4px solid #0066cc;
+}
+
+.selection-info h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #0066cc;
+}
+
+#selection-display {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* 操作ガイド */
+.operation-guide {
+  padding: 15px;
+  background: #fff3cd;
+  border-radius: 4px;
+  border-left: 4px solid #ffc107;
+}
+
+.operation-guide h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #856404;
+}
+
+.operation-guide ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: #856404;
+}
+
+.operation-guide li {
+  margin-bottom: 5px;
+}
+
+/* エディターグリッド */
+.editor-grid-container {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.grid-scroll-area {
+  flex: 1;
+  overflow: auto;
+  border: 2px solid #0066cc;
+  border-radius: 4px;
+  background: #f8f9fa;
+  padding: 10px;
+}
+
+.editor-map-table {
+  border-collapse: collapse;
+  background: white;
+}
+
+.editor-cell {
+  width: 200px !important;
+  height: 40px !important;
+  border: 1px solid #ddd;
+  padding: 5px;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.editor-cell:hover {
+  background: #e3f2fd;
+  border-color: #0066cc;
+}
+
+.editor-cell.selected {
+  border: 3px solid #0066cc;
+  background: #e3f2fd;
+}
+
+.editor-cell.machine {
+  background: #f0f0f0;
+}
+
+.editor-cell.wall {
+  background: #333;
+  color: white;
+}
+
+.editor-cell.counter {
+  background: #ffc107;
+}
+
+.cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 12px;
+}
+
+.cell-content.wall,
+.cell-content.counter {
+  font-weight: bold;
+}
+
+.cell-number {
+  color: #0066cc;
+  font-weight: bold;
+}
+
+/* グリッドコントロール */
+.grid-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  justify-content: center;
+}
+
+.control-btn {
+  padding: 8px 15px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.control-btn:hover {
+  background: #5a6268;
+}
+
+/* ========================================
+   その他のスタイル
+   ======================================== */
+
+.btn-primary,
+.btn-secondary,
+.btn-success {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: #0066cc;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0052a3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.btn-success {
+  background: #28a745;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #218838;
+}
+
+.btn-preset {
+  padding: 8px 15px;
+  background: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-preset:hover {
+  background: #138496;
+}
+
+.btn-size {
+  padding: 6px 12px;
+  background: #e9ecef;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-size:hover {
+  background: #dee2e6;
+}
+
+.btn-size.active {
+  background: #0066cc;
+  color: white;
+  border-color: #0066cc;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.checkbox-label:hover {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1200px) {
+  .map-editor-container {
+    grid-template-columns: 250px 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .map-editor-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+  }
+
+  .tool-palette {
+    max-height: 300px;
+  }
+}

@@ -1,0 +1,24 @@
+<link rel="stylesheet" href="/stylesheets/machine_data.css">
+<link rel="stylesheet" href="/stylesheets/common.css">
+<script src="/javascripts/machine_data.js"></script>
+
+<div class="container">
+    <div class="flex-between mb-20">
+        <%= link_to "← 日付一覧に戻る", hall_path(@hall), class: "btn btn-secondary btn-small" %>
+        <h2 style="margin: 0; color: #333;"><%= @hall.name %> - <%= @date.strftime('%Y年%m月%d日') %></h2>
+        <div></div>
+    </div>
+
+    <% if !@data_exists && @reference_date %>
+    <div class="alert alert-info">
+        ⚠️ この日のデータは存在しません。<%= @reference_date.strftime('%Y年%m月%d日') %>のデータから台番号と機種名を表示しています。
+    </div>
+    <% elsif !@data_exists %>
+    <div class="alert alert-danger">
+        ⚠️ この日およびそれ以前のデータが存在しません。
+    </div>
+    <% end %>
+
+    <!-- タブ群 -->
+    <%= render 'tabs' %>
+</div>

@@ -1,0 +1,147 @@
+<div class="container">
+    <!-- 戻るボタンとタイトル -->
+    <div class="flex-between mb-20">
+        <%= link_to "← ホール一覧に戻る", halls_path, class: "btn btn-secondary btn-small" %>
+        <h2 style="margin: 0; color: #333;"><%= @hall.name %> - 日付一覧</h2>
+        <div></div>
+    </div>
+
+    <!-- ホール情報カード -->
+    <div class="card">
+        <!-- 日付範囲フィルターと更新ボタン -->
+        <%= form_with url: hall_path(@hall), method: :get, local: true, data: { turbo: false } do %>
+        <div class="form-row" style="margin-bottom: 10px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">開始日</label>
+                <input type="date" name="start_date" class="form-control" value="<%= @start_date.strftime('%Y-%m-%d') %>" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">終了日</label>
+                <input type="date" name="end_date" class="form-control" value="<%= @end_date.strftime('%Y-%m-%d') %>" required>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px; display: flex; gap: 10px; justify-content: space-between;">
+            <button type="submit" class="btn btn-primary">期間を変更</button>
+            <button type="button" class="btn btn-success" onclick="saveMemos()">メモを更新</button>
+        </div>
+        <% end %>
+
+        <!-- 日付一覧テーブル -->
+        <form id="memos-form">
+            <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 180px; font-size: 15px;">日付</th>
+                        <th style="width: 120px; font-size: 15px;">平均差枚</th>
+                        <th style="width: 120px; font-size: 15px;">平均回転数</th>
+                        <th style="width: 120px; font-size: 15px;">総差枚</th>
+                        <th style="width: 150px; font-size: 15px;">勝率</th>
+                        <th style="font-size: 15px;">メモ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% @dates.each do |date| %>
+                    <% stats = @date_stats[date] %>
+                    <% has_data = @existing_dates.include?(date) %>
+                    <% date_memo = @date_memos[date] %>
+
+                    <tr class="<%= 'no-data-row' unless has_data %>">
+                        <!-- 日付 -->
+                        <td>
+                            <% wday_ja = ['日', '月', '火', '水', '木', '金', '土'][date.wday] %>
+                            <%= link_to date.strftime('%Y年%m月%d日') + "(#{wday_ja})", 
+                                hall_machine_data_path(@hall, date), 
+                                style: "font-weight: 600; color: #10b981; font-size: 15px;" %>
+                        </td>
+
+                        <% if stats %>
+                        <!-- 平均差枚 -->
+                        <td>
+                            <span class="<%= stats[:avg_diff] >= 0 ? 'positive-value' : 'negative-value' %>" style="font-size: 15px;">
+                                <%= stats[:avg_diff] >= 0 ? '+' : '' %><%= number_with_delimiter(stats[:avg_diff]) %>
+                            </span>
+                        </td>
+
+                        <!-- 平均回転数 -->
+                        <td style="font-size: 15px;"><%= number_with_delimiter(stats[:avg_games]) %>G</td>
+
+                        <!-- 総差枚 -->
+                        <td>
+                            <span class="<%= stats[:total_diff] >= 0 ? 'positive-value' : 'negative-value' %>" style="font-size: 15px;">
+                                <%= stats[:total_diff] >= 0 ? '+' : '' %><%= number_with_delimiter(stats[:total_diff]) %>
+                            </span>
+                        </td>
+
+                        <!-- 勝率（台数含む） -->
+                        <td style="font-size: 15px;">
+                            <span class="<%= stats[:win_rate] >= 40 ? 'positive-value' : 'negative-value' %>">
+                                <%= stats[:win_rate] %>%
+                            </span>
+                            (<%= stats[:plus_machines] %>/<%= stats[:total_machines] %>)
+                        </td>
+                        <% else %>
+                        <!-- データなし -->
+                        <td colspan="4" style="color: #999; text-align: center; font-size: 15px;">データなし</td>
+                        <% end %>
+
+                        <!-- メモ入力 -->
+                        <td style="padding: 5px;">
+                            <input type="text" name="memos[<%= date %>]" class="form-control" style="width: 100%; padding: 8px; font-size: 15px;" value="<%= date_memo %>">
+                        </td>
+                    </tr>
+                    <% end %>
+                </tbody>
+            </table>
+        </form>
+    </div>
+</div>
+
+<script>
+    function saveMemos() {
+        const form = document.getElementById('memos-form');
+        const formData = new FormData(form);
+
+        fetch('<%= update_date_memos_hall_path(@hall) %>', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-Token': document.querySelector('input[name="authenticity_token"]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('メモを更新しました');
+                } else {
+                    alert('エラーが発生しました: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('エラーが発生しました');
+                console.error('Error:', error);
+            });
+    }
+</script>
+
+<style>
+    /* 日付一覧画面専用スタイル */
+    .positive-value {
+        color: #10b981;
+        font-weight: 600;
+    }
+
+    .negative-value {
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .no-data-row {
+        background-color: #fafafa;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f0f9ff !important;
+    }
+</style>

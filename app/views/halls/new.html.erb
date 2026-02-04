@@ -1,0 +1,26 @@
+<div class="container">
+    <div class="card">
+        <div class="card-header">ホール追加</div>
+        <%= form_tag halls_path, method: :post do %>
+        <div class="form-group">
+            <label class="form-label">ホール名</label>
+            <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">ホールコード</label>
+            <input type="text" name="code" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">メモ</label>
+            <textarea name="memo" class="form-control" placeholder="必要に応じてメモを入力してください"></textarea>
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">追加</button>
+            <%= link_to "キャンセル", halls_path, class: "btn btn-secondary" %>
+        </div>
+        <% end %>
+    </div>
+</div>

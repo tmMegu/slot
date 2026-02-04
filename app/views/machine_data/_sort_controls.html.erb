@@ -1,0 +1,33 @@
+<div class="sort-controls" style="margin: 10px 0; padding: 10px 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <label>
+                <strong>並び替え:</strong>
+                <select id="sort-select" onchange="updateSort()">
+                    <option value="machine_number" <%= 'selected' if @sort_by == 'machine_number' %>>台番号</option>
+                    <option value="machine_name" <%= 'selected' if @sort_by == 'machine_name' %>>機種名</option>
+                    <option value="game_count" <%= 'selected' if @sort_by == 'game_count' %>>G数</option>
+                    <option value="difference_count" <%= 'selected' if @sort_by == 'difference_count' %>>差枚</option>
+                    <option value="bb_count" <%= 'selected' if @sort_by == 'bb_count' %>>BB</option>
+                    <option value="rb_count" <%= 'selected' if @sort_by == 'rb_count' %>>RB</option>
+                    <option value="art_count" <%= 'selected' if @sort_by == 'art_count' %>>ART</option>
+                    <% @display_days.each do |days| %>
+                    <option value="diff_<%= days %>" <%= 'selected' if @sort_by == "diff_#{days}" %>>差枚<%= days %>日</option>
+                    <% end %>
+                </select>
+            </label>
+
+            <label>
+                <strong>順序:</strong>
+                <select id="sort-order" onchange="updateSort()">
+                    <option value="asc" <%= 'selected' if @sort_order == 'asc' %>>昇順</option>
+                    <option value="desc" <%= 'selected' if @sort_order == 'desc' %>>降順</option>
+                </select>
+            </label>
+
+            <button onclick="resetSort()" style="padding: 8px 15px; border-radius: 6px;">ソートリセット</button>
+        </div>
+
+        <button type="button" class="btn btn-success" onclick="saveMemos()">メモを更新</button>
+    </div>
+</div>

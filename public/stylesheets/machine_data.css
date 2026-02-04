@@ -1,0 +1,390 @@
+.worst-1 {
+  background-color: #ffcccc;
+}
+
+.worst-2 {
+  background-color: #ffe6e6;
+}
+
+.worst-3 {
+  background-color: #b3e6b3;
+}
+
+.worst-4 {
+  background-color: #d9f2d9;
+}
+
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  background-color: #d1f5e8 !important;
+}
+
+th.sortable:hover {
+  background-color: #b3edd9 !important;
+}
+
+th.sortable::after {
+  content: " ⇅";
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+th.sort-asc::after {
+  content: " ↑";
+  opacity: 1;
+  color: #10b981;
+}
+
+th.sort-desc::after {
+  content: " ↓";
+  opacity: 1;
+  color: #10b981;
+}
+
+.sort-controls {
+  margin: 10px 0;
+  padding: 10px 15px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sort-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-controls select,
+.sort-controls input {
+  padding: 5px 10px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+}
+
+.filter-controls {
+  margin: 20px 0;
+  padding: 0;
+  background-color: transparent;
+  border-radius: 5px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.filter-row:last-child {
+  margin-bottom: 0;
+}
+
+.filter-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-group label {
+  font-weight: bold;
+  margin: 0;
+}
+
+.filter-group input[type="number"] {
+  width: 100px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.filter-group select {
+  padding: 5px 10px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-buttons button {
+  padding: 8px 15px;
+  cursor: pointer;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+  background-color: white;
+}
+
+.filter-buttons button:hover {
+  background-color: #f0f0f0;
+}
+
+.filter-buttons .btn-apply {
+  background-color: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.filter-buttons .btn-reset {
+  background-color: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+.result-info {
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #d1f5e8;
+  border: 1px solid #10b981;
+  border-radius: 3px;
+  color: #0d5d42;
+}
+
+.display-days-selector {
+  background-color: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.display-days-selector h3 {
+  margin: 0;
+}
+
+.day-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  max-height: 120px;
+  overflow-y: auto;
+  padding: 10px;
+  background-color: white;
+  border-radius: 3px;
+  margin-bottom: 10px;
+}
+
+.day-checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 80px;
+}
+
+.day-checkbox-group input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.day-checkbox-group label {
+  cursor: pointer;
+  margin: 0;
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.preset-buttons button {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  border: 1px solid #ffc107;
+  background-color: #fff8e1;
+  color: #333;
+  font-size: 14px;
+}
+
+.preset-buttons button:hover {
+  background-color: #ffe082;
+}
+
+.preset-buttons button.active {
+  background-color: #ffc107;
+  font-weight: bold;
+}
+
+.preset-buttons button.btn-apply-days {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.preset-buttons button.btn-apply-days:hover {
+  background-color: #218838;
+}
+
+table {
+  table-layout: auto;
+  width: auto;
+  min-width: 100%;
+}
+
+td.machine-name-cell,
+th.machine-name-header {
+  white-space: nowrap;
+  padding: 8px 12px !important;
+  min-width: 150px;
+}
+
+td,
+th {
+  white-space: nowrap;
+  font-size: 15px;
+}
+
+.rank-checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rank-checkbox-group input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.rank-checkbox-group label {
+  cursor: pointer;
+  margin: 0;
+}
+
+/* タブ関連 */
+.tabs-container {
+  margin: 20px 0;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 5px;
+  border-bottom: 2px solid #10b981;
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  padding: 12px 24px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  transition: all 0.3s;
+  border-radius: 5px 5px 0 0;
+}
+
+.tab-button:hover {
+  background-color: #e0e0e0;
+}
+
+.tab-button.active {
+  background-color: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* 開閉パネル関連 */
+.collapsible-panel {
+  margin: 10px 0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.collapsible-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.3s;
+  border-radius: 5px;
+}
+
+.collapsible-header:hover {
+  opacity: 0.9;
+}
+
+.collapsible-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.collapsible-toggle {
+  font-size: 16px;
+  font-weight: bold;
+  transition: transform 0.3s;
+}
+
+.collapsible-content {
+  max-height: 0 !important;
+  overflow: hidden !important;
+  transition: max-height 0.3s ease-out;
+}
+
+.collapsible-content.active {
+  max-height: 2000px !important;
+  transition: max-height 0.5s ease-in;
+}
+
+.collapsible-inner {
+  padding: 15px;
+}
+
+/* 日数選択パネル用 */
+.display-days-selector .collapsible-header {
+  background-color: #ffc107;
+  border: 1px solid #ffc107;
+}
+
+.display-days-selector .collapsible-inner {
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-top: none;
+  border-radius: 0 0 5px 5px;
+}
+
+/* フィルターパネル用 */
+.filter-controls .collapsible-header {
+  background-color: #10b981;
+  color: white;
+  border: 1px solid #10b981;
+}
+
+.filter-controls .collapsible-inner {
+  background-color: #e8f9f3;
+  border: 1px solid #10b981;
+  border-top: none;
+  border-radius: 0 0 5px 5px;
+  border-left: 4px solid #10b981;
+}
+
+/* フィルター内のラベルを黒色に */
+.filter-controls .collapsible-inner label {
+  color: #333;
+}
+
+/* ワーストランキング部分のラベルも調整 */
+.filter-controls .collapsible-inner .filter-row label[style*="color: #fff"] {
+  color: #10b981 !important;
+}

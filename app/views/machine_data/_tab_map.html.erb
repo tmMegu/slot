@@ -1,0 +1,98 @@
+<link rel="stylesheet" href="/stylesheets/hall_map.css">
+<link rel="stylesheet" href="/stylesheets/hall_map_print.css">
+<script src="/javascripts/hall_map.js"></script>
+<script src="/javascripts/hall_map_pdf.js"></script>
+
+<div class="map-tab-container">
+    <% if @hall_maps.any? %>
+    <div class="map-toolbar">
+        <div class="map-selector">
+            <label style="font-weight: bold; margin-right: 10px;">🗺️ マップ選択:</label>
+            <select id="map-select" onchange="changeMap(this.value)" style="padding: 8px; font-size: 14px;">
+                <% @hall_maps.each do |map| %>
+                <option value="<%= map.id %>" <%= 'selected' if map.id == @current_map&.id %>>
+                    <%= map.name %>
+                </option>
+                <% end %>
+            </select>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <% if @current_map %>
+            <%= link_to "✏️ このマップを編集", edit_hall_map_path(@hall, @current_map), class: "btn-primary", style: "text-decoration: none;" %>
+            <% end %>
+            <%= link_to "📋 マップ管理", hall_maps_path(@hall), class: "btn-secondary", style: "text-decoration: none;" %>
+
+            <%= link_to "📄 PDF出力", hall_export_map_pdf_path(@hall, @date, map_id: @current_map&.id), class: "btn-primary", style: "padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block;" %>
+
+            <button onclick="exportMapToPDF()" class="btn-secondary" style="padding: 8px 16px; background: #6c757d; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                📄 PDF（旧）
+            </button>
+        </div>
+    </div>
+
+    <%= render 'color_settings' %>
+    <%= render 'display_settings' %>
+
+    <% if @current_map %>
+    <div class="map-grid-container">
+        <table id="map-table" class="map-table">
+            <tbody>
+                <% (1..@current_map.rows).each do |row| %>
+                <tr>
+                    <% (1..@current_map.cols).each do |col| %>
+                    <%
+                          cell = @current_map.get_cell(row, col)
+                          machine_number = cell['machine_number']
+                          cell_type = cell['type'] || 'empty'
+                          label = cell['label']
+                          machine = @machine_data_by_number[machine_number] if machine_number
+                          worst_rank = machine_number && @color_worst_ranks ? @color_worst_ranks[machine_number] : nil
+                        %>
+                    <td class="map-cell <%= cell_type %>" data-row="<%= row %>" data-col="<%= col %>" data-type="<%= cell_type %>" data-machine-number="<%= machine_number %>" <% if machine %> data-difference="<%= machine.difference_count %>" data-games="<%= machine.game_count %>" <% end %> <% if worst_rank %>data-worst-rank="<%= worst_rank %>" <% end %>>
+
+                        <% if cell_type == 'machine' && machine %>
+                        <div class="cell-content machine" title="<%= machine.machine_name %>">
+                            <div class="machine-info">
+                                <div class="machine-number"><%= machine.machine_number %></div>
+                                <div class="machine-name"><%= machine.machine_name.truncate(5, omission: '') %></div>
+                                <div class="machine-stats">
+                                    <% diff_num = machine.difference_count.to_i %>
+                                    <div class="stat-diff <%= diff_num > 0 ? 'positive' : (diff_num < 0 ? 'negative' : '') %>">
+                                        <%= diff_num > 0 ? '+' : '' %><%= machine.difference_count %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <% elsif cell_type == 'wall' %>
+                        <div class="cell-content wall">
+                            <%= label || '■' %>
+                        </div>
+
+                        <% elsif cell_type == 'counter' %>
+                        <div class="cell-content counter">
+                            <%= label || 'カウンター' %>
+                        </div>
+
+                        <% end %>
+                    </td>
+                    <% end %>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+    <% end %>
+
+    <% else %>
+    <div class="no-map-message">
+        <div style="text-align: center; padding: 60px 20px;">
+            <h2 style="color: #666; margin-bottom: 20px;">🗺️ マップが作成されていません</h2>
+            <p style="color: #888; margin-bottom: 30px;">
+                店内の配置図を作成すると、台の位置と実績を視覚的に確認できます。
+            </p>
+            <%= link_to "新規マップを作成", new_hall_map_path(@hall), class: "btn-primary", style: "font-size: 16px; padding: 12px 30px; text-decoration: none; display: inline-block;" %>
+        </div>
+    </div>
+    <% end %>
+</div>
