@@ -42,6 +42,40 @@ document.addEventListener("DOMContentLoaded", function () {
       layoutData = {};
     }
 
+    // HTMLテーブルからセルデータを読み取り（既存データがない場合に備えて）
+    const cellElements = document.querySelectorAll(".editor-cell");
+    cellElements.forEach((cell) => {
+      const row = parseInt(cell.dataset.row);
+      const col = parseInt(cell.dataset.col);
+      const cellType = cell.dataset.type;
+      const machineNumber = cell.dataset.machineNumber;
+      const label = cell.dataset.label;
+
+      const key = `${row}_${col}`;
+
+      // 既存のJSONデータが空、またはこのセルがJSONに存在しない場合、HTMLから構築
+      if (!layoutData[key] && cellType !== "empty") {
+        layoutData[key] = {
+          row: row,
+          col: col,
+          type: cellType,
+        };
+
+        if (
+          machineNumber &&
+          machineNumber !== "undefined" &&
+          machineNumber !== ""
+        ) {
+          layoutData[key].machine_number = parseInt(machineNumber);
+        }
+
+        if (label && label !== "undefined" && label !== "") {
+          layoutData[key].label = label;
+        }
+      }
+    });
+
+    console.log("Initialized editor with layout data:", layoutData);
     initializeEditor(hallId, mapId, layoutData, rows, cols);
   }
 });
@@ -53,7 +87,11 @@ function initializeEditor(hallId, mapId, layoutData, rows, cols) {
   window.mapId = mapId;
   mapRows = rows;
   mapCols = cols;
-  selectTool("machine");
+  selectTool("select");
+  console.log(
+    "Editor initialized. Current editorLayoutData:",
+    editorLayoutData,
+  );
 }
 
 // ツール選択
@@ -68,17 +106,23 @@ function selectTool(tool) {
   });
 
   const machinePanel = document.getElementById("machine-input-panel");
-  const labelPanel = document.getElementById("label-input-panel");
+  const rowColPanel = document.getElementById("row-col-edit-panel");
 
-  if (tool === "machine") {
-    machinePanel.style.display = "block";
-    labelPanel.style.display = "none";
-  } else if (tool === "wall" || tool === "counter") {
-    machinePanel.style.display = "none";
-    labelPanel.style.display = "block";
-  } else {
-    machinePanel.style.display = "none";
-    labelPanel.style.display = "none";
+  if (machinePanel) {
+    if (tool === "machine") {
+      machinePanel.style.display = "inline-flex";
+    } else {
+      machinePanel.style.display = "none";
+    }
+  }
+
+  // 行列編集は「選択」ツールの時のみ表示
+  if (rowColPanel) {
+    if (tool === "select") {
+      rowColPanel.style.display = "inline-flex";
+    } else {
+      rowColPanel.style.display = "none";
+    }
   }
 }
 
@@ -93,6 +137,11 @@ function selectCell(row, col) {
   selectedCell = cell;
   cell.classList.add("selected");
   updateSelectionDisplay(row, col);
+
+  // 「選択」ツールの場合は、セルを選択状態にするだけで何もしない
+  if (currentTool === "select") {
+    return;
+  }
 
   // 台配置ツールが選択されている場合、自動で台番号を設定
   if (currentTool === "machine") {
@@ -177,14 +226,15 @@ function updateSelectionDisplay(row, col) {
   const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
   const display = document.getElementById("selection-display");
 
-  let info = `行: ${row}, 列: ${col}<br>`;
-  info += `タイプ: ${getTypeLabel(cell.dataset.type)}<br>`;
+  if (!display) return;
+
+  let info = `行: ${row}, 列: ${col} / ${getTypeLabel(cell.dataset.type)}`;
 
   if (cell.dataset.machineNumber) {
-    info += `台番号: ${cell.dataset.machineNumber}`;
+    info += ` / 台番号: ${cell.dataset.machineNumber}`;
   }
 
-  display.innerHTML = info;
+  display.textContent = info;
 }
 
 function getTypeLabel(type) {
@@ -248,15 +298,62 @@ function saveMapData() {
   saveBtn.disabled = true;
   saveBtn.textContent = "保存中...";
 
-  // データの検証
+  // データの検証（editorLayoutDataが空の場合、HTMLから再構築を試みる）
   if (!editorLayoutData || Object.keys(editorLayoutData).length === 0) {
-    alert(
-      "保存するデータがありません。マップが正しく読み込まれていない可能性があります。",
+    console.warn(
+      "editorLayoutData is empty, attempting to rebuild from HTML...",
     );
-    saveBtn.disabled = false;
-    saveBtn.textContent = "💾 保存";
-    return;
+
+    // HTMLテーブルから再度セルデータを読み取り
+    const cellElements = document.querySelectorAll(".editor-cell");
+    const rebuiltData = {};
+
+    cellElements.forEach((cell) => {
+      const row = parseInt(cell.dataset.row);
+      const col = parseInt(cell.dataset.col);
+      const cellType = cell.dataset.type;
+      const machineNumber = cell.dataset.machineNumber;
+      const label = cell.dataset.label;
+
+      if (cellType && cellType !== "empty") {
+        const key = `${row}_${col}`;
+        rebuiltData[key] = {
+          row: row,
+          col: col,
+          type: cellType,
+        };
+
+        if (
+          machineNumber &&
+          machineNumber !== "undefined" &&
+          machineNumber !== ""
+        ) {
+          rebuiltData[key].machine_number = parseInt(machineNumber);
+        }
+
+        if (label && label !== "undefined" && label !== "") {
+          rebuiltData[key].label = label;
+        }
+      }
+    });
+
+    if (Object.keys(rebuiltData).length > 0) {
+      editorLayoutData = rebuiltData;
+      console.log(
+        "Successfully rebuilt layout data from HTML:",
+        editorLayoutData,
+      );
+    } else {
+      alert(
+        "保存するデータがありません。マップが正しく読み込まれていない可能性があります。",
+      );
+      saveBtn.disabled = false;
+      saveBtn.textContent = "💾 保存";
+      return;
+    }
   }
+
+  console.log("Saving layout data:", editorLayoutData);
 
   // hidden fieldにデータを設定
   document.getElementById("layout-data-field").value =
@@ -296,6 +393,49 @@ function applyZoom() {
 // 行・列の追加・削除機能（選択中のセル基準）
 // ============================================================
 
+// 現在のHTMLテーブルの状態をeditorLayoutDataに同期
+function syncLayoutDataFromDOM() {
+  const cells = document.querySelectorAll(".editor-cell");
+  let syncCount = 0;
+
+  cells.forEach((cell) => {
+    const row = parseInt(cell.dataset.row);
+    const col = parseInt(cell.dataset.col);
+    const cellType = cell.dataset.type || "empty";
+    const key = `${row}_${col}`;
+
+    if (cellType !== "empty") {
+      editorLayoutData[key] = {
+        row: row,
+        col: col,
+        type: cellType,
+      };
+
+      if (cellType === "machine" && cell.dataset.machineNumber) {
+        editorLayoutData[key].machine_number = parseInt(
+          cell.dataset.machineNumber,
+        );
+      }
+
+      if (
+        (cellType === "wall" || cellType === "counter") &&
+        cell.dataset.label
+      ) {
+        editorLayoutData[key].label = cell.dataset.label;
+      }
+
+      syncCount++;
+    } else {
+      // emptyセルは削除（メモリ節約）
+      if (editorLayoutData[key]) {
+        delete editorLayoutData[key];
+      }
+    }
+  });
+
+  console.log(`Synced ${syncCount} cells from DOM to editorLayoutData`);
+}
+
 // 選択中のセルの行/列を取得
 function getSelectedRowCol() {
   if (!selectedCell) {
@@ -309,6 +449,9 @@ function getSelectedRowCol() {
 
 // 選択中のセルの上/下に行を追加
 function addRowAtSelection(position) {
+  // まずDOMの状態をeditorLayoutDataに同期
+  syncLayoutDataFromDOM();
+
   const selected = getSelectedRowCol();
   if (!selected) return;
 
@@ -320,45 +463,59 @@ function addRowAtSelection(position) {
     Object.keys(editorLayoutData).forEach((key) => {
       const [row, col] = key.split("_").map(Number);
       if (row >= targetRow) {
-        // ディープコピー
-        newLayoutData[`${row + 1}_${col}`] = JSON.parse(
-          JSON.stringify(editorLayoutData[key]),
-        );
+        // ディープコピーして新しい位置に配置
+        const cellData = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        cellData.row = row + 1;
+        cellData.col = col;
+        newLayoutData[`${row + 1}_${col}`] = cellData;
       } else {
-        // ディープコピー
-        newLayoutData[key] = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        // そのままコピー
+        const cellData = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        cellData.row = row;
+        cellData.col = col;
+        newLayoutData[key] = cellData;
       }
     });
 
-    // targetRow行を空で初期化
-    for (let col = 1; col <= mapCols; col++) {
-      newLayoutData[`${targetRow}_${col}`] = { type: "empty" };
-    }
+    // targetRow行の空セルは初期化不要（存在しないセルは自動的にempty扱い）
   } else {
     // 選択中の行の下に挿入: targetRow+1以降の行を+1シフト
     Object.keys(editorLayoutData).forEach((key) => {
       const [row, col] = key.split("_").map(Number);
       if (row > targetRow) {
-        // ディープコピー
-        newLayoutData[`${row + 1}_${col}`] = JSON.parse(
-          JSON.stringify(editorLayoutData[key]),
-        );
+        // ディープコピーして新しい位置に配置
+        const cellData = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        cellData.row = row + 1;
+        cellData.col = col;
+        newLayoutData[`${row + 1}_${col}`] = cellData;
       } else {
-        // ディープコピー
-        newLayoutData[key] = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        // そのままコピー
+        const cellData = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        cellData.row = row;
+        cellData.col = col;
+        newLayoutData[key] = cellData;
       }
     });
 
-    // targetRow+1行を空で初期化
-    for (let col = 1; col <= mapCols; col++) {
-      newLayoutData[`${targetRow + 1}_${col}`] = { type: "empty" };
-    }
+    // targetRow+1行の空セルは初期化不要
   }
 
   editorLayoutData = newLayoutData;
   mapRows++;
   updateMapInfo();
   reloadMapTable();
+
+  // 元のセルの新しい位置を計算して再選択
+  let newRow = selected.row;
+  if (position === "above") {
+    newRow = selected.row + 1; // 上に追加したので、元のセルは+1行目に移動
+  }
+  // position === "below" の場合は元のセルの位置は変わらない
+
+  // 再選択
+  setTimeout(() => {
+    selectCell(newRow, selected.col);
+  }, 10);
 }
 
 // 選択中のセルの行を削除
@@ -367,6 +524,9 @@ function removeRowAtSelection(position) {
     alert("行は最低1行必要です");
     return;
   }
+
+  // まずDOMの状態をeditorLayoutDataに同期
+  syncLayoutDataFromDOM();
 
   const selected = getSelectedRowCol();
   if (!selected) return;
@@ -404,10 +564,28 @@ function removeRowAtSelection(position) {
   mapRows--;
   updateMapInfo();
   reloadMapTable();
+
+  // 削除後、寄ってきたセルを選択
+  let newRow = selected.row;
+  if (position === "current") {
+    // 現在の行を削除した場合、次の行（寄ってくる）を選択
+    newRow = Math.min(selected.row, mapRows);
+  } else {
+    // 下の行を削除した場合、元のセルはそのまま
+    newRow = selected.row;
+  }
+
+  // 再選択
+  setTimeout(() => {
+    selectCell(newRow, selected.col);
+  }, 10);
 }
 
 // 選択中のセルの左/右に列を追加
 function addColumnAtSelection(position) {
+  // まずDOMの状態をeditorLayoutDataに同期
+  syncLayoutDataFromDOM();
+
   const selected = getSelectedRowCol();
   if (!selected) return;
 
@@ -419,45 +597,59 @@ function addColumnAtSelection(position) {
     Object.keys(editorLayoutData).forEach((key) => {
       const [row, col] = key.split("_").map(Number);
       if (col >= targetCol) {
-        // ディープコピー
-        newLayoutData[`${row}_${col + 1}`] = JSON.parse(
-          JSON.stringify(editorLayoutData[key]),
-        );
+        // ディープコピーして新しい位置に配置
+        const cellData = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        cellData.row = row;
+        cellData.col = col + 1;
+        newLayoutData[`${row}_${col + 1}`] = cellData;
       } else {
-        // ディープコピー
-        newLayoutData[key] = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        // そのままコピー
+        const cellData = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        cellData.row = row;
+        cellData.col = col;
+        newLayoutData[key] = cellData;
       }
     });
 
-    // targetCol列を空で初期化
-    for (let row = 1; row <= mapRows; row++) {
-      newLayoutData[`${row}_${targetCol}`] = { type: "empty" };
-    }
+    // targetCol列の空セルは初期化不要
   } else {
     // 選択中の列の右に挿入: targetCol+1以降の列を+1シフト
     Object.keys(editorLayoutData).forEach((key) => {
       const [row, col] = key.split("_").map(Number);
       if (col > targetCol) {
-        // ディープコピー
-        newLayoutData[`${row}_${col + 1}`] = JSON.parse(
-          JSON.stringify(editorLayoutData[key]),
-        );
+        // ディープコピーして新しい位置に配置
+        const cellData = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        cellData.row = row;
+        cellData.col = col + 1;
+        newLayoutData[`${row}_${col + 1}`] = cellData;
       } else {
-        // ディープコピー
-        newLayoutData[key] = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        // そのままコピー
+        const cellData = JSON.parse(JSON.stringify(editorLayoutData[key]));
+        cellData.row = row;
+        cellData.col = col;
+        newLayoutData[key] = cellData;
       }
     });
 
-    // targetCol+1列を空で初期化
-    for (let row = 1; row <= mapRows; row++) {
-      newLayoutData[`${row}_${targetCol + 1}`] = { type: "empty" };
-    }
+    // targetCol+1列の空セルは初期化不要
   }
 
   editorLayoutData = newLayoutData;
   mapCols++;
   updateMapInfo();
   reloadMapTable();
+
+  // 元のセルの新しい位置を計算して再選択
+  let newCol = selected.col;
+  if (position === "left") {
+    newCol = selected.col + 1; // 左に追加したので、元のセルは+1列目に移動
+  }
+  // position === "right" の場合は元のセルの位置は変わらない
+
+  // 再選択
+  setTimeout(() => {
+    selectCell(selected.row, newCol);
+  }, 10);
 }
 
 // 選択中のセルの列を削除
@@ -466,6 +658,9 @@ function removeColumnAtSelection(position) {
     alert("列は最低1列必要です");
     return;
   }
+
+  // まずDOMの状態をeditorLayoutDataに同期
+  syncLayoutDataFromDOM();
 
   const selected = getSelectedRowCol();
   if (!selected) return;
@@ -503,6 +698,21 @@ function removeColumnAtSelection(position) {
   mapCols--;
   updateMapInfo();
   reloadMapTable();
+
+  // 削除後、寄ってきたセルを選択
+  let newCol = selected.col;
+  if (position === "current") {
+    // 現在の列を削除した場合、次の列（寄ってくる）を選択
+    newCol = Math.min(selected.col, mapCols);
+  } else {
+    // 右の列を削除した場合、元のセルはそのまま
+    newCol = selected.col;
+  }
+
+  // 再選択
+  setTimeout(() => {
+    selectCell(selected.row, newCol);
+  }, 10);
 }
 
 // マップ情報の更新

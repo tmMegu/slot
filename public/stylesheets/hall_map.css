@@ -1,5 +1,5 @@
 /* ========================================
-   マップタブのスタイル
+   マップタブ�Eスタイル
    ======================================== */
 
 .map-tab-container {
@@ -23,7 +23,7 @@
 }
 
 /* ========================================
-   マップグリッドのスタイル
+   マップグリチE��のスタイル
    ======================================== */
 
 .map-container {
@@ -39,7 +39,7 @@
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #0066cc;
+  border-bottom: 2px solid #10b981;
 }
 
 .map-header h3 {
@@ -60,7 +60,7 @@
   background: #f8f9fa;
 }
 
-/* マップグリッドコンテナ */
+/* マップグリチE��コンチE�� */
 .map-grid-container {
   width: fit-content;
   max-width: 100%;
@@ -78,13 +78,13 @@
   border: 1px solid #ddd;
 }
 
-/* グリッド線非表示 */
+/* グリチE��線非表示 */
 .hall-map-table.no-grid td,
 .map-table.no-grid td {
   border: none !important;
 }
 
-/* セルサイズ - 小 */
+/* セルサイズ - 封E*/
 .hall-map-table.size-small .map-cell,
 .map-table.size-small .map-cell {
   width: 80px;
@@ -95,7 +95,7 @@
   padding: 3px;
 }
 
-/* セルサイズ - 中（デフォルト） */
+/* セルサイズ - 中�E�デフォルト！E*/
 .hall-map-table .map-cell,
 .map-table .map-cell,
 .hall-map-table.size-medium .map-cell,
@@ -157,7 +157,7 @@
   background-color: white;
 }
 
-/* 色分けスタイル */
+/* 色刁E��スタイル */
 .map-cell.color-red {
   background-color: #ffcccc !important;
   border: 2px solid #dc3545 !important;
@@ -173,7 +173,7 @@
   border: 2px solid #28a745 !important;
 }
 
-/* 機種セルの内容 */
+/* 機種セルの冁E�� */
 .machine-cell {
   display: flex;
   flex-direction: column;
@@ -208,7 +208,7 @@
 
 .machine-number {
   font-size: 12px;
-  color: #0066cc;
+  color: #10b981;
   font-weight: bold;
   line-height: 1.1;
   margin: 0;
@@ -255,7 +255,7 @@
   padding: 1px 0;
 }
 
-/* 旧スタイル（互換性のため残す） */
+/* 旧スタイル�E�互換性のため残す�E�E*/
 .machine-diff {
   font-size: 14px;
   font-weight: bold;
@@ -297,7 +297,7 @@
   height: 100%;
 }
 
-/* 凡例 */
+/* 凡侁E*/
 .map-legend {
   display: flex;
   align-items: center;
@@ -332,20 +332,18 @@
 }
 
 /* ========================================
-   マップエディターのスタイル
+   マップエチE��ターのスタイル
    ======================================== */
 
 .map-editor-container {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
   padding: 20px;
-  height: calc(100vh - 40px);
+  min-height: calc(100vh - 300px);
 }
 
 .editor-header {
-  grid-column: 1 / -1;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -366,7 +364,58 @@
   gap: 10px;
 }
 
-/* ツールパレット */
+/* ツールパレット上部 */
+.tool-palette-top {
+  background: white;
+  border-radius: 8px;
+  padding: 15px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+}
+
+.tool-buttons-horizontal {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* エディター操作パネル */
+.editor-control-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 15px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+}
+
+.control-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.control-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.control-input {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#machine-input-panel {
+  display: none;
+}
 .tool-palette {
   background: white;
   border-radius: 8px;
@@ -379,7 +428,7 @@
   margin-top: 0;
   margin-bottom: 15px;
   color: #333;
-  border-bottom: 2px solid #0066cc;
+  border-bottom: 2px solid #10b981;
   padding-bottom: 10px;
 }
 
@@ -391,25 +440,28 @@
 }
 
 .tool-btn {
-  padding: 12px;
+  padding: 10px 16px;
   border: 2px solid #ddd;
   background: white;
   border-radius: 4px;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   transition: all 0.3s;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  min-width: 100px;
 }
 
 .tool-btn:hover {
   background: #f0f0f0;
-  border-color: #0066cc;
+  border-color: #10b981;
 }
 
 .tool-btn.active {
-  background: #0066cc;
+  background: #10b981;
   color: white;
-  border-color: #0066cc;
+  border-color: #10b981;
 }
 
 /* 入力パネル */
@@ -457,13 +509,13 @@
   padding: 15px;
   background: #e3f2fd;
   border-radius: 4px;
-  border-left: 4px solid #0066cc;
+  border-left: 4px solid #10b981;
 }
 
 .selection-info h4 {
   margin-top: 0;
   margin-bottom: 10px;
-  color: #0066cc;
+  color: #10b981;
 }
 
 #selection-display {
@@ -472,7 +524,7 @@
   line-height: 1.6;
 }
 
-/* 操作ガイド */
+/* 操作ガイチE*/
 .operation-guide {
   padding: 15px;
   background: #fff3cd;
@@ -497,7 +549,7 @@
   margin-bottom: 5px;
 }
 
-/* エディターグリッド */
+/* エチE��ターグリチE�� */
 .editor-grid-container {
   background: white;
   border-radius: 8px;
@@ -511,7 +563,7 @@
 .grid-scroll-area {
   flex: 1;
   overflow: auto;
-  border: 2px solid #0066cc;
+  border: 2px solid #10b981;
   border-radius: 4px;
   background: #f8f9fa;
   padding: 10px;
@@ -536,11 +588,11 @@
 
 .editor-cell:hover {
   background: #e3f2fd;
-  border-color: #0066cc;
+  border-color: #10b981;
 }
 
 .editor-cell.selected {
-  border: 3px solid #0066cc;
+  border: 3px solid #10b981;
   background: #e3f2fd;
 }
 
@@ -571,11 +623,11 @@
 }
 
 .cell-number {
-  color: #0066cc;
+  color: #10b981;
   font-weight: bold;
 }
 
-/* グリッドコントロール */
+/* グリチE��コントロール */
 .grid-controls {
   display: flex;
   gap: 10px;
@@ -598,7 +650,7 @@
 }
 
 /* ========================================
-   その他のスタイル
+   そ�E他�Eスタイル
    ======================================== */
 
 .btn-primary,
@@ -615,7 +667,7 @@
 }
 
 .btn-primary {
-  background: #0066cc;
+  background: #10b981;
   color: white;
 }
 
@@ -669,9 +721,9 @@
 }
 
 .btn-size.active {
-  background: #0066cc;
+  background: #10b981;
   color: white;
-  border-color: #0066cc;
+  border-color: #10b981;
 }
 
 .checkbox-label {
@@ -687,20 +739,266 @@
   border-radius: 4px;
 }
 
-/* レスポンシブ対応 */
-@media (max-width: 1200px) {
-  .map-editor-container {
-    grid-template-columns: 250px 1fr;
-  }
+/* ========================================
+   マップ管理画面のスタイル（インデックス）
+   ======================================== */
+
+.maps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 }
 
-@media (max-width: 768px) {
-  .map-editor-container {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr;
-  }
-
-  .tool-palette {
-    max-height: 300px;
-  }
+.map-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
 }
+
+.map-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.map-card-header {
+  padding: 16px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.map-card-title h3 {
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.map-dimensions {
+  background: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #10b981;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.map-card-body {
+  padding: 20px;
+}
+
+.map-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.stat-item {
+  background: #f0fdf4;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 3px solid #10b981;
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  color: #6c757d;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.stat-value {
+  display: block;
+  font-size: 18px;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.map-card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border-top: 1px solid #d1d5db;
+}
+
+.btn-action {
+  padding: 12px;
+  border: none;
+  background: white;
+  color: #495057;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.btn-action:not(:last-child) {
+  border-right: 1px solid #d1d5db;
+}
+
+.btn-edit {
+  color: #10b981;
+}
+
+.btn-edit:hover {
+  background: #d1f5e8;
+}
+
+.btn-duplicate {
+  color: #059669;
+}
+
+.btn-duplicate:hover {
+  background: #d1f5e8;
+}
+
+.btn-delete {
+  color: #dc3545;
+}
+
+.btn-delete:hover {
+  background: #fff5f5;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state h2 {
+  color: #6c757d;
+  margin-bottom: 30px;
+  font-size: 24px;
+}
+
+.empty-state .btn-new {
+  padding: 15px 40px;
+  font-size: 16px;
+}
+
+/* ========================================
+   マップ編集画面のスタイル
+   ======================================== */
+
+.auto-increment-options {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.radio-option:hover {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.radio-option input[type="radio"] {
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.radio-option input[type="radio"]:checked + span {
+  font-weight: bold;
+  color: #10b981;
+}
+
+.radio-option:has(input[type="radio"]:checked) {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+/* ========================================
+   マップ新規作成画面のスタイル
+   ======================================== */
+
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #374151;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.form-text {
+  display: block;
+  margin-top: 5px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-preview {
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 25px;
+}
+
+.form-preview h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #374151;
+}
+
+.preview-table {
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+
+.preview-table td {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #d1d5db;
+  background: white;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+

@@ -17,11 +17,6 @@
             </select>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-            <% if @current_map %>
-            <%= link_to "✏️ このマップを編集", edit_hall_map_path(@hall, @current_map), class: "btn-primary", style: "text-decoration: none;" %>
-            <% end %>
-            <%= link_to "📋 マップ管理", hall_maps_path(@hall), class: "btn-secondary", style: "text-decoration: none;" %>
-
             <%= link_to "📄 PDF出力", hall_export_map_pdf_path(@hall, @date, map_id: @current_map&.id), class: "btn-primary", style: "padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block;" %>
 
             <button onclick="exportMapToPDF()" class="btn-secondary" style="padding: 8px 16px; background: #6c757d; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 14px;">

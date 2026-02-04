@@ -23,7 +23,7 @@
                         <th>ホール名</th>
                         <th>コード</th>
                         <th>メモ</th>
-                        <th style="width: 200px;">操作</th>
+                        <th style="width: 280px; text-align: center;">操作</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -42,6 +42,7 @@
                         <td>
                             <div class="table-actions">
                                 <%= link_to "編集", edit_hall_path(hall), class: "btn btn-secondary btn-small" %>
+                                <%= link_to "マップ", hall_maps_path(hall), class: "btn btn-success btn-small" %>
                                 <%= link_to "削除", hall_path(hall), method: :delete, data: { turbo_method: :delete, turbo_confirm: "削除しますか?" }, class: "btn btn-danger btn-small" %>
                             </div>
                         </td>
