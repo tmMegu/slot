@@ -1,0 +1,101 @@
+<div class="display-days-selector collapsible-panel">
+    <div class="collapsible-header" onclick="togglePanel('days-content')">
+        <h3>📅 表示する過去データの設定</h3>
+        <span class="collapsible-toggle">▼</span>
+    </div>
+    <div id="days-content" class="collapsible-content">
+        <div class="collapsible-inner">
+            <form id="display-days-form" method="get">
+                <!-- 必須パラメータ -->
+                <input type="hidden" name="hall_id" value="<%= params[:hall_id] %>">
+                <input type="hidden" name="date" value="<%= @date %>">
+
+                <!-- ソート -->
+                <input type="hidden" name="sort_by" value="<%= @sort_by %>">
+                <input type="hidden" name="sort_order" value="<%= @sort_order %>">
+
+                <!-- フィルターパラメータ -->
+                <input type="hidden" name="filter_machine_name" value="<%= @filter_machine_name %>">
+                <input type="hidden" name="filter_machine_name_search" value="<%= @filter_machine_name_search %>">
+                <input type="hidden" name="filter_machine_name_search_type" value="<%= @filter_machine_name_search_type %>">
+                <input type="hidden" name="filter_game_count_min" value="<%= @filter_game_count_min %>">
+                <input type="hidden" name="filter_game_count_max" value="<%= @filter_game_count_max %>">
+                <input type="hidden" name="filter_difference_min" value="<%= @filter_difference_min %>">
+                <input type="hidden" name="filter_difference_max" value="<%= @filter_difference_max %>">
+                <input type="hidden" name="filter_bb_count_min" value="<%= @filter_bb_count_min %>">
+                <input type="hidden" name="filter_bb_count_max" value="<%= @filter_bb_count_max %>">
+                <input type="hidden" name="filter_diff_days" value="<%= @filter_diff_days %>">
+                <input type="hidden" name="filter_diff_value_min" value="<%= @filter_diff_value_min %>">
+                <input type="hidden" name="filter_diff_value_max" value="<%= @filter_diff_value_max %>">
+                <input type="hidden" name="filter_game_count_days" value="<%= @filter_game_count_days %>">
+                <input type="hidden" name="filter_game_count_value_min" value="<%= @filter_game_count_value_min %>">
+                <input type="hidden" name="filter_game_count_value_max" value="<%= @filter_game_count_value_max %>">
+                <input type="hidden" name="filter_machine_count_min" value="<%= @filter_machine_count_min %>">
+                <input type="hidden" name="filter_machine_count_max" value="<%= @filter_machine_count_max %>">
+                <input type="hidden" name="filter_rank_days" value="<%= params[:filter_rank_days] %>">
+                <% if params[:filter_ranks].present? %>
+                <% params[:filter_ranks].each do |rank| %>
+                <input type="hidden" name="filter_ranks[]" value="<%= rank %>">
+                <% end %>
+                <% end %>
+
+                <!-- タブ選択状態を保持 -->
+                <input type="hidden" name="active_tab" value="<%= params[:active_tab] || 'list' %>">
+
+                <!-- 日別集計タブのパラメータを保持 -->
+                <% if params[:date_range].present? %>
+                <input type="hidden" name="date_range" value="<%= params[:date_range] %>">
+                <% end %>
+                <% if params[:custom_dates].present? %>
+                <% params[:custom_dates].each do |custom_date| %>
+                <input type="hidden" name="custom_dates[]" value="<%= custom_date %>">
+                <% end %>
+                <% end %>
+
+                <!-- 表示タイプ選択 -->
+                <div style="margin-bottom: 20px; padding: 15px; background-color: #e8f4f8; border-left: 4px solid #0066cc; border-radius: 3px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 10px;">📊 表示する項目:</label>
+                    <div style="display: flex; gap: 20px;">
+                        <div class="rank-checkbox-group">
+                            <input type="checkbox" id="show-difference" name="show_difference" value="1" <%= 'checked' if params[:show_difference] != '0' %>>
+                            <label for="show-difference">過去差枚を表示</label>
+                        </div>
+                        <div class="rank-checkbox-group">
+                            <input type="checkbox" id="show-games" name="show_games" value="1" <%= 'checked' if params[:show_games] == '1' %>>
+                            <label for="show-games">過去回転数を表示</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 日数選択 -->
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 10px;">📅 表示する日数:</label>
+                    <div class="day-checkboxes">
+                        <% (1..31).each do |day| %>
+                        <div class="day-checkbox-group">
+                            <input type="checkbox" id="day-<%= day %>" name="display_days[]" value="<%= day %>" <%= 'checked' if @display_days.include?(day) %>>
+                            <label for="day-<%= day %>"><%= day %>日</label>
+                        </div>
+                        <% end %>
+                    </div>
+                </div>
+
+                <div class="preset-buttons">
+                    <button type="button" onclick="selectPreset('1-8')" class="<%= 'active' if @display_days == (1..8).to_a %>">
+                        週単位（1～8日）
+                    </button>
+                    <button type="button" onclick="selectPreset('7-7')" class="<%= 'active' if @display_days == [7] %>">
+                        7日
+                    </button>
+                    <button type="button" onclick="selectPreset('1-31')" class="<%= 'active' if @display_days == (1..31).to_a %>">
+                        全期間（1～31日）
+                    </button>
+                    <button type="button" onclick="clearAllDays()" style="background-color: #dc3545; color: white; border-color: #dc3545;">
+                        すべて解除
+                    </button>
+                    <button type="submit" class="btn-apply-days">適用</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

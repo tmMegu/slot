@@ -1,0 +1,35 @@
+<div class="collapsible-panel" style="margin-bottom: 20px;">
+    <div class="collapsible-header" onclick="togglePanel('map-color-settings')" style="background-color: #0066cc; color: white;">
+        <h3>🎨 色分け設定</h3>
+        <span class="collapsible-toggle">▼</span>
+    </div>
+    <div id="map-color-settings" class="collapsible-content">
+        <div class="collapsible-inner" style="background-color: #e8f4f8; padding: 20px;">
+
+            <!-- 色分け有効/無効 -->
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; font-size: 16px;">
+                    <input type="checkbox" id="color-enabled" checked onchange="toggleColorMode()">
+                    色分けを有効にする
+                </label>
+            </div>
+
+            <div id="color-settings-content" style="display: block;">
+                <!-- 色分け条件選択 -->
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 10px;">📊 色分け条件:</label>
+                    <select id="color-condition" onchange="updateMapColors()" style="padding: 8px; font-size: 14px; width: 100%; max-width: 400px;">
+                        <optgroup label="機種ごとのワースト">
+                            <option value="worst_7days" selected>機種ごと過去7日間総差枚ワースト1,2</option>
+                        </optgroup>
+                    </select>
+                    <div style="margin-top: 10px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; font-size: 13px;">
+                        <strong>色の意味:</strong><br>
+                        🔴 赤色 = 機種ごとのワースト1位（最も差枚が悪い台）<br>
+                        🟢 緑色 = 機種ごとのワースト2位（2番目に差枚が悪い台）
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

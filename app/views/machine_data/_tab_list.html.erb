@@ -1,0 +1,133 @@
+<!-- フィルター（過去データ設定を含む） -->
+<%= render 'filter_controls', panel_id: 'filter-content-list' %>
+
+<!-- ソートとメモ更新 -->
+<%= render 'sort_controls' %>
+
+<!-- データテーブル -->
+<div style="margin-top: 20px; overflow-x: auto;">
+    <% if @machine_data.empty? %>
+    <p style="text-align: center; color: #666; padding: 20px;">検索条件に合致するデータがありません</p>
+    <% else %>
+    <table border="1" style="border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'machine_number' %>" onclick="sort('machine_number')">台番号</th>
+                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable machine-name-header <%= 'sort-' + @sort_order if @sort_by == 'machine_name' %>" onclick="sort('machine_name')">機種名</th>
+                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'game_count' %>" onclick="sort('game_count')">G数</th>
+                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'difference_count' %>" onclick="sort('difference_count')">差枚</th>
+                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'bb_count' %>" onclick="sort('bb_count')">BB</th>
+                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'rb_count' %>" onclick="sort('rb_count')">RB</th>
+                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'art_count' %>" onclick="sort('art_count')">ART</th>
+
+                <!-- 過去差枚の列（表示が有効な場合のみ） -->
+                <% if @show_difference && @display_days.any? %>
+                <% @display_days.each do |days| %>
+                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == "diff_#{days}" %>" onclick="sort('diff_<%= days %>')">差枚<%= days %></th>
+                <% end %>
+                <% end %>
+
+                <!-- 過去回転数の列（表示が有効な場合のみ） -->
+                <% if @show_games && @display_days.any? %>
+                <% @display_days.each do |days| %>
+                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == "game_count_#{days}" %>" onclick="sort('game_count_<%= days %>')">回転<%= days %></th>
+                <% end %>
+                <% end %>
+
+                <!-- メモ列 -->
+                <th style="padding: 8px; background-color: #d1f5e8; min-width: 100px;">メモ</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 集計行 -->
+            <% if @data_exists && @filtered_summary %>
+            <tr style="background-color: #e8f9f3; font-weight: bold; border-bottom: 3px solid #10b981;">
+                <td colspan="2" style="text-align: center; padding: 10px;">
+                    📊 検索結果の平均（<%= @filtered_summary[:count] %>台）
+                </td>
+                <td style="text-align: right; padding: 10px;">
+                    <%= number_with_delimiter(@filtered_summary[:avg_games]) %>
+                </td>
+                <td style="text-align: right; padding: 10px;">
+                    <span style="<%= @filtered_summary[:avg_diff] >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %>">
+                        <%= number_with_delimiter(@filtered_summary[:avg_diff]) %>
+                    </span>
+                </td>
+                <td colspan="3" style="text-align: center; padding: 10px;">
+                    <span style="<%= @filtered_summary[:win_rate] >= 40 ? 'color: #10b981;' : 'color: #dc3545;' %>">
+                        勝率: <%= @filtered_summary[:win_rate] %>% (<%= @filtered_summary[:plus_machines] %>/<%= @filtered_summary[:count] %>)
+                    </span>
+                </td>
+                <% total_past_cols = 0 %>
+                <% total_past_cols += @display_days.length if @show_difference && @display_days.any? %>
+                <% total_past_cols += @display_days.length if @show_games && @display_days.any? %>
+                <% if total_past_cols > 0 %>
+                <td colspan="<%= total_past_cols %>" style="padding: 10px;"></td>
+                <% end %>
+                <td style="padding: 10px;"></td>
+            </tr>
+            <% end %>
+
+            <!-- データ行 -->
+            <% @machine_data.each do |data| %>
+            <tr class="<%= @data_exists ? '' : 'no-data-row' %>">
+                <td style="text-align: center; padding: 8px;">
+                    <%= link_to data.machine_number, "/halls/#{@hall.id}/machines/#{data.machine_number}?date=#{@date}", style: "text-decoration: none; color: #10b981;" %>
+                </td>
+                <td class="machine-name-cell"><%= data.machine_name %></td>
+                <td style="text-align: right; padding: 8px;"><%= @data_exists ? number_with_delimiter(data.game_count) : '-' %></td>
+                <td style="text-align: right; padding: 8px;"><%= @data_exists ? number_with_delimiter(data.difference_count) : '-' %></td>
+                <td style="text-align: center; padding: 8px;"><%= @data_exists ? data.bb_count : '-' %></td>
+                <td style="text-align: center; padding: 8px;"><%= @data_exists ? data.rb_count : '-' %></td>
+                <td style="text-align: center; padding: 8px;"><%= @data_exists ? data.art_count : '-' %></td>
+
+                <!-- 過去差枚のセル（表示が有効な場合のみ） -->
+                <% if @show_difference && @display_days.any? %>
+                <% @display_days.each do |days| %>
+                <%
+                  diff = @diff_days[days][data.machine_number]
+                  rank = @diff_ranks[days][data.machine_number]
+                  cell_class = case rank
+                              when 1 then 'worst-1'
+                              when 2 then 'worst-2'
+                              when 3 then 'worst-3'
+                              when 4 then 'worst-4'
+                              else ''
+                              end
+                %>
+                <td style="text-align: right; padding: 8px;" class="<%= cell_class %>">
+                    <%= diff ? number_with_delimiter(diff) : '-' %>
+                </td>
+                <% end %>
+                <% end %>
+
+                <!-- 過去回転数のセル（表示が有効な場合のみ） -->
+                <% if @show_games && @display_days.any? %>
+                <% @display_days.each do |days| %>
+                <%
+                  game_count = @game_count_days[days][data.machine_number]
+                  rank = @game_count_ranks[days][data.machine_number]
+                  cell_class = case rank
+                              when 1 then 'worst-1'
+                              when 2 then 'worst-2'
+                              when 3 then 'worst-3'
+                              when 4 then 'worst-4'
+                              else ''
+                              end
+                %>
+                <td style="text-align: right; padding: 8px;" class="<%= cell_class %>">
+                    <%= game_count ? number_with_delimiter(game_count) : '-' %>
+                </td>
+                <% end %>
+                <% end %>
+
+                <!-- メモ入力 -->
+                <td style="padding: 5px;">
+                    <input type="text" data-machine-number="<%= data.machine_number %>" data-date="<%= @date %>" data-original-value="<%= data.machine_memo %>" class="memo-input form-control" style="width: 100px; padding: 6px; font-size: 14px;" value="<%= data.machine_memo %>">
+                </td>
+            </tr>
+            <% end %>
+        </tbody>
+    </table>
+    <% end %>
+</div>

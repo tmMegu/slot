@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  hall: one
+  date: 2026-01-26
+  machine_number: 1
+  machine_name: MyString
+  game_count: 1
+  difference_count: 1
+  bb_count: 1
+  rb_count: 1
+  art_count: 1
+
+two:
+  hall: two
+  date: 2026-01-26
+  machine_number: 1
+  machine_name: MyString
+  game_count: 1
+  difference_count: 1
+  bb_count: 1
+  rb_count: 1
+  art_count: 1

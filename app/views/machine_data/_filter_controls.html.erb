@@ -1,0 +1,298 @@
+<%
+  # デフォルト値を設定
+  panel_id ||= 'filter-content'
+%>
+
+<div class="filter-controls collapsible-panel">
+    <div class="collapsible-header" onclick="togglePanel('<%= panel_id %>')">
+        <h3>🔍 フィルター</h3>
+        <span class="collapsible-toggle">▼</span>
+    </div>
+    <div id="<%= panel_id %>" class="collapsible-content">
+        <div class="collapsible-inner">
+            <form id="filter-form" method="get">
+                <!-- hall_idとdateを保持 -->
+                <input type="hidden" name="hall_id" value="<%= params[:hall_id] %>">
+                <input type="hidden" id="active-tab" name="active_tab" value="<%= params[:active_tab] || 'list' %>">
+
+                <!-- 表示日数パラメータを保持 -->
+                <% @display_days.each do |day| %>
+                <input type="hidden" name="display_days[]" value="<%= day %>">
+                <% end %>
+
+                <!-- 日別集計タブのパラメータを保持 -->
+                <% if params[:date_range].present? %>
+                <input type="hidden" name="date_range" value="<%= params[:date_range] %>">
+                <% end %>
+                <% if params[:custom_dates].present? %>
+                <% params[:custom_dates].each do |custom_date| %>
+                <input type="hidden" name="custom_dates[]" value="<%= custom_date %>">
+                <% end %>
+                <% end %>
+
+                <!-- アクティブなタブを保持 -->
+                <input type="hidden" id="active-tab" name="active_tab" value="<%= params[:active_tab] || 'list' %>">
+
+                <!-- 日付選択 -->
+                <div class="filter-row" style="border-bottom: 2px solid #0066cc; padding-bottom: 15px; margin-bottom: 15px;">
+                    <div class="filter-group">
+                        <label>📅 日付:</label>
+                        <input type="date" id="date-input" name="date" value="<%= @date %>" required style="padding: 6px 8px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc;" onchange="changeDate(this.value, <%= params[:hall_id] %>)">
+
+                        <!-- 日付ナビゲーション -->
+                        <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+                            <% prev_date = @date - 1.day %>
+                            <% next_date = @date + 1.day %>
+
+                            <a href="<%= url_for(action: 'show', hall_id: params[:hall_id], date: prev_date, sort_by: @sort_by, sort_order: @sort_order, display_days: @display_days) %>" class="btn-nav" style="padding: 5px 10px; text-decoration: none; background-color: #10b981; color: white; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                ◀ 前日
+                            </a>
+
+                            <span style="color: #666; font-size: 13px; min-width: 120px; text-align: center;">
+                                <%= @date.strftime('%Y年%m月%d日') %>
+                            </span>
+
+                            <a href="<%= url_for(action: 'show', hall_id: params[:hall_id], date: next_date, sort_by: @sort_by, sort_order: @sort_order, display_days: @display_days) %>" class="btn-nav" style="padding: 5px 10px; text-decoration: none; background-color: #10b981; color: white; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                翌日 ▶
+                            </a>
+
+                            <a href="<%= url_for(action: 'show', hall_id: params[:hall_id], date: Date.today, sort_by: @sort_by, sort_order: @sort_order, display_days: @display_days) %>" class="btn-nav" style="padding: 5px 10px; text-decoration: none; background-color: #059669; color: white; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                📍 今日
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 機種名フィルター（ドロップダウン） -->
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>機種名:</label>
+                        <select name="filter_machine_name" style="border-radius: 6px; padding: 6px 8px;">
+                            <option value="">--すべて--</option>
+                            <% @machine_names.each do |name| %>
+                            <option value="<%= name %>" <%= 'selected' if @filter_machine_name == name %>>
+                                <%= name %>
+                            </option>
+                            <% end %>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 機種名検索フィルター -->
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>機種名検索:</label>
+                        <input type="text" name="filter_machine_name_search" placeholder="検索ワード入力" value="<%= @filter_machine_name_search %>" style="width: 150px; border-radius: 6px; padding: 6px 8px;">
+                        <select name="filter_machine_name_search_type" style="width: auto; border-radius: 6px; padding: 6px 8px;">
+                            <option value="include" <%= 'selected' if @filter_machine_name_search_type == 'include' %>>含む</option>
+                            <option value="exclude" <%= 'selected' if @filter_machine_name_search_type == 'exclude' %>>含まない</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- G数フィルター -->
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>G数:</label>
+                        <input type="number" name="filter_game_count_min" placeholder="最小" value="<%= @filter_game_count_min %>">
+                        <span>～</span>
+                        <input type="number" name="filter_game_count_max" placeholder="最大" value="<%= @filter_game_count_max %>">
+                    </div>
+                </div>
+
+                <!-- 当日差枚フィルター -->
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>当日差枚:</label>
+                        <input type="number" name="filter_difference_min" placeholder="最小" value="<%= @filter_difference_min %>">
+                        <span>～</span>
+                        <input type="number" name="filter_difference_max" placeholder="最大" value="<%= @filter_difference_max %>">
+                    </div>
+                </div>
+
+                <!-- BB数フィルター -->
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>BB数:</label>
+                        <input type="number" name="filter_bb_count_min" placeholder="最小" value="<%= @filter_bb_count_min %>">
+                        <span>～</span>
+                        <input type="number" name="filter_bb_count_max" placeholder="最大" value="<%= @filter_bb_count_max %>">
+                    </div>
+                </div>
+
+                <!-- 過去N日差枚フィルター -->
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>過去</label>
+                        <select name="filter_diff_days">
+                            <option value="">--日数選択--</option>
+                            <% (1..31).each do |days| %>
+                            <option value="<%= days %>" <%= 'selected' if @filter_diff_days == days %>>
+                                <%= days %>日
+                            </option>
+                            <% end %>
+                        </select>
+                        <label>の差枚:</label>
+                        <input type="number" name="filter_diff_value_min" placeholder="最小" value="<%= @filter_diff_value_min %>">
+                        <span>～</span>
+                        <input type="number" name="filter_diff_value_max" placeholder="最大" value="<%= @filter_diff_value_max %>">
+                    </div>
+                </div>
+
+                <!-- 過去N日回転数フィルター -->
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>過去</label>
+                        <select name="filter_game_count_days">
+                            <option value="">--日数選択--</option>
+                            <% (1..31).each do |days| %>
+                            <option value="<%= days %>" <%= 'selected' if @filter_game_count_days == days %>>
+                                <%= days %>日
+                            </option>
+                            <% end %>
+                        </select>
+                        <label>の回転数:</label>
+                        <input type="number" name="filter_game_count_value_min" placeholder="最小" value="<%= @filter_game_count_value_min %>">
+                        <span>～</span>
+                        <input type="number" name="filter_game_count_value_max" placeholder="最大" value="<%= @filter_game_count_value_max %>">
+                    </div>
+                </div>
+
+                <!-- 機種毎台数フィルター -->
+                <div class="filter-row" style="border-top: 2px dashed #0066cc; padding-top: 15px; margin-top: 15px;">
+                    <div class="filter-group">
+                        <label>機種毎台数:</label>
+                        <input type="number" name="filter_machine_count_min" placeholder="最小" value="<%= @filter_machine_count_min %>" min="0">
+                        <span>～</span>
+                        <input type="number" name="filter_machine_count_max" placeholder="最大" value="<%= @filter_machine_count_max %>" min="0">
+                    </div>
+                    <div class="filter-group" style="font-size: 12px; color: #666; margin-left: 10px;">
+                        <p style="margin: 0;">（〇台以上のみ表示、または△台以下を除外）</p>
+                    </div>
+                </div>
+
+                <!-- 機種毎ワーストランキングフィルター -->
+                <div class="filter-row" style="border-top: 2px dashed #0066cc; padding-top: 15px; margin-top: 15px;">
+                    <div class="filter-group" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                        <label style="color: #0066cc; font-weight: bold;">🏆 機種毎ワースト台絞り込み:</label>
+                        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <label>過去</label>
+                                <select name="filter_rank_days">
+                                    <option value="">--日数選択--</option>
+                                    <% (1..31).each do |days| %>
+                                    <option value="<%= days %>" <%= 'selected' if params[:filter_rank_days].to_i == days %>>
+                                        <%= days %>日
+                                    </option>
+                                    <% end %>
+                                </select>
+                                <label>の差枚で絞り込み</label>
+                            </div>
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="rank-checkbox-group">
+                                    <input type="checkbox" id="rank-1" name="filter_ranks[]" value="1" <%= 'checked' if params[:filter_ranks]&.include?('1') %>>
+                                    <label for="rank-1" style="color: #ff6b6b; font-weight: bold;">
+                                        ワースト1位
+                                    </label>
+                                </div>
+                                <div class="rank-checkbox-group">
+                                    <input type="checkbox" id="rank-2" name="filter_ranks[]" value="2" <%= 'checked' if params[:filter_ranks]&.include?('2') %>>
+                                    <label for="rank-2" style="color: #ffb3b3; font-weight: bold;">
+                                        ワースト2位
+                                    </label>
+                                </div>
+                                <div class="rank-checkbox-group">
+                                    <input type="checkbox" id="rank-3" name="filter_ranks[]" value="3" <%= 'checked' if params[:filter_ranks]&.include?('3') %>>
+                                    <label for="rank-3" style="color: #66cc66; font-weight: bold;">
+                                        ワースト3位
+                                    </label>
+                                </div>
+                                <div class="rank-checkbox-group">
+                                    <input type="checkbox" id="rank-4" name="filter_ranks[]" value="4" <%= 'checked' if params[:filter_ranks]&.include?('4') %>>
+                                    <label for="rank-4" style="color: #b3e6b3; font-weight: bold;">
+                                        ワースト4位
+                                    </label>
+                                </div>
+                                <div class="rank-checkbox-group">
+                                    <input type="checkbox" id="rank-5" name="filter_ranks[]" value="5" <%= 'checked' if params[:filter_ranks]&.include?('5') %>>
+                                    <label for="rank-5" style="color: #999; font-weight: bold;">
+                                        ワースト5位
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 表示する過去データの設定パネル -->
+                <div class="filter-row" style="border-top: 2px dashed #10b981; padding-top: 15px; margin-top: 15px;">
+                    <div class="filter-group" style="flex-direction: column; align-items: flex-start; gap: 10px; width: 100%;">
+                        <label style="color: #10b981; font-weight: bold;">📅 表示する過去データの設定</label>
+
+                        <!-- 表示タイプ選択 -->
+                        <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                            <div class="rank-checkbox-group">
+                                <input type="checkbox" id="show-difference" name="show_difference" value="1" <%= 'checked' if params[:show_difference] != '0' %>>
+                                <label for="show-difference">過去差枚を表示</label>
+                            </div>
+                            <div class="rank-checkbox-group">
+                                <input type="checkbox" id="show-games" name="show_games" value="1" <%= 'checked' if params[:show_games] == '1' %>>
+                                <label for="show-games">過去回転数を表示</label>
+                            </div>
+                        </div>
+
+                        <!-- 日数選択 -->
+                        <div style="width: 100%;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">表示する日数:</label>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; max-height: 150px; overflow-y: auto; padding: 10px; background-color: white; border-radius: 6px; border: 1px solid #ccc;">
+                                <% (1..31).each do |day| %>
+                                <div class="day-checkbox-group" style="min-width: auto;">
+                                    <input type="checkbox" id="day-<%= day %>" name="display_days[]" value="<%= day %>" <%= 'checked' if @display_days.include?(day) %>>
+                                    <label for="day-<%= day %>"><%= day %>日</label>
+                                </div>
+                                <% end %>
+                            </div>
+                        </div>
+
+                        <!-- プリセットボタン -->
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                            <button type="button" onclick="selectPreset('7-7')" style="padding: 6px 12px; background-color: #fff8e1; border: 1px solid #ffc107; border-radius: 3px; cursor: pointer;">
+                                7日
+                            </button>
+                            <button type="button" onclick="selectPreset('1-8')" style="padding: 6px 12px; background-color: #fff8e1; border: 1px solid #ffc107; border-radius: 3px; cursor: pointer;">
+                                週単位（1～8日）
+                            </button>
+                            <button type="button" onclick="selectPreset('1-31')" style="padding: 6px 12px; background-color: #fff8e1; border: 1px solid #ffc107; border-radius: 3px; cursor: pointer;">
+                                全期間（1～31日）
+                            </button>
+                            <button type="button" onclick="clearAllDays()" style="padding: 6px 12px; background-color: #dc3545; color: white; border: 1px solid #dc3545; border-radius: 3px; cursor: pointer;">
+                                すべて解除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- フィルターボタン -->
+                <div class="filter-row">
+                    <div class="filter-buttons">
+                        <button type="submit" class="btn-apply" style="padding: 6px 16px; border-radius: 6px;">フィルター適用</button>
+                        <button type="button" class="btn-reset" onclick="resetFilter()" style="padding: 6px 16px; border-radius: 6px; white-space: nowrap;">リセット</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- フィルター結果表示 -->
+            <% if params[:filter_machine_name].present? || params[:filter_machine_name_search].present? ||
+                    params[:filter_game_count_min].present? || params[:filter_game_count_max].present? || 
+                    params[:filter_difference_min].present? || params[:filter_difference_max].present? ||
+                    params[:filter_bb_count_min].present? || params[:filter_bb_count_max].present? ||
+                    params[:filter_diff_days].present? || params[:filter_game_count_days].present? ||
+                    params[:filter_rank_days].present? || params[:filter_machine_count_min].present? || 
+                    params[:filter_machine_count_max].present? %>
+            <div class="result-info">
+                ✓ フィルター適用済み: <strong><%= @machine_data.length %></strong>台を表示中
+            </div>
+            <% end %>
+        </div>
+    </div>
+</div>

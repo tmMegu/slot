@@ -1,0 +1,299 @@
+/**
+ * ホールマップ印刷用スタイル
+ * 
+ * PDF出力時に適用されるスタイルを定義します。
+ * 通常の表示には影響を与えません。
+ */
+
+/* ============================================================
+   印刷用メディアクエリ
+   ============================================================ */
+
+@media print {
+  /* ページ設定 - サイズ自動調整でコンテンツに合わせる */
+  @page {
+    size: auto; /* コンテンツに合わせてサイズを自動調整 */
+    margin: 5mm; /* 最小限の余白 */
+  }
+
+  /* ============================================================
+     非表示要素
+     ============================================================ */
+
+  /* 画面表示時に .print-hide が付いた要素を非表示 */
+  .print-hide,
+  .print-hide-temp,
+  /* 以下は念のため明示的に非表示 */
+  nav,
+  footer,
+  .sidebar,
+  .tab-buttons,
+  .collapsible-panel,
+  .map-toolbar,
+  .btn-primary,
+  .btn-secondary,
+  button,
+  header,
+  .header,
+  h1:not(.map-table h1),
+  h2:not(.map-table h2),
+  .page-title,
+  a:not(.map-table a),
+  .back-link,
+  .breadcrumb,
+  .navigation {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* マップテーブル以外のすべてのコンテンツを非表示 */
+  body > *:not(:has(.map-table)) {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* ============================================================
+     ページ全体の設定 - 空白ページを完全に排除
+     ============================================================ */
+
+  html {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* マップコンテナのみ表示 - 直接配置 */
+  .map-tab-container,
+  .map-grid-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+    display: block !important;
+    position: relative !important;
+  }
+
+  /* PDFスケールが適用されている場合は維持 */
+  .map-grid-container.pdf-scaled {
+    transform-origin: top left !important;
+    /* transformはJavaScriptから動的に設定される */
+  }
+
+  /* ============================================================
+     テーブルの設定 - 1ページに収める
+     ============================================================ */
+
+  .map-table {
+    width: auto !important; /* コンテンツに合わせて自動調整 */
+    max-width: none !important;
+    border-collapse: collapse !important;
+    page-break-inside: avoid !important; /* テーブルを途中で改ページしない */
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    margin: 0 !important;
+    display: table !important;
+  }
+
+  .map-table tbody {
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  .map-table tr {
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  .map-table td {
+    border: 1px solid #333 !important; /* 印刷時は必ずボーダーを表示 */
+    page-break-inside: avoid !important;
+    white-space: nowrap !important; /* セル内で改行しない */
+  }
+
+  /* ============================================================
+     セルの設定
+     ============================================================ */
+
+  .map-cell {
+    border: 1px solid #333 !important;
+    background: white !important;
+    color: black !important;
+    text-align: center;
+    vertical-align: middle;
+    padding: 2mm;
+    page-break-inside: avoid !important;
+  }
+
+  /* 機種セル */
+  .map-cell.machine {
+    background-color: #f5f5f5 !important;
+  }
+
+  /* 壁セル */
+  .map-cell.wall {
+    background-color: #cccccc !important;
+  }
+
+  /* カウンターセル */
+  .map-cell.counter {
+    background-color: #ffffcc !important;
+  }
+
+  /* ============================================================
+     色分けスタイル（印刷用に調整）
+     ============================================================ */
+
+  .map-cell.color-red {
+    background-color: #ffcccc !important;
+    border: 2px solid #cc0000 !important;
+  }
+
+  .map-cell.color-green {
+    background-color: #ccffcc !important;
+    border: 2px solid #00cc00 !important;
+  }
+
+  .map-cell.color-yellow {
+    background-color: #ffffcc !important;
+    border: 2px solid #cccc00 !important;
+  }
+
+  /* ============================================================
+     テキストの設定
+     ============================================================ */
+
+  .machine-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1mm;
+  }
+
+  .machine-name,
+  .machine-number,
+  .machine-stats {
+    color: black !important;
+  }
+
+  .machine-number {
+    font-weight: bold;
+    font-size: 12pt;
+  }
+
+  .machine-name {
+    font-size: 10pt;
+  }
+
+  .machine-stats {
+    font-size: 9pt;
+  }
+
+  /* 差枚の色（印刷でも見やすく） */
+  .stat-diff.positive {
+    color: #006600 !important; /* 濃い緑 */
+  }
+
+  .stat-diff.negative {
+    color: #cc0000 !important; /* 濃い赤 */
+  }
+
+  /* ============================================================
+     背景とシャドウの削除
+     ============================================================ */
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    background-image: none !important;
+  }
+
+  /* ============================================================
+     リンクの設定
+     ============================================================ */
+
+  a {
+    text-decoration: none !important;
+    color: black !important;
+  }
+
+  /* ============================================================
+     改ページ制御 - 強制的に1ページに収める
+     ============================================================ */
+
+  table {
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  td,
+  th {
+    page-break-inside: avoid !important;
+  }
+
+  /* 余計な空白ページを防ぐ */
+  body::after,
+  body::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  div::after,
+  div::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* すべての要素の高さを自動調整 */
+  div:not(.map-table):not(.map-grid-container):not(.map-tab-container) {
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+  }
+
+  /* 色を正確に印刷 */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}
+
+/* ============================================================
+   画面表示時の補助クラス
+   ============================================================ */
+
+/* 印刷準備中の非表示クラス（画面表示時） */
+.print-hide {
+  display: none;
+}
+
+/* 印刷モード時のマップコンテナ（画面表示時） */
+.print-mode {
+  /* 画面表示時は通常通り */
+}

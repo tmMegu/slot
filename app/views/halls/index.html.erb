@@ -1,0 +1,62 @@
+<div class="container">
+    <div class="card">
+        <div class="card-header">データ一括取得</div>
+        <form action="/machine_data/batch_import" method="post">
+            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+            <div class="form-row mb-20">
+                <div class="form-group">
+                    <label class="form-label">開始日</label>
+                    <input type="date" name="start_date" class="form-control" value="<%= (Date.today - 1.day).strftime('%Y-%m-%d') %>" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">終了日</label>
+                    <input type="date" name="end_date" class="form-control" value="<%= Date.today.strftime('%Y-%m-%d') %>" required>
+                </div>
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">
+                            <input type="checkbox" id="select-all" onchange="document.querySelectorAll('input[name=\'hall_ids[]\']').forEach(cb => cb.checked = this.checked)">
+                        </th>
+                        <th>ホール名</th>
+                        <th>コード</th>
+                        <th>メモ</th>
+                        <th style="width: 200px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% @halls.each do |hall| %>
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="hall_ids[]" value="<%= hall.id %>">
+                        </td>
+                        <td>
+                            <%= link_to hall.name, hall_path(hall), style: "font-weight: 600;" %>
+                        </td>
+                        <td><%= hall.code %></td>
+                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <%= hall.memo.present? ? hall.memo : "-" %>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <%= link_to "編集", edit_hall_path(hall), class: "btn btn-secondary btn-small" %>
+                                <%= link_to "削除", hall_path(hall), method: :delete, data: { turbo_method: :delete, turbo_confirm: "削除しますか?" }, class: "btn btn-danger btn-small" %>
+                            </div>
+                        </td>
+                    </tr>
+                    <% end %>
+                </tbody>
+            </table>
+
+            <div class="mt-20">
+                <button type="submit" class="btn btn-success">選択したホールのデータを一括取得</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="btn-group">
+        <%= link_to "ホール追加", new_hall_path, class: "btn btn-primary" %>
+    </div>
+</div>

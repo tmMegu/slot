@@ -1,0 +1,46 @@
+<h1><%= @hall.name %> - 台番号 <%= @machine_number %></h1>
+<h2><%= @machine_name %></h2>
+
+<%= link_to "台データ一覧に戻る", "/halls/#{@hall.id}/dates/#{@current_date}", style: "margin-bottom: 20px; display: inline-block;" %>
+
+<div style="margin-top: 20px;">
+    <% if @machine_history.empty? %>
+    <p>過去10日間のデータがありません</p>
+    <% else %>
+    <table border="1" style="border-collapse: collapse; width: 100%;">
+        <thead>
+            <tr>
+                <th style="padding: 10px; background-color: #e8e8e8;">日付</th>
+                <th style="padding: 10px; background-color: #e8e8e8;">G数</th>
+                <th style="padding: 10px; background-color: #e8e8e8;">差枚</th>
+                <th style="padding: 10px; background-color: #e8e8e8;">BB</th>
+                <th style="padding: 10px; background-color: #e8e8e8;">RB</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% @machine_history.each do |data| %>
+            <tr>
+                <td style="padding: 10px;">
+                    <%= link_to data.date.strftime('%Y年%m月%d日 (%a)'), "/halls/#{@hall.id}/dates/#{data.date}", style: "text-decoration: none;" %>
+                </td>
+                <td style="text-align: right; padding: 10px;"><%= number_with_delimiter(data.game_count) %></td>
+                <td style="text-align: right; padding: 10px; <%= data.difference_count >= 0 ? 'color: blue;' : 'color: red;' %>">
+                    <%= number_with_delimiter(data.difference_count) %>
+                </td>
+                <td style="text-align: center; padding: 10px;"><%= data.bb_count %></td>
+                <td style="text-align: center; padding: 10px;"><%= data.rb_count %></td>
+            </tr>
+            <% end %>
+        </tbody>
+        <tfoot>
+            <tr style="background-color: #f0f0f0; font-weight: bold;">
+                <td style="padding: 10px;">合計</td>
+                <td style="text-align: right; padding: 10px;"><%= number_with_delimiter(@machine_history.sum(&:game_count)) %></td>
+                <td style="text-align: right; padding: 10px;"><%= number_with_delimiter(@machine_history.sum(&:difference_count)) %></td>
+                <td style="text-align: center; padding: 10px;"><%= @machine_history.sum(&:bb_count) %></td>
+                <td style="text-align: center; padding: 10px;"><%= @machine_history.sum(&:rb_count) %></td>
+            </tr>
+        </tfoot>
+    </table>
+    <% end %>
+</div>

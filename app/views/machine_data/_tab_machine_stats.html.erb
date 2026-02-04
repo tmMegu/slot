@@ -1,0 +1,113 @@
+<div style="margin-top: 20px;">
+    <% if !@data_exists %>
+    <div style="padding: 20px; text-align: center; background-color: #f8d7da; border: 1px solid #dc3545; border-radius: 5px; color: #721c24;">
+        ⚠️ この日のデータが存在しないため、機種別集計を表示できません。
+    </div>
+    <% elsif @machine_stats.empty? %>
+    <p style="text-align: center; color: #666; padding: 20px;">機種データがありません</p>
+    <% else %>
+    <%
+      # 台数毎にグループ化
+      stats_5_plus = @machine_stats.select { |s| s[:total_machines] >= 5 }
+      stats_3_to_4 = @machine_stats.select { |s| s[:total_machines] >= 3 && s[:total_machines] <= 4 }
+      stats_1_to_2 = @machine_stats.select { |s| s[:total_machines] <= 2 }
+
+      # 各グループで順位を再計算
+      [stats_5_plus, stats_3_to_4, stats_1_to_2].each do |group|
+        group.sort_by! { |s| -s[:avg_diff] }
+        group.each_with_index { |s, i| s[:group_rank] = i + 1 }
+      end
+    %>
+
+    <% [
+      { title: '5台以上の機種', stats: stats_5_plus, color: '#10b981' },
+      { title: '3～4台の機種', stats: stats_3_to_4, color: '#3b82f6' },
+      { title: '2台以下の機種', stats: stats_1_to_2, color: '#f59e0b' }
+    ].each do |section| %>
+    <% next if section[:stats].empty? %>
+
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: <%= section[:color] %>; border-bottom: 3px solid <%= section[:color] %>; padding-bottom: 8px; margin-bottom: 15px;">
+            📊 <%= section[:title] %> (<%= section[:stats].length %>機種)
+        </h3>
+
+        <div style="overflow-x: auto;">
+            <table border="1" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="padding: 10px; background-color: #d1f5e8; text-align: center;">順位</th>
+                        <th style="padding: 10px; background-color: #d1f5e8; text-align: left;">機種名</th>
+                        <th style="padding: 10px; background-color: #d1f5e8; text-align: center;">台数</th>
+                        <th style="padding: 10px; background-color: #d1f5e8; text-align: right;">平均差枚</th>
+                        <th style="padding: 10px; background-color: #d1f5e8; text-align: right;">総差枚</th>
+                        <th style="padding: 10px; background-color: #d1f5e8; text-align: right;">平均G数</th>
+                        <th style="padding: 10px; background-color: #d1f5e8; text-align: center;">勝率</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% section[:stats].each do |stat| %>
+                    <tr>
+                        <td style="padding: 8px; text-align: center; font-weight: bold;">
+                            <% if stat[:group_rank] == 1 %>
+                            <span style="font-size: 18px;">🥇</span>
+                            <% elsif stat[:group_rank] == 2 %>
+                            <span style="font-size: 18px;">🥈</span>
+                            <% elsif stat[:group_rank] == 3 %>
+                            <span style="font-size: 18px;">🥉</span>
+                            <% else %>
+                            <%= stat[:group_rank] %>
+                            <% end %>
+                        </td>
+                        <td style="padding: 8px; font-weight: bold;">
+                            <%= stat[:machine_name] %>
+                        </td>
+                        <td style="padding: 8px; text-align: center; font-weight: bold; color: <%= section[:color] %>;">
+                            <%= stat[:total_machines] %>台
+                        </td>
+                        <td style="padding: 8px; text-align: right;">
+                            <span style="<%= stat[:avg_diff] >= 0 ? 'color: #10b981; font-weight: bold;' : 'color: #dc3545; font-weight: bold;' %>">
+                                <%= number_with_delimiter(stat[:avg_diff]) %>
+                            </span>
+                        </td>
+                        <td style="padding: 8px; text-align: right;">
+                            <span style="<%= stat[:total_diff] >= 0 ? 'color: #10b981; font-weight: bold;' : 'color: #dc3545; font-weight: bold;' %>">
+                                <%= number_with_delimiter(stat[:total_diff]) %>
+                            </span>
+                        </td>
+                        <td style="padding: 8px; text-align: right;">
+                            <%= number_with_delimiter(stat[:avg_games]) %>
+                        </td>
+                        <td style="padding: 8px; text-align: center; white-space: nowrap;">
+                            <span style="<%= stat[:win_rate] >= 50 ? 'color: #10b981; font-weight: bold;' : 'color: #dc3545; font-weight: bold;' %>">
+                                <%= stat[:win_rate] %>% (<%= stat[:plus_machines] %>/<%= stat[:total_machines] %>)
+                            </span>
+                        </td>
+                    </tr>
+                    <% end %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <% end %>
+
+    <div style="margin-top: 20px; padding: 15px; background-color: #e8f9f3; border-left: 4px solid #10b981; border-radius: 3px;">
+        <h4 style="margin-top: 0;">📊 集計情報</h4>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+            <li><strong>機種数:</strong> <%= @machine_stats.length %>機種</li>
+            <li><strong>総台数:</strong> <%= @machine_stats.sum { |s| s[:total_machines] } %>台</li>
+            <li><strong>全体平均差枚:</strong>
+                <% overall_avg = @machine_stats.sum { |s| s[:avg_diff] * s[:total_machines] } / @machine_stats.sum { |s| s[:total_machines] }.to_f %>
+                <span style="<%= overall_avg >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %> font-weight: bold;">
+                    <%= number_with_delimiter(overall_avg.round) %>
+                </span>
+            </li>
+            <li><strong>全体総差枚:</strong>
+                <% overall_total = @machine_stats.sum { |s| s[:total_diff] } %>
+                <span style="<%= overall_total >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %> font-weight: bold;">
+                    <%= number_with_delimiter(overall_total) %>
+                </span>
+            </li>
+        </ul>
+    </div>
+    <% end %>
+</div>
