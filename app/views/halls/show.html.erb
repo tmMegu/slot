@@ -36,10 +36,10 @@
                         <tr>
                             <th style="width: 180px;">日付</th>
                             <th style="width: 90px;">平均差枚</th>
-                            <th style="width: 90px;">平均回転数</th>
+                            <th style="width: 110px;">平均回転数</th>
                             <th style="width: 90px;">総差枚</th>
-                            <th style="width: 110px;">勝率</th>
-                            <th style="min-width: 150px;">メモ</th>
+                            <th style="width: 150px;">勝率</th>
+                            <th style="width: 280px; min-width: 150px;">メモ</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,8 +88,8 @@
                             <% end %>
 
                             <!-- メモ入力 -->
-                            <td style="padding: 3px;">
-                                <input type="text" name="memos[<%= date %>]" class="form-control" style="width: 100%; padding: 4px 6px; font-size: 12px;" value="<%= date_memo %>">
+                            <td style="padding: 1px;">
+                                <input type="text" name="memos[<%= date %>]" class="form-control" style="width: 100%; font-size: 12px;" value="<%= date_memo %>">
                             </td>
                         </tr>
                         <% end %>
