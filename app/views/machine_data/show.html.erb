@@ -129,7 +129,16 @@
 
 <div class="container">
     <div class="flex-between mb-10">
-        <%= link_to "← 戻る", hall_path(@hall), class: "btn btn-secondary btn-small" %>
+        <% 
+          # referrerに応じて戻るリンク先を変更
+          back_url = if request.referer && request.referer.include?('trend_analysis')
+                       hall_trend_analysis_path(@hall)
+                     else
+                       hall_path(@hall)
+                     end
+          back_text = request.referer && request.referer.include?('trend_analysis') ? "← 傾向調査に戻る" : "← 戻る"
+        %>
+        <%= link_to back_text, back_url, class: "btn btn-secondary btn-small" %>
         <h2 style="margin: 0; color: #333;"><%= @hall.name %> - <%= @date.strftime('%Y年%m月%d日') %></h2>
         <div></div>
     </div>

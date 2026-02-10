@@ -1,0 +1,46 @@
+<div class="matrix-section">
+    <div class="matrix-title">
+        📆 末尾日×曜日 分析
+    </div>
+
+    <div class="matrix-description">
+        末尾日と曜日の組み合わせで分析します。例：「末尾8の日の土曜日は出ているか」などを確認できます。
+    </div>
+
+    <div class="matrix-wrapper">
+        <table class="matrix-table">
+            <thead>
+                <tr>
+                    <th class="corner-cell">末尾日＼曜日</th>
+                    <% 
+            wday_names = ['日', '月', '火', '水', '木', '金', '土']
+            wday_colors = ['#dc3545', '#333', '#333', '#333', '#333', '#333', '#007bff']
+          %>
+                    <% wday_names.each_with_index do |wday_name, index| %>
+                    <th style="color: <%= wday_colors[index] %>;"><%= wday_name %></th>
+                    <% end %>
+                </tr>
+            </thead>
+            <tbody>
+                <% [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'ぞろ目', '月=日', '月末'].each do |date_cond| %>
+                <tr>
+                    <th class="row-header"><%= date_cond %></th>
+                    <% (0..6).each do |wday| %>
+                    <% data = @last_digit_weekday_matrix[date_cond][wday] %>
+                    <% if data %>
+                    <td class="stat-cell <%= data[:avg_diff] >= 0 ? 'positive-bg' : 'negative-bg' %>">
+                        <div class="stat-value <%= data[:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                            <%= number_with_delimiter(data[:avg_diff]) %>
+                        </div>
+                        <div class="stat-detail">G<%= number_with_delimiter(data[:avg_games]) %> / <%= data[:win_rate] %>% / <%= data[:days_count] %>日</div>
+                    </td>
+                    <% else %>
+                    <td class="no-data-cell">-</td>
+                    <% end %>
+                    <% end %>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -7,6 +7,15 @@ Rails.application.routes.draw do
       post :update_date_memos
     end
 
+    # 傾向調査機能
+    get "trend_analysis", to: "trend_analysis#show", as: "trend_analysis"
+
+    # データ分析機能
+    get "data_analysis", to: "data_analysis#show", as: "data_analysis"
+
+    # 台番号の過去データ表示
+    get "machines/:machine_number", to: "machine_data#machine_history", as: "machine_history"
+
     get "dates/:date", to: "machine_data#show", as: "machine_data"
 
     # 台メモの更新

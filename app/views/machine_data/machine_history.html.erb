@@ -1,46 +1,162 @@
-<h1><%= @hall.name %> - 台番号 <%= @machine_number %></h1>
-<h2><%= @machine_name %></h2>
+<div class="container">
+    <div class="page-header">
+        <h1><%= @hall.name %> - 台番号 <%= @machine_number %></h1>
+        <h2><%= @machine_name %></h2>
+    </div>
 
-<%= link_to "← 戻る", "/halls/#{@hall.id}/dates/#{@current_date}", style: "margin-bottom: 20px; display: inline-block;" %>
+    <div style="margin-bottom: 20px;">
+        <%= link_to "← 戻る", request.referrer || hall_machine_data_path(@hall, date: @current_date), class: "btn btn-secondary" %>
+    </div>
 
-<div style="margin-top: 20px;">
-    <% if @machine_history.empty? %>
-    <p>過去10日間のデータがありません</p>
-    <% else %>
-    <table border="1" style="border-collapse: collapse; width: 100%;">
-        <thead>
-            <tr>
-                <th style="padding: 10px; background-color: #e8e8e8;">日付</th>
-                <th style="padding: 10px; background-color: #e8e8e8;">G数</th>
-                <th style="padding: 10px; background-color: #e8e8e8;">差枚</th>
-                <th style="padding: 10px; background-color: #e8e8e8;">BB</th>
-                <th style="padding: 10px; background-color: #e8e8e8;">RB</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% @machine_history.each do |data| %>
-            <tr>
-                <td style="padding: 10px;">
-                    <%= link_to data.date.strftime('%Y年%m月%d日 (%a)'), "/halls/#{@hall.id}/dates/#{data.date}", style: "text-decoration: none;" %>
-                </td>
-                <td style="text-align: right; padding: 10px;"><%= number_with_delimiter(data.game_count) %></td>
-                <td style="text-align: right; padding: 10px; <%= data.difference_count >= 0 ? 'color: blue;' : 'color: red;' %>">
-                    <%= number_with_delimiter(data.difference_count) %>
-                </td>
-                <td style="text-align: center; padding: 10px;"><%= data.bb_count %></td>
-                <td style="text-align: center; padding: 10px;"><%= data.rb_count %></td>
-            </tr>
-            <% end %>
-        </tbody>
-        <tfoot>
-            <tr style="background-color: #f0f0f0; font-weight: bold;">
-                <td style="padding: 10px;">合計</td>
-                <td style="text-align: right; padding: 10px;"><%= number_with_delimiter(@machine_history.sum(&:game_count)) %></td>
-                <td style="text-align: right; padding: 10px;"><%= number_with_delimiter(@machine_history.sum(&:difference_count)) %></td>
-                <td style="text-align: center; padding: 10px;"><%= @machine_history.sum(&:bb_count) %></td>
-                <td style="text-align: center; padding: 10px;"><%= @machine_history.sum(&:rb_count) %></td>
-            </tr>
-        </tfoot>
-    </table>
+    <div class="filter-panel" style="margin-bottom: 20px;">
+        <%= form_with url: hall_machine_history_path(@hall, @machine_number), method: :get, local: true do |form| %>
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>表示期間:</label>
+                <%= form.number_field :days, 
+              value: params[:days] || 90,
+              min: 1,
+              max: 365,
+              class: "form-control",
+              style: "width: 100px;" %>
+                <span>日間</span>
+            </div>
+            <div class="filter-group">
+                <%= form.submit "更新", class: "btn btn-primary" %>
+            </div>
+        </div>
+        <% end %>
+    </div>
+
+    <% if @summary.present? %>
+    <div class="summary-section" style="margin-bottom: 30px;">
+        <h3>集計データ（<%= @days %>日間）</h3>
+        <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;">
+            <div class="summary-card">
+                <div class="summary-label">データ日数</div>
+                <div class="summary-value"><%= @summary[:data_days] %>日</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">合計G数</div>
+                <div class="summary-value"><%= number_with_delimiter(@summary[:total_games]) %></div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">合計差枚</div>
+                <div class="summary-value" style="color: <%= @summary[:total_diff] >= 0 ? 'blue' : 'red' %>;">
+                    <%= number_with_delimiter(@summary[:total_diff]) %>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">平均G数</div>
+                <div class="summary-value"><%= number_with_delimiter(@summary[:avg_games]) %></div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">平均差枚</div>
+                <div class="summary-value" style="color: <%= @summary[:avg_diff] >= 0 ? 'blue' : 'red' %>;">
+                    <%= number_with_delimiter(@summary[:avg_diff]) %>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">合計BB</div>
+                <div class="summary-value"><%= number_with_delimiter(@summary[:total_bb]) %></div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">合計RB</div>
+                <div class="summary-value"><%= number_with_delimiter(@summary[:total_rb]) %></div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">BB平均間隔</div>
+                <div class="summary-value">
+                    <%= @summary[:bb_interval] == 0 ? '-' : "1/#{@summary[:bb_interval]}" %>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">勝率</div>
+                <div class="summary-value"><%= @summary[:win_rate] %>%</div>
+            </div>
+        </div>
+    </div>
     <% end %>
+
+    <div class="data-section">
+        <h3>日別データ</h3>
+        <% if @machine_data.empty? %>
+        <p>指定期間のデータがありません</p>
+        <% else %>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>日付</th>
+                        <th class="text-right">G数</th>
+                        <th class="text-right">差枚</th>
+                        <th class="text-center">BB</th>
+                        <th class="text-center">RB</th>
+                        <th class="text-center">BB間隔</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% @machine_data.each do |data| %>
+                    <tr>
+                        <td>
+                            <%= link_to hall_machine_data_path(@hall, date: data.date) do %>
+                            <%= data.date.strftime('%Y/%m/%d (%a)') %>
+                            <% end %>
+                        </td>
+                        <td class="text-right"><%= number_with_delimiter(data.game_count) %></td>
+                        <td class="text-right <%= data.difference_count >= 0 ? 'positive' : 'negative' %>">
+                            <%= number_with_delimiter(data.difference_count) %>
+                        </td>
+                        <td class="text-center"><%= data.bb_count %></td>
+                        <td class="text-center"><%= data.rb_count %></td>
+                        <td class="text-center">
+                            <%= data.bb_count > 0 ? "1/#{(data.game_count.to_f / data.bb_count).round}" : '-' %>
+                        </td>
+                    </tr>
+                    <% end %>
+                </tbody>
+            </table>
+        </div>
+        <% end %>
+    </div>
 </div>
+
+<style>
+    .summary-section h3,
+    .data-section h3 {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #007bff;
+    }
+
+    .summary-card {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #dee2e6;
+    }
+
+    .summary-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 8px;
+    }
+
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #212529;
+    }
+
+    @media (max-width: 768px) {
+        .summary-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+
+        .summary-value {
+            font-size: 1.2rem;
+        }
+    }
+</style>

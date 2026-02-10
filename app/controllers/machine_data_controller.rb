@@ -76,6 +76,43 @@ class MachineDataController < ApplicationController
     redirect_to halls_path
   end
 
+  # 台番号の過去データ表示
+  def machine_history
+    @hall = Hall.find_by(id: params[:hall_id])
+    @machine_number = params[:machine_number].to_i
+    
+    # 日付範囲の設定
+    @end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today
+    @start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : (@end_date - 90.days)
+    
+    # 指定された台番号の過去データを取得（最適化：1回のクエリ）
+    @machine_data = @hall.machine_data
+                         .where(machine_number: @machine_number, date: @start_date..@end_date)
+                         .order(date: :desc)
+                         .to_a
+    
+    # データが存在する場合、機種名を取得
+    @machine_name = @machine_data.first&.machine_name
+    
+    # 集計データを計算
+    if @machine_data.any?
+      @summary = {
+        total_days: @machine_data.length,
+        total_games: @machine_data.sum(&:game_count),
+        total_diff: @machine_data.sum(&:difference_count),
+        total_bb: @machine_data.sum(&:bb_count),
+        total_rb: @machine_data.sum(&:rb_count),
+        total_art: @machine_data.sum(&:art_count),
+        avg_games: (@machine_data.sum(&:game_count).to_f / @machine_data.length).round,
+        avg_diff: (@machine_data.sum(&:difference_count).to_f / @machine_data.length).round,
+        plus_days: @machine_data.count { |m| m.difference_count > 0 },
+        win_rate: (@machine_data.count { |m| m.difference_count > 0 }.to_f / @machine_data.length * 100).round(1)
+      }
+    else
+      @summary = nil
+    end
+  end
+
   # メインの表示アクション
   # 【パフォーマンス最適化済み】
   # - 必要な列のみをSELECT
@@ -239,57 +276,175 @@ class MachineDataController < ApplicationController
     @hall = Hall.find_by(id: params[:hall_id])
     @date = Date.parse(params[:date])
 
+    # セッションキーを設定
+    @session_key = "machine_data_filters"
+    
+    # セッションから検索条件を復元（パラメータが指定されていない場合）
+    restore_from_session_if_needed
+
     # 表示設定
-    @show_difference = params[:show_difference] != "0"
-    @show_games = params[:show_games] == "1"
+    @show_difference = get_param_or_session(:show_difference, "1") != "0"
+    @show_games = get_param_or_session(:show_games, "0") == "1"
 
     # ソート設定
-    @sort_by = params[:sort_by] || "machine_number"
-    @sort_order = params[:sort_order] || "asc"
+    @sort_by = get_param_or_session(:sort_by, "machine_number")
+    @sort_order = get_param_or_session(:sort_order, "asc")
 
     # 表示日数
-    @display_days = if params[:display_days].present?
-                      params[:display_days].map(&:to_i).uniq.sort
+    if params[:display_days].present?
+      @display_days = params[:display_days].map(&:to_i).uniq.sort
+    elsif session[@session_key] && session[@session_key][:display_days].present?
+      display_days_value = session[@session_key][:display_days]
+      @display_days = display_days_value.is_a?(String) ?
+        display_days_value.split(',').map(&:to_i).uniq.sort :
+        display_days_value.map(&:to_i).uniq.sort
     else
-                      [ 7 ] # デフォルト値を7日に設定
+      @display_days = [ 7 ] # デフォルト値を7日に設定
     end
 
     # フィルター設定
     setup_filter_parameters
+    
+    # セッションに保存
+    save_to_session
+  end
+
+  # セッションから検索条件を復元（パラメータが何も指定されていない場合のみ）
+  def restore_from_session_if_needed
+    # パラメータが何も指定されていない場合、セッションから復元
+    if params.keys.none? { |k| k.start_with?('filter_', 'sort_', 'show_', 'display_') }
+      if session[@session_key]
+        session[@session_key].each do |key, value|
+          params[key] = value unless params[key].present?
+        end
+      end
+    end
+  end
+  
+  # パラメータまたはセッションから値を取得
+  def get_param_or_session(key, default_value)
+    if params[key].present?
+      params[key]
+    elsif session[@session_key] && session[@session_key][key]
+      session[@session_key][key]
+    else
+      default_value
+    end
+  end
+  
+  # セッションに検索条件を保存（サイズ最適化）
+  def save_to_session
+    session[@session_key] ||= {}
+    
+    # 空値を保存しないヘルパー
+    save_if_present = lambda do |key, value|
+      if value.is_a?(Array)
+        session[@session_key][key] = value.join(',') if value.any?
+      elsif value.present? || value == false || value == 0
+        session[@session_key][key] = value
+      else
+        session[@session_key].delete(key)
+      end
+    end
+    
+    # 表示設定
+    save_if_present.call(:show_difference, @show_difference ? "1" : "0")
+    save_if_present.call(:show_games, @show_games ? "1" : "0")
+    
+    # ソート設定
+    save_if_present.call(:sort_by, @sort_by)
+    save_if_present.call(:sort_order, @sort_order)
+    
+    # 表示日数
+    save_if_present.call(:display_days, @display_days)
+    
+    # フィルター設定（空値は保存しない）
+    save_if_present.call(:filter_machine_name, @filter_machine_name)
+    save_if_present.call(:filter_machine_name_search, @filter_machine_name_search)
+    save_if_present.call(:filter_machine_name_search_type, @filter_machine_name_search_type)
+    save_if_present.call(:filter_game_count_min, @filter_game_count_min)
+    save_if_present.call(:filter_game_count_max, @filter_game_count_max)
+    save_if_present.call(:filter_difference_min, @filter_difference_min)
+    save_if_present.call(:filter_difference_max, @filter_difference_max)
+    save_if_present.call(:filter_bb_count_min, @filter_bb_count_min)
+    save_if_present.call(:filter_bb_count_max, @filter_bb_count_max)
+    save_if_present.call(:filter_machine_last_digit, @filter_machine_last_digit)
+    save_if_present.call(:filter_machine_double_digit, @filter_machine_double_digit ? "1" : nil)
+    save_if_present.call(:filter_best_ranks, @filter_best_ranks)
+    save_if_present.call(:filter_best_rank_days, @filter_best_rank_days)
+    save_if_present.call(:filter_diff_days, @filter_diff_days)
+    save_if_present.call(:filter_diff_value_min, @filter_diff_value_min)
+    save_if_present.call(:filter_diff_value_max, @filter_diff_value_max)
+    save_if_present.call(:filter_game_count_days, @filter_game_count_days)
+    save_if_present.call(:filter_game_count_value_min, @filter_game_count_value_min)
+    save_if_present.call(:filter_game_count_value_max, @filter_game_count_value_max)
+    save_if_present.call(:filter_machine_count_min, @filter_machine_count_min)
+    save_if_present.call(:filter_machine_count_max, @filter_machine_count_max)
+    save_if_present.call(:filter_rank_days, @filter_rank_days)
+    save_if_present.call(:filter_ranks, @filter_ranks)
   end
 
   def setup_filter_parameters
-    @filter_machine_name = params[:filter_machine_name]
-    @filter_machine_name_search = params[:filter_machine_name_search]
-    @filter_machine_name_search_type = params[:filter_machine_name_search_type] || "include"
-    @filter_game_count_min = parse_int_param(:filter_game_count_min)
-    @filter_game_count_max = parse_int_param(:filter_game_count_max)
-    @filter_difference_min = parse_int_param(:filter_difference_min)
-    @filter_difference_max = parse_int_param(:filter_difference_max)
-    @filter_bb_count_min = parse_int_param(:filter_bb_count_min)
-    @filter_bb_count_max = parse_int_param(:filter_bb_count_max)
+    @filter_machine_name = get_param_or_session(:filter_machine_name, nil)
+    @filter_machine_name_search = get_param_or_session(:filter_machine_name_search, nil)
+    @filter_machine_name_search_type = get_param_or_session(:filter_machine_name_search_type, "include")
+    @filter_game_count_min = parse_int_param_with_session(:filter_game_count_min)
+    @filter_game_count_max = parse_int_param_with_session(:filter_game_count_max)
+    @filter_difference_min = parse_int_param_with_session(:filter_difference_min)
+    @filter_difference_max = parse_int_param_with_session(:filter_difference_max)
+    @filter_bb_count_min = parse_int_param_with_session(:filter_bb_count_min)
+    @filter_bb_count_max = parse_int_param_with_session(:filter_bb_count_max)
 
     # 台番号末尾フィルター
-    @filter_machine_last_digit = params[:filter_machine_last_digit]
-    @filter_machine_double_digit = params[:filter_machine_double_digit] == "1"
+    @filter_machine_last_digit = get_param_or_session(:filter_machine_last_digit, nil)
+    @filter_machine_double_digit = get_param_or_session(:filter_machine_double_digit, "0") == "1"
 
-    # ベストランクフィルター
-    @filter_best_ranks = params[:filter_best_ranks]&.map(&:to_i) || []
-    @filter_best_rank_days = parse_int_param(:filter_best_rank_days)
-    @filter_diff_days = parse_int_param(:filter_diff_days)
-    @filter_diff_value_min = parse_int_param(:filter_diff_value_min)
-    @filter_diff_value_max = parse_int_param(:filter_diff_value_max)
-    @filter_game_count_days = parse_int_param(:filter_game_count_days)
-    @filter_game_count_value_min = parse_int_param(:filter_game_count_value_min)
-    @filter_game_count_value_max = parse_int_param(:filter_game_count_value_max)
-    @filter_machine_count_min = parse_int_param(:filter_machine_count_min)
-    @filter_machine_count_max = parse_int_param(:filter_machine_count_max)
-    @filter_rank_days = parse_int_param(:filter_rank_days)
-    @filter_ranks = params[:filter_ranks]&.map(&:to_i) || []
+    # ベストランクフィルター（配列の復元）
+    if params[:filter_best_ranks].present?
+      @filter_best_ranks = params[:filter_best_ranks].map(&:to_i)
+    elsif session[@session_key] && session[@session_key][:filter_best_ranks].present?
+      @filter_best_ranks = session[@session_key][:filter_best_ranks].is_a?(String) ?
+        session[@session_key][:filter_best_ranks].split(',').map(&:to_i) :
+        session[@session_key][:filter_best_ranks]
+    else
+      @filter_best_ranks = []
+    end
+    
+    @filter_best_rank_days = parse_int_param_with_session(:filter_best_rank_days)
+    @filter_diff_days = parse_int_param_with_session(:filter_diff_days)
+    @filter_diff_value_min = parse_int_param_with_session(:filter_diff_value_min)
+    @filter_diff_value_max = parse_int_param_with_session(:filter_diff_value_max)
+    @filter_game_count_days = parse_int_param_with_session(:filter_game_count_days)
+    @filter_game_count_value_min = parse_int_param_with_session(:filter_game_count_value_min)
+    @filter_game_count_value_max = parse_int_param_with_session(:filter_game_count_value_max)
+    @filter_machine_count_min = parse_int_param_with_session(:filter_machine_count_min)
+    @filter_machine_count_max = parse_int_param_with_session(:filter_machine_count_max)
+    @filter_rank_days = parse_int_param_with_session(:filter_rank_days)
+    
+    # ランクフィルター（配列の復元）
+    if params[:filter_ranks].present?
+      @filter_ranks = params[:filter_ranks].map(&:to_i)
+    elsif session[@session_key] && session[@session_key][:filter_ranks].present?
+      @filter_ranks = session[@session_key][:filter_ranks].is_a?(String) ?
+        session[@session_key][:filter_ranks].split(',').map(&:to_i) :
+        session[@session_key][:filter_ranks]
+    else
+      @filter_ranks = []
+    end
   end
 
   def parse_int_param(key)
     params[key].present? ? params[key].to_i : nil
+  end
+  
+  def parse_int_param_with_session(key)
+    if params[key].present?
+      params[key].to_i
+    elsif session[@session_key] && session[@session_key][key]
+      session[@session_key][key].to_i
+    else
+      nil
+    end
   end
 
   # ============================================================

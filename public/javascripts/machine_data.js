@@ -381,18 +381,12 @@ function saveMemos() {
   const dateMatch = window.location.pathname.match(/\/dates\/([^\/]+)/);
   const date = dateMatch ? dateMatch[1] : null;
 
-  // デバッグ情報
-  console.log("saveMemos - pathname:", window.location.pathname);
-  console.log("saveMemos - hallId:", hallId);
-  console.log("saveMemos - date:", date);
-
   if (!date) {
     alert("日付情報が取得できません");
     return;
   }
 
   const url = `/halls/${hallId}/dates/${date}/update_machine_memos`;
-  console.log("saveMemos - URL:", url);
   const formData = new FormData();
 
   // 変更されたメモのみを収集
@@ -414,8 +408,6 @@ function saveMemos() {
     alert("変更されたメモはありません");
     return;
   }
-
-  console.log(`saveMemos - 変更件数: ${changedCount}件`);
 
   formData.append(
     "authenticity_token",

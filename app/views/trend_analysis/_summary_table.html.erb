@@ -1,0 +1,79 @@
+<% if @daily_summary.empty? %>
+<div class="no-data">
+    <p>📭 条件に一致するデータがありません</p>
+    <p style="font-size: 14px; color: #999;">フィルター条件を変更してお試しください</p>
+</div>
+<% else %>
+<div style="margin-bottom: 10px; color: #666; font-size: 14px;">
+    📊 検索結果: <strong><%= @daily_summary.length %></strong>日分のデータ
+    <% if @analysis_start_date && @analysis_end_date %>
+    （分析期間: <%= @analysis_start_date.strftime('%Y/%m/%d') %> 〜 <%= @analysis_end_date.strftime('%Y/%m/%d') %>）
+    <% end %>
+</div>
+
+<table class="summary-table">
+    <thead>
+        <tr>
+            <th>日付</th>
+            <th>合計差枚</th>
+            <th>平均差枚</th>
+            <th>平均回転数</th>
+            <th>勝率</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% @daily_summary.each do |summary| %>
+        <% 
+          wday = summary[:date].wday
+          wday_names = ['日', '月', '火', '水', '木', '金', '土']
+          wday_colors = ['#dc3545', '#333', '#333', '#333', '#333', '#333', '#007bff']
+        %>
+        <tr>
+            <td>
+                <%= link_to hall_machine_data_path(@hall, summary[:date]), class: "date-link" do %>
+                <%= summary[:date].strftime('%Y/%m/%d') %>
+                <span style="color: <%= wday_colors[wday] %>; font-weight: bold;">(<%= wday_names[wday] %>)</span>
+                <% end %>
+            </td>
+            <td class="<%= summary[:total_difference] >= 0 ? 'positive' : 'negative' %>">
+                <%= number_with_delimiter(summary[:total_difference]) %>
+            </td>
+            <td class="<%= summary[:avg_difference] >= 0 ? 'positive' : 'negative' %>">
+                <%= number_with_delimiter(summary[:avg_difference]) %>
+            </td>
+            <td><%= number_with_delimiter(summary[:avg_games]) %></td>
+            <td>
+                <span style="color: <%= summary[:win_rate] >= 40 ? '#10b981' : '#dc3545' %>; font-weight: bold;">
+                    <%= summary[:win_rate] %>%
+                </span>
+                (<%= summary[:win_count] %>/<%= summary[:machine_count] %>)
+            </td>
+        </tr>
+        <% end %>
+    </tbody>
+    <% if @daily_summary.length > 1 %>
+    <tfoot style="background-color: #e9ecef; font-weight: bold;">
+        <tr>
+            <td>📈 合計/平均</td>
+            <td class="<%= @daily_summary.sum { |s| s[:total_difference] } >= 0 ? 'positive' : 'negative' %>">
+                <%= number_with_delimiter(@daily_summary.sum { |s| s[:total_difference] }) %>
+            </td>
+            <td class="<%= (@daily_summary.sum { |s| s[:avg_difference] } / @daily_summary.length.to_f).round >= 0 ? 'positive' : 'negative' %>">
+                <%= number_with_delimiter((@daily_summary.sum { |s| s[:avg_difference] } / @daily_summary.length.to_f).round) %>
+            </td>
+            <td><%= number_with_delimiter((@daily_summary.sum { |s| s[:avg_games] } / @daily_summary.length.to_f).round) %></td>
+            <td>
+                <% 
+              total_machines = @daily_summary.sum { |s| s[:machine_count] }
+              total_wins = @daily_summary.sum { |s| s[:win_count] }
+              overall_win_rate = total_machines > 0 ? (total_wins.to_f / total_machines * 100).round(1) : 0
+            %>
+                <span style="color: <%= overall_win_rate >= 40 ? '#10b981' : '#dc3545' %>; font-weight: bold;">
+                    <%= overall_win_rate %>%
+                </span>
+            </td>
+        </tr>
+    </tfoot>
+    <% end %>
+</table>
+<% end %>

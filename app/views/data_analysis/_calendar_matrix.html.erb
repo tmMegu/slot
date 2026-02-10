@@ -1,0 +1,99 @@
+<div class="matrix-section">
+    <div class="matrix-title">
+        📅 カレンダー分析
+    </div>
+
+    <!-- 月切り替えボタン -->
+    <div class="calendar-navigation">
+        <% prev_year = @calendar_month == 1 ? @calendar_year - 1 : @calendar_year %>
+        <% prev_month = @calendar_month == 1 ? 12 : @calendar_month - 1 %>
+        <% next_year = @calendar_month == 12 ? @calendar_year + 1 : @calendar_year %>
+        <% next_month = @calendar_month == 12 ? 1 : @calendar_month + 1 %>
+
+        <%= link_to "◀", hall_data_analysis_path(@hall, start_date: @start_date, end_date: @end_date, calendar_year: prev_year, calendar_month: prev_month), class: "calendar-nav-btn" %>
+
+        <span class="calendar-month-display">
+            <%= @calendar_year %>年<%= @calendar_month %>月
+        </span>
+
+        <%= link_to "▶", hall_data_analysis_path(@hall, start_date: @start_date, end_date: @end_date, calendar_year: next_year, calendar_month: next_month), class: "calendar-nav-btn" %>
+    </div>
+
+    <!-- カレンダー表示 -->
+    <div class="calendar-grid">
+        <%
+      # カレンダーの開始日（月の初日）
+      calendar_start = Date.new(@calendar_year, @calendar_month, 1)
+      calendar_end = calendar_start.end_of_month
+      
+      # 週の開始（日曜日から）
+      start_wday = calendar_start.wday
+      
+      # 曜日ヘッダー
+      wday_names = ['日', '月', '火', '水', '木', '金', '土']
+      wday_colors = ['#dc3545', '#333', '#333', '#333', '#333', '#333', '#007bff']
+    %>
+
+        <!-- 曜日ヘッダー -->
+        <div class="calendar-header">
+            <% wday_names.each_with_index do |wday_name, index| %>
+            <div class="calendar-header-cell" style="color: <%= wday_colors[index] %>;">
+                <%= wday_name %>
+            </div>
+            <% end %>
+        </div>
+
+        <!-- カレンダーボディ -->
+        <div class="calendar-body">
+            <% # 月初の空白セル %>
+            <% start_wday.times do %>
+            <div class="calendar-cell empty-cell"></div>
+            <% end %>
+
+            <% # 日付セル %>
+            <% (1..calendar_end.day).each do |day| %>
+            <% 
+          date = Date.new(@calendar_year, @calendar_month, day)
+          data = @calendar_data[day]
+          wday = date.wday
+        %>
+
+            <div class="calendar-cell <%= data ? 'has-data' : 'no-data' %>" data-date="<%= date %>">
+                <div class="calendar-day" style="color: <%= wday_colors[wday] %>;">
+                    <%= day %>
+                    <% if data %>
+                    <span class="data-count">(<%= data[:machine_count] %>台)</span>
+                    <% end %>
+                </div>
+
+                <% if data %>
+                <div class="calendar-stats">
+                    <div class="stat-item">
+                        <span class="stat-value <%= data[:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                            <%= number_with_delimiter(data[:avg_diff]) %>
+                        </span>
+                        <span class="stat-label">差枚</span>
+                    </div>
+
+                    <div class="stat-item">
+                        <span class="stat-value">
+                            <%= number_with_delimiter(data[:avg_games]) %>
+                        </span>
+                        <span class="stat-label">G数</span>
+                    </div>
+
+                    <div class="stat-item">
+                        <span class="stat-value <%= data[:win_rate] >= 40 ? 'positive' : 'negative' %>">
+                            <%= data[:win_rate] %>%
+                        </span>
+                        <span class="stat-label">勝率</span>
+                    </div>
+                </div>
+                <% else %>
+                <div class="no-data-text">データなし</div>
+                <% end %>
+            </div>
+            <% end %>
+        </div>
+    </div>
+</div>

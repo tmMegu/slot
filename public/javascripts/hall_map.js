@@ -362,23 +362,8 @@ function setupDisplayCheckboxes() {
       checkbox.removeEventListener("change", updateMapDisplay);
       // 新しいリスナーを追加
       checkbox.addEventListener("change", function (e) {
-        console.log(
-          `✓ ${id} がクリックされました - checked:`,
-          e.target.checked,
-        );
         updateMapDisplay();
       });
-
-      // テスト用：要素の状態を確認
-      const styles = window.getComputedStyle(checkbox);
-      console.log(`${id} にイベントリスナーを追加`, {
-        disabled: checkbox.disabled,
-        display: styles.display,
-        pointerEvents: styles.pointerEvents,
-        visibility: styles.visibility,
-      });
-    } else {
-      console.log(`${id} が見つかりません`);
     }
   });
 }

@@ -31,7 +31,7 @@
 <% @machine_data.each do |data| %>
 <tr class="<%= @data_exists ? '' : 'no-data-row' %>">
     <td style="text-align: center; padding: 8px;">
-        <%= link_to data.machine_number, "/halls/#{@hall.id}/machines/#{data.machine_number}?date=#{@date}", style: "text-decoration: none; color: #10b981;" %>
+        <%= link_to data.machine_number, hall_machine_history_path(@hall, data.machine_number), style: "color: #10b981; font-weight: bold; text-decoration: none;" %>
     </td>
     <td class="machine-name-cell"><%= data.machine_name %></td>
     <td style="text-align: right; padding: 8px;"><%= @data_exists ? number_with_delimiter(data.game_count) : '-' %></td>

@@ -44,6 +44,8 @@
                                 <div class="table-actions">
                                     <%= link_to "編集", edit_hall_path(hall), class: "btn btn-secondary btn-small" %>
                                     <%= link_to "マップ", hall_maps_path(hall), class: "btn btn-success btn-small" %>
+                                    <%= link_to "傾向調査", hall_trend_analysis_path(hall), class: "btn btn-info btn-small" %>
+                                    <%= link_to "📊 分析", hall_data_analysis_path(hall), class: "btn btn-info btn-small" %>
                                     <%= link_to "削除", hall_path(hall), method: :delete, data: { turbo_method: :delete, turbo_confirm: "削除しますか?" }, class: "btn btn-danger btn-small" %>
                                 </div>
                             </td>

@@ -1,0 +1,44 @@
+<div class="matrix-section">
+    <div class="matrix-title">
+        🎯 末尾日×末尾番台 分析
+    </div>
+
+    <div class="matrix-description">
+        末尾日と末尾番台の組み合わせで、平均差枚とG数を分析します。例：「末尾8の日に末尾8番台が出ているか」などを確認できます。
+    </div>
+
+    <div class="matrix-wrapper">
+        <table class="matrix-table">
+            <thead>
+                <tr>
+                    <th class="corner-cell">末尾日＼末尾番台</th>
+                    <% [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'ぞろ目', '月=日', '月末'].each do |machine_cond| %>
+                    <th><%= machine_cond %></th>
+                    <% end %>
+                </tr>
+            </thead>
+            <tbody>
+                <% [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'ぞろ目', '月=日', '月末'].each do |date_cond| %>
+                <tr>
+                    <th class="row-header"><%= date_cond %></th>
+                    <% [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'ぞろ目', '月=日', '月末'].each do |machine_cond| %>
+                    <% data = @last_digit_machine_matrix[date_cond][machine_cond] %>
+                    <% if data %>
+                    <td class="stat-cell <%= data[:avg_diff] >= 0 ? 'positive-bg' : 'negative-bg' %>">
+                        <div class="stat-value <%= data[:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                            <%= number_with_delimiter(data[:avg_diff]) %>
+                        </div>
+                        <div class="stat-detail">
+                            G<%= number_with_delimiter(data[:avg_games]) %> / <%= data[:win_rate] %>% / <%= data[:days_count] %>日
+                        </div>
+                    </td>
+                    <% else %>
+                    <td class="no-data-cell">-</td>
+                    <% end %>
+                    <% end %>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,53 @@
+<div class="matrix-section">
+    <div class="matrix-title">
+        🎰 機種×日付 分析（直近90日）
+    </div>
+
+    <div class="matrix-description">
+        各機種の日付ごとのデータを表示します。横方向にスクロールして全日付を確認できます。
+    </div>
+
+    <div class="matrix-wrapper" style="max-height: 600px; overflow-x: auto;">
+        <% if @machine_date_matrix.empty? %>
+        <p style="text-align: center; padding: 40px; color: #666;">データがありません</p>
+        <% else %>
+        <table class="matrix-table" style="min-width: 100%;">
+            <thead>
+                <tr>
+                    <th class="corner-cell" style="position: sticky; left: 0; z-index: 11;">機種名</th>
+                    <% @machine_date_dates.each do |date| %>
+                    <th style="min-width: 100px;">
+                        <%= date.strftime('%-m/%-d') %>
+                        <div style="font-size: 0.8em;">
+                            <%= %w[日 月 火 水 木 金 土][date.wday] %>
+                        </div>
+                    </th>
+                    <% end %>
+                </tr>
+            </thead>
+            <tbody>
+                <% @machine_date_matrix.each do |machine_name, dates_data| %>
+                <tr>
+                    <th class="row-header" style="position: sticky; left: 0; z-index: 10; text-align: left; padding: 8px;">
+                        <%= machine_name %>
+                    </th>
+                    <% @machine_date_dates.each do |date| %>
+                    <% data = dates_data[date] %>
+                    <% if data %>
+                    <td class="stat-cell <%= data[:avg_diff] >= 0 ? 'positive-bg' : 'negative-bg' %>">
+                        <div class="stat-value <%= data[:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                            <%= number_with_delimiter(data[:avg_diff]) %>
+                        </div>
+                        <div class="stat-detail">G<%= number_with_delimiter(data[:avg_games]) %> / <%= data[:win_rate] %>% / <%= data[:machine_count] %>台</div>
+                    </td>
+                    <% else %>
+                    <td class="no-data-cell">-</td>
+                    <% end %>
+                    <% end %>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+        <% end %>
+    </div>
+</div>

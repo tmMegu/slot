@@ -1,0 +1,336 @@
+<form method="get" action="<%= hall_trend_analysis_path(@hall) %>" class="filter-panel-accordion">
+    <input type="hidden" name="hall_id" value="<%= @hall.id %>" />
+
+    <!-- 分析対象期間 -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>📅 分析対象期間</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content" style="display: block;">
+            <div class="filter-controls">
+                <label>
+                    開始日:
+                    <input type="date" name="analysis_start_date" value="<%= @analysis_start_date %>" />
+                </label>
+                <label>
+                    終了日:
+                    <input type="date" name="analysis_end_date" value="<%= @analysis_end_date %>" />
+                </label>
+                <span style="color: #6c757d; font-size: 12px;">
+                    （現在: <%= (@analysis_end_date - @analysis_start_date).to_i + 1 %>日間）
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表示日付範囲 -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>📋 表示日付範囲</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content" style="display: block;">
+            <div class="filter-controls">
+                <label>
+                    <input type="radio" name="display_date_mode" value="all" <%= 'checked' if @display_date_mode == 'all' %> />
+                    全日付
+                </label>
+                <label>
+                    <input type="radio" name="display_date_mode" value="last_digit" <%= 'checked' if @display_date_mode == 'last_digit' %> />
+                    末尾指定:
+                    <select name="display_last_digit">
+                        <option value="">-</option>
+                        <% (0..9).each do |digit| %>
+                        <option value="<%= digit %>" <%= 'selected' if @display_last_digit == digit.to_s %>><%= digit %></option>
+                        <% end %>
+                    </select>
+                </label>
+                <label>
+                    <input type="radio" name="display_date_mode" value="day_number" <%= 'checked' if @display_date_mode == 'day_number' %> />
+                    特定日付:
+                    <select name="display_day_number">
+                        <option value="">-</option>
+                        <% (1..31).each do |day| %>
+                        <option value="<%= day %>" <%= 'selected' if @display_day_number == day.to_s %>><%= day %>日</option>
+                        <% end %>
+                    </select>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 機種名フィルター -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>🎰 機種名フィルター</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content">
+            <div class="filter-controls">
+                <label>
+                    機種選択:
+                    <select name="filter_machine_name">
+                        <option value="">全機種</option>
+                        <% @machine_names.each do |name| %>
+                        <option value="<%= name %>" <%= 'selected' if @filter_machine_name == name %>><%= name %></option>
+                        <% end %>
+                    </select>
+                </label>
+                <label>
+                    機種名検索:
+                    <input type="text" name="filter_machine_name_search" value="<%= @filter_machine_name_search %>" placeholder="機種名で検索" />
+                </label>
+                <label>
+                    <select name="filter_machine_name_search_type">
+                        <option value="include" <%= 'selected' if @filter_machine_name_search_type == 'include' %>>含む</option>
+                        <option value="exclude" <%= 'selected' if @filter_machine_name_search_type == 'exclude' %>>含まない</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 台番号フィルター -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>🔢 台番号フィルター</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content">
+            <div class="filter-controls">
+                <label>
+                    末尾:
+                    <select name="filter_machine_last_digit">
+                        <option value="">全て</option>
+                        <% (0..9).each do |digit| %>
+                        <option value="<%= digit %>" <%= 'selected' if @filter_machine_last_digit == digit.to_s %>><%= digit %></option>
+                        <% end %>
+                    </select>
+                </label>
+                <label>
+                    <input type="checkbox" name="filter_machine_double_digit" value="1" <%= 'checked' if @filter_machine_double_digit %> />
+                    2桁ぞろ目
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数値フィルター -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>📊 数値フィルター（当日データ）</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content">
+            <div class="filter-controls">
+                <label>
+                    差枚:
+                    <input type="number" name="filter_difference_min" value="<%= @filter_difference_min %>" placeholder="最小" style="width: 80px;" />
+                    〜
+                    <input type="number" name="filter_difference_max" value="<%= @filter_difference_max %>" placeholder="最大" style="width: 80px;" />
+                </label>
+                <label>
+                    回転数:
+                    <input type="number" name="filter_game_count_min" value="<%= @filter_game_count_min %>" placeholder="最小" style="width: 80px;" />
+                    〜
+                    <input type="number" name="filter_game_count_max" value="<%= @filter_game_count_max %>" placeholder="最大" style="width: 80px;" />
+                </label>
+                <label>
+                    BB回数:
+                    <input type="number" name="filter_bb_count_min" value="<%= @filter_bb_count_min %>" placeholder="最小" style="width: 60px;" />
+                    〜
+                    <input type="number" name="filter_bb_count_max" value="<%= @filter_bb_count_max %>" placeholder="最大" style="width: 60px;" />
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 過去差枚フィルター -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>📈 過去差枚フィルター（ワースト・ベスト）</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content">
+            <div class="filter-controls">
+                <label>
+                    過去:
+                    <input type="number" name="filter_past_diff_days" value="<%= @filter_past_diff_days %>" placeholder="日数" style="width: 60px;" />
+                    日間の
+                </label>
+                <label>
+                    <select name="filter_past_diff_type">
+                        <option value="worst" <%= 'selected' if @filter_past_diff_type == 'worst' %>>ワースト</option>
+                        <option value="best" <%= 'selected' if @filter_past_diff_type == 'best' %>>ベスト</option>
+                    </select>
+                </label>
+            </div>
+            <div class="filter-controls" style="margin-top: 8px;">
+                <span style="font-weight: bold; margin-right: 8px;">順位:</span>
+                <% (1..5).each do |rank| %>
+                <label style="margin-right: 12px;">
+                    <input type="checkbox" name="filter_past_diff_ranks[]" value="<%= rank %>" <%= 'checked' if @filter_past_diff_ranks.include?(rank) %> />
+                    <%= rank %>位
+                </label>
+                <% end %>
+            </div>
+            <div style="margin-top: 8px; padding: 8px; background-color: #f8f9fa; border-radius: 4px; font-size: 11px; color: #6c757d;">
+                💡 例：過去7日間のワースト、1位・2位・3位を選択 → 機種ごとに直近7日間の合計差枚が低い順に1〜3位の台を表示
+            </div>
+        </div>
+    </div>
+
+    <!-- 機種毎台数フィルター -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>🎯 機種毎台数フィルター</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content">
+            <div class="filter-controls">
+                <label>
+                    台数:
+                    <input type="number" name="filter_machine_count_min" value="<%= @filter_machine_count_min %>" placeholder="最小" style="width: 60px;" />
+                    〜
+                    <input type="number" name="filter_machine_count_max" value="<%= @filter_machine_count_max %>" placeholder="最大" style="width: 60px;" />
+                    台
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ソート順 -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>⬆️ 表示順</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content">
+            <div class="filter-controls">
+                <label>
+                    <input type="radio" name="sort_order" value="desc" <%= 'checked' if @sort_order == 'desc' %> />
+                    新しい順
+                </label>
+                <label>
+                    <input type="radio" name="sort_order" value="asc" <%= 'checked' if @sort_order == 'asc' %> />
+                    古い順
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ボタン -->
+    <div class="filter-buttons">
+        <button type="submit" class="btn btn-primary">🔍 検索</button>
+        <button type="button" class="btn btn-secondary" onclick="resetFilters()">🔄 リセット</button>
+    </div>
+</form>
+
+<script>
+    function toggleAccordion(button) {
+        const content = button.nextElementSibling;
+        const icon = button.querySelector('.accordion-icon');
+
+        if (content.style.display === 'none' || content.style.display === '') {
+            content.style.display = 'block';
+            icon.textContent = '▼';
+        } else {
+            content.style.display = 'none';
+            icon.textContent = '▶';
+        }
+    }
+
+    function resetFilters() {
+        window.location.href = '<%= hall_trend_analysis_path(@hall) %>';
+    }
+</script>
+
+<style>
+    .filter-panel-accordion {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .accordion-section {
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .accordion-section:last-of-type {
+        border-bottom: none;
+    }
+
+    .accordion-header {
+        width: 100%;
+        padding: 12px 16px;
+        background: #f8f9fa;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+
+    .accordion-header:hover {
+        background: #e9ecef;
+    }
+
+    .accordion-icon {
+        font-size: 12px;
+        transition: transform 0.2s;
+    }
+
+    .accordion-content {
+        padding: 16px;
+        display: none;
+    }
+
+    .filter-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .filter-controls label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+    }
+
+    .filter-controls input[type="date"],
+    .filter-controls input[type="number"],
+    .filter-controls input[type="text"],
+    .filter-controls select {
+        padding: 4px 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .filter-buttons {
+        padding: 16px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    @media (max-width: 768px) {
+        .filter-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-controls label {
+            width: 100%;
+        }
+    }
+</style>
