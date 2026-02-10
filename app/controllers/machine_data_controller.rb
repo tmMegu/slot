@@ -292,7 +292,10 @@ class MachineDataController < ApplicationController
 
     # 表示日数
     if params[:display_days].present?
-      @display_days = params[:display_days].map(&:to_i).uniq.sort
+      display_days_param = params[:display_days]
+      @display_days = display_days_param.is_a?(String) ?
+        display_days_param.split(',').map(&:to_i).uniq.sort :
+        display_days_param.map(&:to_i).uniq.sort
     elsif session[@session_key] && session[@session_key][:display_days].present?
       display_days_value = session[@session_key][:display_days]
       @display_days = display_days_value.is_a?(String) ?
