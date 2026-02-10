@@ -1,3 +1,4 @@
+<!-- 並び替えコントロールはテーブルヘッダーで行うため非表示
 <div class="sort-controls" style="margin: 10px 0; padding: 5px 5px;">
     <div style="display: flex; gap: 15px; align-items: center; width: 100%;">
         <label>
@@ -26,4 +27,10 @@
 
         <button type="button" class="btn btn-success" onclick="saveMemos()" style="padding: 5px 10px; margin-left: auto; background-color: #28a745;">更新</button>
     </div>
+</div>
+-->
+
+<!-- メモ更新ボタンのみ表示 -->
+<div style="margin: 10px 0; padding: 5px 5px; display: flex; justify-content: flex-end;">
+    <button type="button" class="btn btn-success" onclick="saveMemos()" style="padding: 5px 10px; background-color: #28a745;">メモ更新</button>
 </div>

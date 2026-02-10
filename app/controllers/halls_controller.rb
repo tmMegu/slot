@@ -87,8 +87,8 @@ class HallsController < ApplicationController
       @start_date = Date.parse(params[:start_date])
       @end_date = Date.parse(params[:end_date])
     else
-      # デフォルト: 1ヶ月前から2日後まで
-      @start_date = Date.today - 1.month
+      # デフォルト: 1週間前から2日後まで（パフォーマンス改善）
+      @start_date = Date.today - 7.days
       @end_date = Date.today + 2.days
     end
   end
@@ -108,38 +108,39 @@ class HallsController < ApplicationController
     @date_memos = fetch_date_memos(@hall, @dates)
   end
 
-  # 各日付の集計データを計算
+  # 各日付の集計データを計算（最適化版：1回のクエリで全期間のデータを取得）
   def calculate_date_stats(hall, dates)
     stats = {}
-
+    
+    # 全期間のデータを1回のクエリで取得してグループ化
+    date_range = dates.min..dates.max
+    all_data = hall.machine_data
+                   .where(date: date_range)
+                   .select(:date, :difference_count, :game_count, :machine_number)
+                   .group_by(&:date)
+    
     dates.each do |date|
-      data = hall.machine_data.where(date: date)
-
-      if data.exists?
-        stats[date] = build_date_stats(data)
+      data = all_data[date]
+      if data && data.any?
+        total_machines = data.count
+        total_diff = data.sum(&:difference_count)
+        total_games = data.sum(&:game_count)
+        plus_machines = data.count { |d| d.difference_count > 0 }
+        
+        stats[date] = {
+          avg_diff: calculate_average(total_diff, total_machines),
+          avg_games: calculate_average(total_games, total_machines),
+          total_diff: total_diff,
+          plus_machines: plus_machines,
+          total_machines: total_machines,
+          win_rate: calculate_win_rate(plus_machines, total_machines)
+        }
       else
         stats[date] = nil
       end
     end
 
     stats
-  end
-
-  # 日付の統計情報を構築
-  def build_date_stats(data)
-    total_machines = data.count
-    total_diff = data.sum(:difference_count)
-    total_games = data.sum(:game_count)
-    plus_machines = data.where("difference_count > 0").count
-
-    {
-      avg_diff: calculate_average(total_diff, total_machines),
-      avg_games: calculate_average(total_games, total_machines),
-      total_diff: total_diff,
-      plus_machines: plus_machines,
-      total_machines: total_machines,
-      win_rate: calculate_win_rate(plus_machines, total_machines)
-    }
   end
 
   # 平均値を計算
@@ -152,14 +153,23 @@ class HallsController < ApplicationController
     total_count > 0 ? ((plus_count.to_f / total_count) * 100).round(1) : 0
   end
 
-  # 各日付のメモを取得（最初の1件のdate_memoを取得）
+  # 各日付のメモを取得（最適化版：1回のクエリで全日付分を取得）
   def fetch_date_memos(hall, dates)
+    date_range = dates.min..dates.max
+    # 各日付の最初のレコードからdate_memoを取得
+    hall.machine_data
+        .where(date: date_range)
+        .select('DISTINCT ON (date) date, date_memo')
+        .order(:date)
+        .each_with_object({}) { |data, hash| hash[data.date] = data.date_memo }
+  rescue
+    # SQLiteではDISTINCT ONが使えないため、代替方法
     memos = {}
-    dates.each do |date|
-      # その日の最初のデータからdate_memoを取得
-      first_data = hall.machine_data.where(date: date).first
-      memos[date] = first_data&.date_memo
-    end
+    hall.machine_data
+        .where(date: date_range)
+        .select(:date, :date_memo)
+        .group_by(&:date)
+        .each { |date, records| memos[date] = records.first&.date_memo }
     memos
   end
 end

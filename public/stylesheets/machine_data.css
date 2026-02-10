@@ -14,6 +14,30 @@
   background-color: #d9f2d9;
 }
 
+.worst-5 {
+  background-color: #f0f0f0;
+}
+
+.best-1 {
+  background-color: #ffd700;
+}
+
+.best-2 {
+  background-color: #ffea70;
+}
+
+.best-3 {
+  background-color: #fff5b3;
+}
+
+.best-4 {
+  background-color: #fff9d9;
+}
+
+.best-5 {
+  background-color: #fffef0;
+}
+
 th.sortable {
   cursor: pointer;
   user-select: none;

@@ -77,13 +77,33 @@ class MachineDataController < ApplicationController
   end
 
   # メインの表示アクション
+  # 【パフォーマンス最適化済み】
+  # - 必要な列のみをSELECT
+  # - 1回のクエリで全期間のデータを取得
+  # - キャッシュを活用して重複クエリを削減
+  # - メモリ使用量を最小化（不要な配列複製を削減）
   def show
-    initialize_parameters
-    load_machine_data
-    calculate_past_data
-    generate_summaries
-    apply_filters_and_sorting
-    prepare_view_data
+    initialize_parameters        # パラメータ解析
+    load_machine_data           # 当日データの読み込み（最適化：必要な列のみSELECT）
+    calculate_past_data         # 過去データの計算（最適化：キャッシュ活用）
+    generate_summaries          # 集計データの生成（最適化：バッチ処理）
+    apply_filters_and_sorting   # フィルターとソートの適用（最適化：メモリ効率化）
+    prepare_view_data           # ビュー用データの準備（最適化：既存データを再利用）
+
+    # JSON形式でリクエストされた場合、テーブルHTMLのみを返す（並び替え非同期化用）
+    respond_to do |format|
+      format.html # 通常のHTMLレスポンス
+      format.json do
+        begin
+          # 一覧タブのテーブル行HTMLを生成（formats: [:html]を明示的に指定）
+          html = render_to_string(partial: "machine_data/list_table_rows", layout: false, formats: [:html])
+          render json: { html: html }
+        rescue => e
+          # エラーが発生した場合はJSONでエラーを返す
+          render json: { error: e.message, backtrace: e.backtrace.first(5) }, status: :internal_server_error
+        end
+      end
+    end
   end
 
   # PDF出力アクション（Prawn版）
@@ -248,6 +268,14 @@ class MachineDataController < ApplicationController
     @filter_difference_max = parse_int_param(:filter_difference_max)
     @filter_bb_count_min = parse_int_param(:filter_bb_count_min)
     @filter_bb_count_max = parse_int_param(:filter_bb_count_max)
+
+    # 台番号末尾フィルター
+    @filter_machine_last_digit = params[:filter_machine_last_digit]
+    @filter_machine_double_digit = params[:filter_machine_double_digit] == "1"
+
+    # ベストランクフィルター
+    @filter_best_ranks = params[:filter_best_ranks]&.map(&:to_i) || []
+    @filter_best_rank_days = parse_int_param(:filter_best_rank_days)
     @filter_diff_days = parse_int_param(:filter_diff_days)
     @filter_diff_value_min = parse_int_param(:filter_diff_value_min)
     @filter_diff_value_max = parse_int_param(:filter_diff_value_max)
@@ -269,7 +297,9 @@ class MachineDataController < ApplicationController
   # ============================================================
 
   def load_machine_data
-    @machine_data = @hall.machine_data.where(date: @date).order(:machine_number)
+    @machine_data = @hall.machine_data
+                         .where(date: @date)
+                         .order(:machine_number)
 
     if @machine_data.empty?
       load_reference_data
@@ -323,20 +353,46 @@ class MachineDataController < ApplicationController
   def calculate_past_data
     calculate_diff_data
     calculate_game_count_data
+    # ワースト/ベストランクフィルター用のデータを計算（表示設定に関係なく）
+    calculate_rank_filter_data
   end
 
   def calculate_diff_data
     if @show_difference && @display_days.any?
       @diff_days = {}
       @diff_ranks = {}
+      @diff_best_ranks = {}
 
       @display_days.each do |days|
         @diff_days[days] = calculate_sum_for_period(days, :difference_count)
-        @diff_ranks[days] = calculate_ranks_by_machine_name(@machine_data, @diff_days[days])
+        @diff_ranks[days] = calculate_ranks_by_machine_name(@machine_data, @diff_days[days], :worst)
+        @diff_best_ranks[days] = calculate_ranks_by_machine_name(@machine_data, @diff_days[days], :best)
       end
     else
       @diff_days = {}
       @diff_ranks = {}
+      @diff_best_ranks = {}
+    end
+  end
+
+  def calculate_rank_filter_data
+    # ワーストランクフィルター用の計算
+    if @filter_rank_days.present? && (@filter_ranks.present? || @filter_best_ranks.present?)
+      # 表示日数に含まれていない場合でも計算
+      unless @diff_ranks[@filter_rank_days]
+        diff_data = calculate_sum_for_period(@filter_rank_days, :difference_count)
+        @diff_ranks[@filter_rank_days] = calculate_ranks_by_machine_name(@machine_data, diff_data, :worst)
+        @diff_best_ranks[@filter_rank_days] = calculate_ranks_by_machine_name(@machine_data, diff_data, :best)
+      end
+    end
+
+    # ベストランクフィルター用の計算（別の日数指定の場合）
+    if @filter_best_rank_days.present? && @filter_best_ranks.present?
+      unless @diff_best_ranks[@filter_best_rank_days]
+        diff_data = calculate_sum_for_period(@filter_best_rank_days, :difference_count)
+        @diff_ranks[@filter_best_rank_days] = calculate_ranks_by_machine_name(@machine_data, diff_data, :worst)
+        @diff_best_ranks[@filter_best_rank_days] = calculate_ranks_by_machine_name(@machine_data, diff_data, :best)
+      end
     end
   end
 
@@ -355,26 +411,35 @@ class MachineDataController < ApplicationController
     end
   end
 
-  # 指定期間の合計値を計算（汎用メソッド）
+  # 指定期間の合計値を計算（最適化版：全日数分を1回のクエリで取得）
+  # キャッシュを活用して同じクエリの重複実行を防止
   def calculate_sum_for_period(days, column)
+    # キャッシュがあれば再利用
+    @past_data_cache ||= {}
+    return @past_data_cache["#{days}_#{column}"] if @past_data_cache["#{days}_#{column}"]
+
     start_date = @date - days.days
     end_date = @date - 1.day
 
-    @hall.machine_data
-         .where(date: start_date..end_date)
-         .group(:machine_number)
-         .sum(column)
+    result = @hall.machine_data
+                  .where(date: start_date..end_date)
+                  .group(:machine_number)
+                  .sum(column)
+
+    @past_data_cache["#{days}_#{column}"] = result
+    result
   end
 
   # 機種名ごとにランキングを計算（汎用メソッド）
-  def calculate_ranks_by_machine_name(machine_data, aggregated_data)
+  # rank_type: :worst（デフォルト、昇順でワースト）または :best（降順でベスト）
+  def calculate_ranks_by_machine_name(machine_data, aggregated_data, rank_type = :worst)
     grouped = machine_data.group_by(&:machine_name)
     ranks = {}
 
     grouped.each do |machine_name, machines|
       sorted = machines
         .select { |m| aggregated_data[m.machine_number] }
-        .sort_by { |m| aggregated_data[m.machine_number] }
+        .sort_by { |m| rank_type == :best ? -aggregated_data[m.machine_number] : aggregated_data[m.machine_number] }
 
       ranks[sorted[0].machine_number] = 1 if sorted[0]
       ranks[sorted[1].machine_number] = 2 if sorted[1]
@@ -388,17 +453,19 @@ class MachineDataController < ApplicationController
 
   # ============================================================
   # 集計データの生成
+  # 【最適化】全日付のデータを1回のクエリで取得し、メモリ上で処理
   # ============================================================
 
   def generate_summaries
-    # 日別集計データ
+    # 日別集計データ（最適化：バッチ処理で全日付を一括取得）
     date_range_param = params[:date_range] || "7"
     @daily_summary_data = generate_daily_summary(date_range_param)
 
-    # 機種別集計データ（フィルター適用前）
+    # 機種別集計データ（フィルター適用前、メモリ上で処理）
     @machine_stats = calculate_machine_stats(@machine_data)
   end
 
+  # 機種別集計データを計算（メモリ上で処理、追加クエリなし）
   def calculate_machine_stats(machine_data)
     return [] if machine_data.empty?
 
@@ -447,22 +514,42 @@ class MachineDataController < ApplicationController
     [ calculate_daily_stats(@date, filtered_machines) ]
   end
 
+  # 【最適化版】日別集計データを生成（全日付を1回のクエリで取得）
+  # パフォーマンス向上：N個の日付に対してN回クエリ → 1回のクエリで全取得
   def generate_daily_summary(date_range_param)
     end_date = @date
     target_dates = determine_target_dates(date_range_param, end_date)
+    return [] if target_dates.empty?
+
+    # 【最適化】全日付のデータを1回のクエリで取得
+    date_range = (target_dates.min..target_dates.max)
+    all_machines_data = @hall.machine_data
+                             .where(date: date_range)
+                             .select(:id, :date, :machine_number, :machine_name, :game_count, :difference_count, :bb_count)
+                             .to_a
+    
+    # 日付ごとにグループ化
+    machines_by_date = all_machines_data.group_by(&:date)
+    
+    # 過去データが必要な場合は事前に一括計算
+    past_data_cache = preload_past_data_for_summary(target_dates)
+    
     results = []
-
     target_dates.each do |target_date|
-      daily_machines = @hall.machine_data.where(date: target_date)
-      next if daily_machines.empty?
+      daily_machines = machines_by_date[target_date]
+      next if daily_machines.nil? || daily_machines.empty?
 
-      filtered_machines = apply_filter_for_summary(daily_machines, target_date)
+      filtered_machines = apply_filter_for_summary_optimized(daily_machines, target_date, past_data_cache)
       next if filtered_machines.empty?
 
       results << calculate_daily_stats(target_date, filtered_machines)
     end
 
     results
+  rescue => e
+    Rails.logger.error "日別集計エラー: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    []
   end
 
   def determine_target_dates(date_range_param, end_date)
@@ -474,10 +561,13 @@ class MachineDataController < ApplicationController
 
     case date_range_param
     when "day_7"
+      # 7のつく日を全て取得（制限なし）
       fetch_dates_by_day_numbers([ 7, 17, 27 ], end_date)
     when "day_1"
+      # 1のつく日を全て取得（制限なし）
       fetch_dates_by_day_numbers([ 1, 11, 21, 31 ], end_date)
     when "day_8"
+      # 8のつく日を全て取得（制限なし）
       fetch_dates_by_day_numbers([ 8, 18, 28 ], end_date)
     else
       days = date_range_param.to_i
@@ -486,11 +576,14 @@ class MachineDataController < ApplicationController
     end
   end
 
-  def fetch_dates_by_day_numbers(day_numbers, end_date)
-    @hall.machine_data
-         .where("CAST(strftime('%d', date) AS INTEGER) IN (?)", day_numbers)
-         .where("date <= ?", end_date)
-         .select(:date)
+  def fetch_dates_by_day_numbers(day_numbers, end_date, start_limit = nil)
+    query = @hall.machine_data
+                 .where("CAST(strftime('%d', date) AS INTEGER) IN (?)", day_numbers)
+                 .where("date <= ?", end_date)
+
+    query = query.where("date >= ?", start_limit) if start_limit
+
+    query.select(:date)
          .distinct
          .order(date: :desc)
          .pluck(:date)
@@ -513,13 +606,100 @@ class MachineDataController < ApplicationController
     }
   end
 
+  # 【最適化】日別集計用の過去データを事前に一括取得
+  def preload_past_data_for_summary(target_dates)
+    cache = {}
+    
+    # 過去差枚フィルターが有効な場合
+    if @filter_diff_days.present? && (@filter_diff_value_min.present? || @filter_diff_value_max.present?)
+      days = @filter_diff_days
+      # 全日付分の過去データを1回のクエリで取得
+      min_start = target_dates.min - days.days
+      max_end = target_dates.max - 1.day
+      
+      diff_data = @hall.machine_data
+                       .where(date: min_start..max_end)
+                       .select(:date, :machine_number, :difference_count)
+                       .to_a
+      
+      # 各ターゲット日付ごとに集計
+      target_dates.each do |target_date|
+        start_date = target_date - days.days
+        end_date = target_date - 1.day
+        
+        aggregated = Hash.new(0)
+        diff_data.each do |record|
+          if record.date >= start_date && record.date <= end_date
+            aggregated[record.machine_number] += record.difference_count
+          end
+        end
+        
+        cache["diff_#{target_date}"] = aggregated
+      end
+    end
+    
+    # 過去回転数フィルターが有効な場合
+    if @filter_game_count_days.present? && (@filter_game_count_value_min.present? || @filter_game_count_value_max.present?)
+      days = @filter_game_count_days
+      min_start = target_dates.min - days.days
+      max_end = target_dates.max - 1.day
+      
+      game_data = @hall.machine_data
+                       .where(date: min_start..max_end)
+                       .select(:date, :machine_number, :game_count)
+                       .to_a
+      
+      target_dates.each do |target_date|
+        start_date = target_date - days.days
+        end_date = target_date - 1.day
+        
+        aggregated = Hash.new(0)
+        game_data.each do |record|
+          if record.date >= start_date && record.date <= end_date
+            aggregated[record.machine_number] += record.game_count
+          end
+        end
+        
+        cache["game_#{target_date}"] = aggregated
+      end
+    end
+    
+    # ランクフィルターが有効な場合
+    if @filter_rank_days.present? && (@filter_ranks.present? || @filter_best_ranks.present?)
+      days = @filter_rank_days
+      min_start = target_dates.min - days.days
+      max_end = target_dates.max - 1.day
+      
+      rank_data = @hall.machine_data
+                       .where(date: min_start..max_end)
+                       .select(:date, :machine_number, :machine_name, :difference_count)
+                       .to_a
+      
+      target_dates.each do |target_date|
+        start_date = target_date - days.days
+        end_date = target_date - 1.day
+        
+        aggregated = Hash.new(0)
+        rank_data.each do |record|
+          if record.date >= start_date && record.date <= end_date
+            aggregated[record.machine_number] += record.difference_count
+          end
+        end
+        
+        cache["rank_#{target_date}"] = aggregated
+      end
+    end
+    
+    cache
+  end
+
   # ============================================================
   # フィルター処理
   # ============================================================
 
   def apply_filters_and_sorting
-    # マップタブ用に全台データを保持（フィルター適用前）
-    @all_machine_data = @machine_data.dup
+    # マップタブ用に全台データを保持（index_byでハッシュ化のみ）
+    @machine_data_by_number = @machine_data.index_by(&:machine_number)
 
     # フィルター適用
     @machine_data = apply_filter(@machine_data, @diff_days, @game_count_days)
@@ -597,6 +777,19 @@ class MachineDataController < ApplicationController
     # BB数フィルター
     filtered = apply_range_filter(filtered, :bb_count, @filter_bb_count_min, @filter_bb_count_max)
 
+    # 台番号末尾フィルター
+    if @filter_machine_last_digit.present?
+      filtered = filtered.select { |m| m.machine_number.to_s[-1] == @filter_machine_last_digit }
+    end
+
+    # 台番号末尾2桁ぞろ目フィルター
+    if @filter_machine_double_digit
+      filtered = filtered.select do |m|
+        number_str = m.machine_number.to_s
+        number_str.length >= 2 && number_str[-1] == number_str[-2]
+      end
+    end
+
     filtered
   end
 
@@ -646,6 +839,7 @@ class MachineDataController < ApplicationController
   end
 
   def apply_rank_filter(filtered)
+    # ワーストランクフィルター（@filter_rank_daysは既にcalculate_rank_filter_dataで計算済み）
     if @filter_rank_days.present? && @filter_ranks.present? && @diff_ranks[@filter_rank_days]
       filtered = filtered.select do |m|
         rank = @diff_ranks[@filter_rank_days][m.machine_number]
@@ -653,9 +847,41 @@ class MachineDataController < ApplicationController
       end
     end
 
+    # ベストランクフィルター（filter_best_rank_daysまたはfilter_rank_daysを使用）
+    best_days = @filter_best_rank_days || @filter_rank_days
+    if best_days.present? && @filter_best_ranks.present? && @diff_best_ranks[best_days]
+      filtered = filtered.select do |m|
+        rank = @diff_best_ranks[best_days][m.machine_number]
+        @filter_best_ranks.include?(rank)
+      end
+    end
+
     filtered
   end
 
+  # 【最適化版】事前にキャッシュした過去データを使用
+  def apply_filter_for_summary_optimized(machines, target_date, past_data_cache)
+    filtered = machines
+
+    # 機種名フィルター
+    filtered = apply_machine_name_filter(filtered)
+
+    # 数値フィルター
+    filtered = apply_numeric_filters(filtered)
+
+    # 過去データフィルター（キャッシュから取得）
+    filtered = apply_past_data_filters_with_cache(filtered, target_date, past_data_cache)
+
+    # 機種毎台数フィルター
+    filtered = apply_machine_count_filter(filtered)
+
+    # ワーストランキングフィルター（キャッシュから取得）
+    filtered = apply_rank_filter_with_cache(filtered, target_date, past_data_cache)
+
+    filtered
+  end
+
+  # 互換性のため旧メソッドも残す（非日別集計用）
   def apply_filter_for_summary(machines, target_date)
     filtered = machines.to_a
 
@@ -673,6 +899,31 @@ class MachineDataController < ApplicationController
 
     # ワーストランキングフィルター（その日付時点での計算）
     filtered = apply_rank_filter_for_date(filtered, target_date)
+
+    filtered
+  end
+
+  # 【最適化版】キャッシュから過去データを取得してフィルター
+  def apply_past_data_filters_with_cache(filtered, target_date, past_data_cache)
+    # 過去差枚フィルター
+    if @filter_diff_days.present? && (@filter_diff_value_min.present? || @filter_diff_value_max.present?)
+      diff_data = past_data_cache["diff_#{target_date}"] || {}
+
+      filtered = filtered.select do |m|
+        diff_value = diff_data[m.machine_number] || 0
+        value_in_range?(diff_value, @filter_diff_value_min, @filter_diff_value_max)
+      end
+    end
+
+    # 過去回転数フィルター
+    if @filter_game_count_days.present? && (@filter_game_count_value_min.present? || @filter_game_count_value_max.present?)
+      game_count_data = past_data_cache["game_#{target_date}"] || {}
+
+      filtered = filtered.select do |m|
+        game_count_value = game_count_data[m.machine_number] || 0
+        value_in_range?(game_count_value, @filter_game_count_value_min, @filter_game_count_value_max)
+      end
+    end
 
     filtered
   end
@@ -711,6 +962,31 @@ class MachineDataController < ApplicationController
          .sum(column)
   end
 
+  # 【最適化版】キャッシュから過去データを取得してランクフィルター
+  def apply_rank_filter_with_cache(filtered, target_date, past_data_cache)
+    if @filter_rank_days.present? && (@filter_ranks.present? || @filter_best_ranks.present?)
+      diff_data = past_data_cache["rank_#{target_date}"] || {}
+      ranks = calculate_ranks_by_machine_name(filtered, diff_data, :worst)
+      best_ranks = calculate_ranks_by_machine_name(filtered, diff_data, :best)
+
+      if @filter_ranks.present?
+        filtered = filtered.select do |m|
+          rank = ranks[m.machine_number]
+          @filter_ranks.include?(rank)
+        end
+      end
+
+      if @filter_best_ranks.present?
+        filtered = filtered.select do |m|
+          rank = best_ranks[m.machine_number]
+          @filter_best_ranks.include?(rank)
+        end
+      end
+    end
+
+    filtered
+  end
+
   def apply_rank_filter_for_date(filtered, target_date)
     if @filter_rank_days.present? && @filter_ranks.present?
       diff_data = calculate_aggregated_data_for_date(target_date, @filter_rank_days, :difference_count)
@@ -740,9 +1016,17 @@ class MachineDataController < ApplicationController
     when "art_count"        then machine_data.sort_by(&:art_count)
     when /^diff_(\d+)$/
       days = Regexp.last_match(1).to_i
+      # ソート用の日数データが存在しない場合は動的に計算
+      unless diff_days[days]
+        diff_days[days] = calculate_sum_for_period(days, :difference_count)
+      end
       machine_data.sort_by { |m| diff_days[days][m.machine_number] || 0 }
     when /^game_count_(\d+)$/
       days = Regexp.last_match(1).to_i
+      # ソート用の日数データが存在しない場合は動的に計算
+      unless game_count_days[days]
+        game_count_days[days] = calculate_sum_for_period(days, :game_count)
+      end
       machine_data.sort_by { |m| game_count_days[days][m.machine_number] || 0 }
     else
       machine_data.sort_by(&:machine_number)
@@ -756,64 +1040,31 @@ class MachineDataController < ApplicationController
   # ============================================================
 
   def prepare_view_data
-    # ドロップダウン用機種一覧
-    @machine_names = if @data_exists
-                       @hall.machine_data.where(date: @date).pluck(:machine_name).uniq.sort
-    elsif @reference_date
-                       @hall.machine_data.where(date: @reference_date).pluck(:machine_name).uniq.sort
-    else
-                       []
-    end
+    # ドロップダウン用機種一覧（既にロード済みのデータから取得してクエリを削減）
+    @machine_names = @machine_data_by_number.values.map(&:machine_name).uniq.sort
 
     # マップ用データ
     @hall_maps = @hall.hall_maps.order(:created_at)
     @current_map = @hall_maps.first
-    # マップタブでは常に全台表示（フィルター適用なし）
-    @machine_data_by_number = @all_machine_data.index_by(&:machine_number)
+    # マップタブでは常に全台表示（@machine_data_by_numberは既にapply_filters_and_sortingで作成済み）
 
     # 色分け用データ
     @color_worst_ranks = calculate_color_worst_ranks(7)
   end
 
   # 色分け用：機種ごとの過去N日間総差枚ワーストランキング（全台対象）
+  # 【最適化】既存のキャッシュとデータを活用
   def calculate_color_worst_ranks(days)
-    past_data = calculate_aggregated_data_for_date(@date, days, :difference_count)
-
-    # 機種名を取得（当日データがない場合は参照日から取得）
-    machine_info = if @data_exists
-                     @hall.machine_data
-                          .where(date: @date)
-                          .select(:machine_number, :machine_name)
-                          .index_by(&:machine_number)
-    elsif @reference_date
-                     @hall.machine_data
-                          .where(date: @reference_date)
-                          .select(:machine_number, :machine_name)
-                          .index_by(&:machine_number)
-    else
-                     {}
-    end
-
-    # 機種名でグループ化
-    grouped_by_name = Hash.new { |h, k| h[k] = [] }
-    past_data.each do |machine_number, total_diff|
-      machine_name = machine_info[machine_number]&.machine_name
-      next unless machine_name
-
-      grouped_by_name[machine_name] << { machine_number: machine_number, total_diff: total_diff }
-    end
-
-    # 各機種でワースト1, 2, 3, 4, 5を特定
-    worst_ranks = {}
-    grouped_by_name.each do |machine_name, machines|
-      sorted = machines.sort_by { |m| m[:total_diff] }
-      worst_ranks[sorted[0][:machine_number]] = 1 if sorted[0]
-      worst_ranks[sorted[1][:machine_number]] = 2 if sorted[1]
-      worst_ranks[sorted[2][:machine_number]] = 3 if sorted[2]
-      worst_ranks[sorted[3][:machine_number]] = 4 if sorted[3]
-      worst_ranks[sorted[4][:machine_number]] = 5 if sorted[4]
-    end
-
-    worst_ranks
+    # 既に計算済みの場合は再利用
+    return @diff_ranks[days] if @diff_ranks && @diff_ranks[days]
+    
+    # calculate_sum_for_periodのキャッシュを活用
+    past_data = calculate_sum_for_period(days, :difference_count)
+    
+    # 既にロード済みのデータから機種名を取得
+    machines = @machine_data_by_number.values
+    
+    # ランキング計算
+    calculate_ranks_by_machine_name(machines, past_data, :worst)
   end
 end

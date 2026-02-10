@@ -64,11 +64,8 @@
                 <div style="max-height: 400px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 2px;">
                     <% 
                       selected_dates = params[:custom_dates] || []
-                      # 現在の日付から前後1ヶ月の範囲を設定
-                      end_date = @date + 1.month
-                      start_date = @date - 1.month
-                      # データが存在する日付のみを取得
-                      available_dates = @hall.machine_data.where(date: start_date..end_date).select(:date).distinct.order(date: :desc).pluck(:date)
+                      # データが存在する全ての日付を表示
+                      available_dates = @hall.machine_data.select(:date).distinct.order(date: :desc).pluck(:date)
                     %>
                     <% available_dates.each do |date| %>
                     <label style="display: flex; align-items: center; padding: 2px;">

@@ -122,6 +122,23 @@
                     </div>
                 </div>
 
+                <!-- 台番号末尾フィルター -->
+                <div class="filter-row filter-row-inline">
+                    <div class="filter-group">
+                        <label>台番号末尾:</label>
+                        <select name="filter_machine_last_digit" style="width: 80px;">
+                            <option value="">--すべて--</option>
+                            <% (0..9).each do |digit| %>
+                            <option value="<%= digit %>" <%= 'selected' if @filter_machine_last_digit == digit.to_s %>><%= digit %></option>
+                            <% end %>
+                        </select>
+                        <label style="margin-left: 15px; cursor: pointer;">
+                            <input type="checkbox" name="filter_machine_double_digit" value="1" <%= 'checked' if @filter_machine_double_digit %>>
+                            末尾2桁ぞろ目のみ
+                        </label>
+                    </div>
+                </div>
+
                 <!-- 過去N日差枚フィルター -->
                 <div class="filter-row filter-row-inline">
                     <div class="filter-group">
@@ -217,6 +234,59 @@
                                     <input type="checkbox" id="rank-5" name="filter_ranks[]" value="5" <%= 'checked' if params[:filter_ranks]&.include?('5') %>>
                                     <label for="rank-5" style="color: #999; font-weight: bold;">
                                         ワースト5位
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 機種毎ベストランキングフィルター -->
+                <div class="filter-row" style="border-top: 2px dashed #fbbf24; padding-top: 5px; margin-top: 5px;">
+                    <div class="filter-group" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                        <label style="color: #fbbf24; font-weight: bold;">⭐ 機種毎ベスト台絞り込み:</label>
+                        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <label>過去</label>
+                                <select name="filter_best_rank_days">
+                                    <option value="">--日数選択--</option>
+                                    <% (1..31).each do |days| %>
+                                    <option value="<%= days %>" <%= 'selected' if params[:filter_best_rank_days].to_i == days %>>
+                                        <%= days %>日
+                                    </option>
+                                    <% end %>
+                                </select>
+                                <label>の差枚で絞り込み</label>
+                            </div>
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="rank-checkbox-group">
+                                    <input type="checkbox" id="best-rank-1" name="filter_best_ranks[]" value="1" <%= 'checked' if params[:filter_best_ranks]&.include?('1') %>>
+                                    <label for="best-rank-1" style="color: #ffd700; font-weight: bold;">
+                                        ベスト1位
+                                    </label>
+                                </div>
+                                <div class="rank-checkbox-group">
+                                    <input type="checkbox" id="best-rank-2" name="filter_best_ranks[]" value="2" <%= 'checked' if params[:filter_best_ranks]&.include?('2') %>>
+                                    <label for="best-rank-2" style="color: #ffa500; font-weight: bold;">
+                                        ベスト2位
+                                    </label>
+                                </div>
+                                <div class="rank-checkbox-group">
+                                    <input type="checkbox" id="best-rank-3" name="filter_best_ranks[]" value="3" <%= 'checked' if params[:filter_best_ranks]&.include?('3') %>>
+                                    <label for="best-rank-3" style="color: #ff8c00; font-weight: bold;">
+                                        ベスト3位
+                                    </label>
+                                </div>
+                                <div class="rank-checkbox-group">
+                                    <input type="checkbox" id="best-rank-4" name="filter_best_ranks[]" value="4" <%= 'checked' if params[:filter_best_ranks]&.include?('4') %>>
+                                    <label for="best-rank-4" style="color: #ffc966; font-weight: bold;">
+                                        ベスト4位
+                                    </label>
+                                </div>
+                                <div class="rank-checkbox-group">
+                                    <input type="checkbox" id="best-rank-5" name="filter_best_ranks[]" value="5" <%= 'checked' if params[:filter_best_ranks]&.include?('5') %>>
+                                    <label for="best-rank-5" style="color: #999; font-weight: bold;">
+                                        ベスト5位
                                     </label>
                                 </div>
                             </div>
