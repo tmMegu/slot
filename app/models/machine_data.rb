@@ -3,12 +3,12 @@ class MachineData < ApplicationRecord
 
   validates :date, presence: true
   validates :machine_number, presence: true
-  # メモ専用レコード（machine_nameが空でmemoが存在する）の場合はmachine_nameが空でもOK
+  # 実データの場合のみ機種名を必須とする（全カウントが0の場合はメモ専用レコード）
   validates :machine_name, presence: true, unless: :memo_only_record?
 
   private
 
   def memo_only_record?
-    machine_name.blank? && (machine_memo.present? || date_memo.present?)
+    game_count == 0 && difference_count == 0 && bb_count == 0 && rb_count == 0 && art_count == 0
   end
 end
