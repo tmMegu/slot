@@ -424,6 +424,21 @@ th {
    ======================================== */
 
 @media (max-width: 768px) {
+  /* タブコンテンツに左右の余白を追加 */
+  .tab-content {
+    padding: 0 10px;
+  }
+
+  /* tabs-containerの余白を調整 */
+  .tabs-container {
+    margin: 10px -10px 0 -10px;
+  }
+
+  /* tab-buttonsに左右のpaddingを追加 */
+  .tab-buttons {
+    padding: 0 10px;
+  }
+
   /* タブボタン */
   .tab-buttons {
     flex-wrap: wrap;
