@@ -294,13 +294,61 @@
                     </div>
                 </div>
 
+                <!-- 過去差枚がマイナスの台フィルター -->
+                <div class="filter-row" style="border-top: 2px dashed #dc3545; padding-top: 5px; margin-top: 5px;">
+                    <div class="filter-group" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                        <label style="color: #dc3545; font-weight: bold;">📉 過去差枚がマイナスの台:</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <label>過去</label>
+                            <select name="filter_past_negative_days" style="width: 70px;">
+                                <option value="">--日数選択--</option>
+                                <% (1..31).each do |days| %>
+                                <option value="<%= days %>" <%= 'selected' if params[:filter_past_negative_days].to_i == days %>>
+                                    <%= days %>日
+                                </option>
+                                <% end %>
+                            </select>
+                            <label>の差枚合計がマイナスの台のみ表示</label>
+                        </div>
+                        <div style="padding: 6px; background-color: #fff3cd; border-radius: 4px; font-size: 11px; color: #856404;">
+                            💡 例：過去7日間に7を選択 → 直近7日間の差枚合計がマイナスの台のみを表示
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 過去マイナスになった日数フィルター -->
+                <div class="filter-row" style="border-top: 2px dashed #ff6b6b; padding-top: 5px; margin-top: 5px;">
+                    <div class="filter-group" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                        <label style="color: #ff6b6b; font-weight: bold;">📊 マイナスになった日数で絞り込み:</label>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <label>過去</label>
+                            <select name="filter_negative_count_days" style="width: 70px;">
+                                <option value="">--日数選択--</option>
+                                <% (1..31).each do |days| %>
+                                <option value="<%= days %>" <%= 'selected' if params[:filter_negative_count_days].to_i == days %>>
+                                    <%= days %>日
+                                </option>
+                                <% end %>
+                            </select>
+                            <label>で、マイナスになった日数:</label>
+                            <input type="number" name="filter_negative_count_min" placeholder="最小" value="<%= @filter_negative_count_min %>" style="width: 60px;">
+                            <span>～</span>
+                            <input type="number" name="filter_negative_count_max" placeholder="最大" value="<%= @filter_negative_count_max %>" style="width: 60px;">
+                            <label>日</label>
+                        </div>
+                        <div style="padding: 6px; background-color: #f8d7da; border-radius: 4px; font-size: 11px; color: #721c24;">
+                            💡 例：過去7日間で、最小3日、最大5日 → 直近7日間でマイナスになった日が3〜5日の台を表示
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 表示する過去データの設定パネル -->
                 <div class="filter-row" style="border-top: 2px dashed #10b981; padding-top: 5px; margin-top: 5px;">
                     <div class="filter-group" style="flex-direction: column; align-items: flex-start; gap: 10px; width: 100%;">
                         <label style="color: #10b981; font-weight: bold;">📅 表示する過去データの設定</label>
 
                         <!-- 表示タイプ選択 -->
-                        <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                        <div style="display: flex; gap: 20px; margin-bottom: 10px; flex-wrap: wrap;">
                             <div class="rank-checkbox-group">
                                 <input type="checkbox" id="show-difference" name="show_difference" value="1" <%= 'checked' if params[:show_difference] != '0' %>>
                                 <label for="show-difference">過去差枚を表示</label>
@@ -308,6 +356,18 @@
                             <div class="rank-checkbox-group">
                                 <input type="checkbox" id="show-games" name="show_games" value="1" <%= 'checked' if params[:show_games] == '1' %>>
                                 <label for="show-games">過去回転数を表示</label>
+                            </div>
+                            <div class="rank-checkbox-group">
+                                <input type="checkbox" id="show-bb" name="show_bb" value="1" <%= 'checked' if params[:show_bb] == '1' %>>
+                                <label for="show-bb">BB回数を表示</label>
+                            </div>
+                            <div class="rank-checkbox-group">
+                                <input type="checkbox" id="show-rb" name="show_rb" value="1" <%= 'checked' if params[:show_rb] == '1' %>>
+                                <label for="show-rb">RB回数を表示</label>
+                            </div>
+                            <div class="rank-checkbox-group">
+                                <input type="checkbox" id="show-art" name="show_art" value="1" <%= 'checked' if params[:show_art] == '1' %>>
+                                <label for="show-art">ART回数を表示</label>
                             </div>
                         </div>
 

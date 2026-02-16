@@ -45,15 +45,34 @@ class HallsController < ApplicationController
     memos = params[:memos] || {}
 
     updated_count = 0
+    created_count = 0
 
     memos.each do |date_str, memo_text|
       date = Date.parse(date_str)
-      # その日付の全データを更新
-      hall.machine_data.where(date: date).update_all(date_memo: memo_text)
-      updated_count += 1
+      existing_records = hall.machine_data.where(date: date)
+
+      if existing_records.exists?
+        # その日付の全データを更新
+        existing_records.update_all(date_memo: memo_text)
+        updated_count += 1
+      else
+        # レコードが存在しない場合、メモ専用レコードを作成
+        hall.machine_data.create!(
+          date: date,
+          machine_number: 0,
+          machine_name: "",
+          date_memo: memo_text,
+          game_count: 0,
+          difference_count: 0,
+          bb_count: 0,
+          rb_count: 0,
+          art_count: 0
+        )
+        created_count += 1
+      end
     end
 
-    render json: { success: true, updated_count: updated_count }
+    render json: { success: true, updated_count: updated_count, created_count: created_count }
   rescue => e
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end
@@ -98,8 +117,13 @@ class HallsController < ApplicationController
     # 日付の範囲を配列で生成（新しい順）
     @dates = (@start_date..@end_date).to_a.reverse
 
-    # 実際にデータが存在する日付を取得
-    @existing_dates = @hall.machine_data.select(:date).distinct.pluck(:date).to_set
+    # 実際にデータが存在する日付を取得（機種名が存在するレコードのみ）
+    @existing_dates = @hall.machine_data
+                           .where.not(machine_name: [ nil, "" ])
+                           .select(:date)
+                           .distinct
+                           .pluck(:date)
+                           .to_set
 
     # 各日付の集計データを計算
     @date_stats = calculate_date_stats(@hall, @dates)
@@ -111,14 +135,15 @@ class HallsController < ApplicationController
   # 各日付の集計データを計算（最適化版：1回のクエリで全期間のデータを取得）
   def calculate_date_stats(hall, dates)
     stats = {}
-    
-    # 全期間のデータを1回のクエリで取得してグループ化
+
+    # 全期間のデータを1回のクエリで取得してグループ化（機種名が存在するレコードのみ）
     date_range = dates.min..dates.max
     all_data = hall.machine_data
                    .where(date: date_range)
+                   .where.not(machine_name: [ nil, "" ])
                    .select(:date, :difference_count, :game_count, :machine_number)
                    .group_by(&:date)
-    
+
     dates.each do |date|
       data = all_data[date]
       if data && data.any?
@@ -126,7 +151,7 @@ class HallsController < ApplicationController
         total_diff = data.sum(&:difference_count)
         total_games = data.sum(&:game_count)
         plus_machines = data.count { |d| d.difference_count > 0 }
-        
+
         stats[date] = {
           avg_diff: calculate_average(total_diff, total_machines),
           avg_games: calculate_average(total_games, total_machines),
@@ -159,7 +184,7 @@ class HallsController < ApplicationController
     # 各日付の最初のレコードからdate_memoを取得
     hall.machine_data
         .where(date: date_range)
-        .select('DISTINCT ON (date) date, date_memo')
+        .select("DISTINCT ON (date) date, date_memo")
         .order(:date)
         .each_with_object({}) { |data, hash| hash[data.date] = data.date_memo }
   rescue

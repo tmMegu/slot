@@ -35,6 +35,15 @@ class MachineDataImporter
       Rails.logger.info "  #{i+1}: #{row.inspect}"
     end
 
+    # 既存データのメモを保存
+    existing_memos = {}
+    existing_date_memo = nil
+    hall.machine_data.where(date: @date).each do |data|
+      existing_memos[data.machine_number] = data.machine_memo if data.machine_memo.present?
+      existing_date_memo ||= data.date_memo if data.date_memo.present?
+    end
+    Rails.logger.info "既存メモ保存: #{existing_memos.size}件, 日付メモ: #{existing_date_memo.present? ? '有' : '無'}"
+
     # 既存データを削除（同じ日付のデータを上書き）
     deleted_count = hall.machine_data.where(date: @date).delete_all
     Rails.logger.info "既存データ削除: #{deleted_count}件"
@@ -52,6 +61,8 @@ class MachineDataImporter
         bb_count: row_data[:bb_count],
         rb_count: row_data[:rb_count],
         art_count: row_data[:art_count],
+        machine_memo: existing_memos[row_data[:machine_number]], # 既存の台メモを復元
+        date_memo: existing_date_memo, # 既存の日付メモを復元
         created_at: now,
         updated_at: now
       }

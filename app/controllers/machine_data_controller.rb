@@ -80,20 +80,20 @@ class MachineDataController < ApplicationController
   def machine_history
     @hall = Hall.find_by(id: params[:hall_id])
     @machine_number = params[:machine_number].to_i
-    
+
     # 日付範囲の設定
     @end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today
     @start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : (@end_date - 90.days)
-    
+
     # 指定された台番号の過去データを取得（最適化：1回のクエリ）
     @machine_data = @hall.machine_data
                          .where(machine_number: @machine_number, date: @start_date..@end_date)
                          .order(date: :desc)
                          .to_a
-    
+
     # データが存在する場合、機種名を取得
     @machine_name = @machine_data.first&.machine_name
-    
+
     # 集計データを計算
     if @machine_data.any?
       @summary = {
@@ -120,6 +120,12 @@ class MachineDataController < ApplicationController
   # - キャッシュを活用して重複クエリを削減
   # - メモリ使用量を最小化（不要な配列複製を削減）
   def show
+    # リセットフラグがあればセッションを削除
+    if params[:reset_filters] == "1"
+      session.delete(:machine_data_filters)
+      redirect_to hall_machine_data_path(params[:hall_id], params[:date]) and return
+    end
+
     initialize_parameters        # パラメータ解析
     load_machine_data           # 当日データの読み込み（最適化：必要な列のみSELECT）
     calculate_past_data         # 過去データの計算（最適化：キャッシュ活用）
@@ -133,7 +139,7 @@ class MachineDataController < ApplicationController
       format.json do
         begin
           # 一覧タブのテーブル行HTMLを生成（formats: [:html]を明示的に指定）
-          html = render_to_string(partial: "machine_data/list_table_rows", layout: false, formats: [:html])
+          html = render_to_string(partial: "machine_data/list_table_rows", layout: false, formats: [ :html ])
           render json: { html: html }
         rescue => e
           # エラーが発生した場合はJSONでエラーを返す
@@ -226,15 +232,33 @@ class MachineDataController < ApplicationController
     memos = params[:memos] || {}
 
     updated_count = 0
+    created_count = 0
+
     memos.each do |machine_number, memo|
       machine_data = hall.machine_data.find_by(date: date, machine_number: machine_number)
+
       if machine_data
+        # 既存レコードを更新
         machine_data.update(machine_memo: memo)
         updated_count += 1
+      else
+        # 新規レコードを作成（メモ専用レコードとして機種名は空）
+        hall.machine_data.create!(
+          date: date,
+          machine_number: machine_number,
+          machine_name: "",
+          machine_memo: memo,
+          game_count: 0,
+          difference_count: 0,
+          bb_count: 0,
+          rb_count: 0,
+          art_count: 0
+        )
+        created_count += 1
       end
     end
 
-    render json: { success: true, updated_count: updated_count }
+    render json: { success: true, updated_count: updated_count, created_count: created_count }
   rescue => e
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end
@@ -278,13 +302,16 @@ class MachineDataController < ApplicationController
 
     # セッションキーを設定
     @session_key = "machine_data_filters"
-    
+
     # セッションから検索条件を復元（パラメータが指定されていない場合）
     restore_from_session_if_needed
 
     # 表示設定
     @show_difference = get_param_or_session(:show_difference, "1") != "0"
     @show_games = get_param_or_session(:show_games, "0") == "1"
+    @show_bb = get_param_or_session(:show_bb, "0") == "1"
+    @show_rb = get_param_or_session(:show_rb, "0") == "1"
+    @show_art = get_param_or_session(:show_art, "0") == "1"
 
     # ソート設定
     @sort_by = get_param_or_session(:sort_by, "machine_number")
@@ -294,12 +321,12 @@ class MachineDataController < ApplicationController
     if params[:display_days].present?
       display_days_param = params[:display_days]
       @display_days = display_days_param.is_a?(String) ?
-        display_days_param.split(',').map(&:to_i).uniq.sort :
+        display_days_param.split(",").map(&:to_i).uniq.sort :
         display_days_param.map(&:to_i).uniq.sort
     elsif session[@session_key] && session[@session_key][:display_days].present?
       display_days_value = session[@session_key][:display_days]
       @display_days = display_days_value.is_a?(String) ?
-        display_days_value.split(',').map(&:to_i).uniq.sort :
+        display_days_value.split(",").map(&:to_i).uniq.sort :
         display_days_value.map(&:to_i).uniq.sort
     else
       @display_days = [ 7 ] # デフォルト値を7日に設定
@@ -307,7 +334,7 @@ class MachineDataController < ApplicationController
 
     # フィルター設定
     setup_filter_parameters
-    
+
     # セッションに保存
     save_to_session
   end
@@ -315,7 +342,7 @@ class MachineDataController < ApplicationController
   # セッションから検索条件を復元（パラメータが何も指定されていない場合のみ）
   def restore_from_session_if_needed
     # パラメータが何も指定されていない場合、セッションから復元
-    if params.keys.none? { |k| k.start_with?('filter_', 'sort_', 'show_', 'display_') }
+    if params.keys.none? { |k| k.start_with?("filter_", "sort_", "show_", "display_") }
       if session[@session_key]
         session[@session_key].each do |key, value|
           params[key] = value unless params[key].present?
@@ -323,7 +350,7 @@ class MachineDataController < ApplicationController
       end
     end
   end
-  
+
   # パラメータまたはセッションから値を取得
   def get_param_or_session(key, default_value)
     if params[key].present?
@@ -334,33 +361,36 @@ class MachineDataController < ApplicationController
       default_value
     end
   end
-  
+
   # セッションに検索条件を保存（サイズ最適化）
   def save_to_session
     session[@session_key] ||= {}
-    
+
     # 空値を保存しないヘルパー
     save_if_present = lambda do |key, value|
       if value.is_a?(Array)
-        session[@session_key][key] = value.join(',') if value.any?
+        session[@session_key][key] = value.join(",") if value.any?
       elsif value.present? || value == false || value == 0
         session[@session_key][key] = value
       else
         session[@session_key].delete(key)
       end
     end
-    
+
     # 表示設定
     save_if_present.call(:show_difference, @show_difference ? "1" : "0")
     save_if_present.call(:show_games, @show_games ? "1" : "0")
-    
+    save_if_present.call(:show_bb, @show_bb ? "1" : "0")
+    save_if_present.call(:show_rb, @show_rb ? "1" : "0")
+    save_if_present.call(:show_art, @show_art ? "1" : "0")
+
     # ソート設定
     save_if_present.call(:sort_by, @sort_by)
     save_if_present.call(:sort_order, @sort_order)
-    
+
     # 表示日数
     save_if_present.call(:display_days, @display_days)
-    
+
     # フィルター設定（空値は保存しない）
     save_if_present.call(:filter_machine_name, @filter_machine_name)
     save_if_present.call(:filter_machine_name_search, @filter_machine_name_search)
@@ -407,12 +437,12 @@ class MachineDataController < ApplicationController
       @filter_best_ranks = params[:filter_best_ranks].map(&:to_i)
     elsif session[@session_key] && session[@session_key][:filter_best_ranks].present?
       @filter_best_ranks = session[@session_key][:filter_best_ranks].is_a?(String) ?
-        session[@session_key][:filter_best_ranks].split(',').map(&:to_i) :
+        session[@session_key][:filter_best_ranks].split(",").map(&:to_i) :
         session[@session_key][:filter_best_ranks]
     else
       @filter_best_ranks = []
     end
-    
+
     @filter_best_rank_days = parse_int_param_with_session(:filter_best_rank_days)
     @filter_diff_days = parse_int_param_with_session(:filter_diff_days)
     @filter_diff_value_min = parse_int_param_with_session(:filter_diff_value_min)
@@ -423,13 +453,13 @@ class MachineDataController < ApplicationController
     @filter_machine_count_min = parse_int_param_with_session(:filter_machine_count_min)
     @filter_machine_count_max = parse_int_param_with_session(:filter_machine_count_max)
     @filter_rank_days = parse_int_param_with_session(:filter_rank_days)
-    
+
     # ランクフィルター（配列の復元）
     if params[:filter_ranks].present?
-      @filter_ranks = params[:filter_ranks].map(&:to_i)
+      @filter_ranks = params[:filter_ranks].is_a?(Array) ? params[:filter_ranks].map(&:to_i) : params[:filter_ranks].to_s.split(",").map(&:to_i)
     elsif session[@session_key] && session[@session_key][:filter_ranks].present?
       @filter_ranks = session[@session_key][:filter_ranks].is_a?(String) ?
-        session[@session_key][:filter_ranks].split(',').map(&:to_i) :
+        session[@session_key][:filter_ranks].split(",").map(&:to_i) :
         session[@session_key][:filter_ranks]
     else
       @filter_ranks = []
@@ -439,7 +469,7 @@ class MachineDataController < ApplicationController
   def parse_int_param(key)
     params[key].present? ? params[key].to_i : nil
   end
-  
+
   def parse_int_param_with_session(key)
     if params[key].present?
       params[key].to_i
@@ -459,11 +489,12 @@ class MachineDataController < ApplicationController
                          .where(date: @date)
                          .order(:machine_number)
 
-    if @machine_data.empty?
-      load_reference_data
-    else
+    # データ存在判定：データが存在し、かつ機種名が入っているレコードがある場合
+    if @machine_data.any? && @machine_data.where.not(machine_name: [ nil, "" ]).exists?
       @data_exists = true
       @reference_date = nil
+    else
+      load_reference_data
     end
   end
 
@@ -473,7 +504,10 @@ class MachineDataController < ApplicationController
 
     if @reference_date
       reference_data = @hall.machine_data.where(date: @reference_date).order(:machine_number)
-      @machine_data = create_empty_machine_data(reference_data)
+
+      # メモのみのレコードがある場合はマージする
+      existing_memo_records = @machine_data.index_by(&:machine_number)
+      @machine_data = create_empty_machine_data_with_memos(reference_data, existing_memo_records)
     else
       @machine_data = []
     end
@@ -495,9 +529,32 @@ class MachineDataController < ApplicationController
     end
   end
 
+  # メモのみのレコードをマージして空データを作成
+  def create_empty_machine_data_with_memos(reference_data, existing_memo_records)
+    reference_data.map do |data|
+      existing = existing_memo_records[data.machine_number]
+      memo = existing&.machine_memo || ""
+
+      MachineData.new(
+        hall_id: @hall.id,
+        date: @date,
+        machine_number: data.machine_number,
+        machine_name: data.machine_name,
+        game_count: 0,
+        difference_count: 0,
+        bb_count: 0,
+        rb_count: 0,
+        art_count: 0,
+        machine_memo: memo
+      )
+    end
+  end
+
   def find_latest_data_date(hall, target_date)
+    # 機種名が入っているレコード（実データ）のみを対象とする
     hall.machine_data
         .where("date < ?", target_date)
+        .where.not(machine_name: [ nil, "" ])
         .order(date: :desc)
         .limit(1)
         .pluck(:date)
@@ -585,6 +642,26 @@ class MachineDataController < ApplicationController
                   .sum(column)
 
     @past_data_cache["#{days}_#{column}"] = result
+    result
+  end
+
+  # 過去N日間でマイナスになった日数をカウント
+  def calculate_negative_days_count(days)
+    # キャッシュがあれば再利用
+    @negative_count_cache ||= {}
+    return @negative_count_cache[days] if @negative_count_cache[days]
+
+    start_date = @date - days.days
+    end_date = @date - 1.day
+
+    # 過去N日間のデータを取得し、マイナスの日数をカウント
+    result = @hall.machine_data
+                  .where(date: start_date..end_date)
+                  .where("difference_count < 0")
+                  .group(:machine_number)
+                  .count
+
+    @negative_count_cache[days] = result
     result
   end
 
@@ -685,13 +762,13 @@ class MachineDataController < ApplicationController
                              .where(date: date_range)
                              .select(:id, :date, :machine_number, :machine_name, :game_count, :difference_count, :bb_count)
                              .to_a
-    
+
     # 日付ごとにグループ化
     machines_by_date = all_machines_data.group_by(&:date)
-    
+
     # 過去データが必要な場合は事前に一括計算
     past_data_cache = preload_past_data_for_summary(target_dates)
-    
+
     results = []
     target_dates.each do |target_date|
       daily_machines = machines_by_date[target_date]
@@ -767,87 +844,87 @@ class MachineDataController < ApplicationController
   # 【最適化】日別集計用の過去データを事前に一括取得
   def preload_past_data_for_summary(target_dates)
     cache = {}
-    
+
     # 過去差枚フィルターが有効な場合
     if @filter_diff_days.present? && (@filter_diff_value_min.present? || @filter_diff_value_max.present?)
       days = @filter_diff_days
       # 全日付分の過去データを1回のクエリで取得
       min_start = target_dates.min - days.days
       max_end = target_dates.max - 1.day
-      
+
       diff_data = @hall.machine_data
                        .where(date: min_start..max_end)
                        .select(:date, :machine_number, :difference_count)
                        .to_a
-      
+
       # 各ターゲット日付ごとに集計
       target_dates.each do |target_date|
         start_date = target_date - days.days
         end_date = target_date - 1.day
-        
+
         aggregated = Hash.new(0)
         diff_data.each do |record|
           if record.date >= start_date && record.date <= end_date
             aggregated[record.machine_number] += record.difference_count
           end
         end
-        
+
         cache["diff_#{target_date}"] = aggregated
       end
     end
-    
+
     # 過去回転数フィルターが有効な場合
     if @filter_game_count_days.present? && (@filter_game_count_value_min.present? || @filter_game_count_value_max.present?)
       days = @filter_game_count_days
       min_start = target_dates.min - days.days
       max_end = target_dates.max - 1.day
-      
+
       game_data = @hall.machine_data
                        .where(date: min_start..max_end)
                        .select(:date, :machine_number, :game_count)
                        .to_a
-      
+
       target_dates.each do |target_date|
         start_date = target_date - days.days
         end_date = target_date - 1.day
-        
+
         aggregated = Hash.new(0)
         game_data.each do |record|
           if record.date >= start_date && record.date <= end_date
             aggregated[record.machine_number] += record.game_count
           end
         end
-        
+
         cache["game_#{target_date}"] = aggregated
       end
     end
-    
+
     # ランクフィルターが有効な場合
     if @filter_rank_days.present? && (@filter_ranks.present? || @filter_best_ranks.present?)
       days = @filter_rank_days
       min_start = target_dates.min - days.days
       max_end = target_dates.max - 1.day
-      
+
       rank_data = @hall.machine_data
                        .where(date: min_start..max_end)
                        .select(:date, :machine_number, :machine_name, :difference_count)
                        .to_a
-      
+
       target_dates.each do |target_date|
         start_date = target_date - days.days
         end_date = target_date - 1.day
-        
+
         aggregated = Hash.new(0)
         rank_data.each do |record|
           if record.date >= start_date && record.date <= end_date
             aggregated[record.machine_number] += record.difference_count
           end
         end
-        
+
         cache["rank_#{target_date}"] = aggregated
       end
     end
-    
+
     cache
   end
 
@@ -974,6 +1051,24 @@ class MachineDataController < ApplicationController
       end
     end
 
+    # 過去差枚がマイナスの台フィルター
+    if @filter_past_negative_days.present?
+      negative_diff_data = calculate_sum_for_period(@filter_past_negative_days, :difference_count)
+      filtered = filtered.select do |m|
+        diff_value = negative_diff_data[m.machine_number] || 0
+        diff_value < 0
+      end
+    end
+
+    # 過去マイナスになった日数フィルター
+    if @filter_negative_count_days.present? && (@filter_negative_count_min.present? || @filter_negative_count_max.present?)
+      negative_count_data = calculate_negative_days_count(@filter_negative_count_days)
+      filtered = filtered.select do |m|
+        negative_days = negative_count_data[m.machine_number] || 0
+        value_in_range?(negative_days, @filter_negative_count_min, @filter_negative_count_max)
+      end
+    end
+
     filtered
   end
 
@@ -1083,6 +1178,24 @@ class MachineDataController < ApplicationController
       end
     end
 
+    # 過去差枚がマイナスの台フィルター（リアルタイム計算）
+    if @filter_past_negative_days.present?
+      negative_diff_data = calculate_aggregated_data_for_date(target_date, @filter_past_negative_days, :difference_count)
+      filtered = filtered.select do |m|
+        diff_value = negative_diff_data[m.machine_number] || 0
+        diff_value < 0
+      end
+    end
+
+    # 過去マイナスになった日数フィルター（リアルタイム計算）
+    if @filter_negative_count_days.present? && (@filter_negative_count_min.present? || @filter_negative_count_max.present?)
+      negative_count_data = calculate_negative_days_count_for_date(target_date, @filter_negative_count_days)
+      filtered = filtered.select do |m|
+        negative_days = negative_count_data[m.machine_number] || 0
+        value_in_range?(negative_days, @filter_negative_count_min, @filter_negative_count_max)
+      end
+    end
+
     filtered
   end
 
@@ -1107,6 +1220,24 @@ class MachineDataController < ApplicationController
       end
     end
 
+    # 過去差枚がマイナスの台フィルター
+    if @filter_past_negative_days.present?
+      negative_diff_data = calculate_aggregated_data_for_date(target_date, @filter_past_negative_days, :difference_count)
+      filtered = filtered.select do |m|
+        diff_value = negative_diff_data[m.machine_number] || 0
+        diff_value < 0
+      end
+    end
+
+    # 過去マイナスになった日数フィルター
+    if @filter_negative_count_days.present? && (@filter_negative_count_min.present? || @filter_negative_count_max.present?)
+      negative_count_data = calculate_negative_days_count_for_date(target_date, @filter_negative_count_days)
+      filtered = filtered.select do |m|
+        negative_days = negative_count_data[m.machine_number] || 0
+        value_in_range?(negative_days, @filter_negative_count_min, @filter_negative_count_max)
+      end
+    end
+
     filtered
   end
 
@@ -1118,6 +1249,18 @@ class MachineDataController < ApplicationController
          .where(date: start_date..end_date)
          .group(:machine_number)
          .sum(column)
+  end
+
+  # 特定の日付を基準に過去N日間でマイナスになった日数をカウント
+  def calculate_negative_days_count_for_date(target_date, days)
+    start_date = target_date - days.days
+    end_date = target_date - 1.day
+
+    @hall.machine_data
+         .where(date: start_date..end_date)
+         .where("difference_count < 0")
+         .group(:machine_number)
+         .count
   end
 
   # 【最適化版】キャッシュから過去データを取得してランクフィルター
@@ -1215,13 +1358,13 @@ class MachineDataController < ApplicationController
   def calculate_color_worst_ranks(days)
     # 既に計算済みの場合は再利用
     return @diff_ranks[days] if @diff_ranks && @diff_ranks[days]
-    
+
     # calculate_sum_for_periodのキャッシュを活用
     past_data = calculate_sum_for_period(days, :difference_count)
-    
+
     # 既にロード済みのデータから機種名を取得
     machines = @machine_data_by_number.values
-    
+
     # ランキング計算
     calculate_ranks_by_machine_name(machines, past_data, :worst)
   end

@@ -75,6 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
+    console.log("Initialized editor with layout data:", layoutData);
     initializeEditor(hallId, mapId, layoutData, rows, cols);
   }
 });
@@ -87,6 +88,10 @@ function initializeEditor(hallId, mapId, layoutData, rows, cols) {
   mapRows = rows;
   mapCols = cols;
   selectTool("select");
+  console.log(
+    "Editor initialized. Current editorLayoutData:",
+    editorLayoutData,
+  );
 }
 
 // ツール選択
@@ -334,6 +339,10 @@ function saveMapData() {
 
     if (Object.keys(rebuiltData).length > 0) {
       editorLayoutData = rebuiltData;
+      console.log(
+        "Successfully rebuilt layout data from HTML:",
+        editorLayoutData,
+      );
     } else {
       alert(
         "保存するデータがありません。マップが正しく読み込まれていない可能性があります。",
@@ -343,6 +352,8 @@ function saveMapData() {
       return;
     }
   }
+
+  console.log("Saving layout data:", editorLayoutData);
 
   // hidden fieldにデータを設定
   document.getElementById("layout-data-field").value =
@@ -421,6 +432,8 @@ function syncLayoutDataFromDOM() {
       }
     }
   });
+
+  console.log(`Synced ${syncCount} cells from DOM to editorLayoutData`);
 }
 
 // 選択中のセルの行/列を取得

@@ -97,7 +97,7 @@ function getActiveTab() {
   return activeButton ? activeButton.getAttribute("data-tab") : "list";
 }
 
-// ソートセレクトボックスから更新する関数（非同期版）
+// ソートセレクトボックスから更新する関数
 function updateSort() {
   const sortBy = document.getElementById("sort-select").value;
   const sortOrder = document.getElementById("sort-order").value;
@@ -105,80 +105,17 @@ function updateSort() {
   const currentUrl = new URL(window.location.href);
   currentUrl.searchParams.set("sort_by", sortBy);
   currentUrl.searchParams.set("sort_order", sortOrder);
-  currentUrl.searchParams.set("format", "json");
 
-  const tbody = document.querySelector("#tab-list tbody");
-
-  fetch(currentUrl.toString(), {
-    headers: {
-      Accept: "application/json",
-    },
-  })
-    .then((response) => {
-      // レスポンスのコンテンツタイプをチェック
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(
-          "サーバーがJSONを返していません。HTMLが返された可能性があります。",
-        );
-      }
-      return response.json().then((data) => ({ data, ok: response.ok }));
-    })
-    .then(({ data, ok }) => {
-      if (!ok && data.error) {
-        // サーバーエラーの詳細を表示
-        console.error("サーバーエラー:", data.error);
-        if (data.backtrace) {
-          console.error("バックトレース:", data.backtrace);
-        }
-        throw new Error(data.error);
-      }
-      if (data.html) {
-        // テーブルのtbody部分のみを更新
-        if (tbody) {
-          tbody.innerHTML = data.html;
-        }
-        // ソート矢印を更新
-        updateSortArrows(sortBy, sortOrder);
-        // URLのパラメータを更新（ブラウザ履歴に追加せずに）
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set("sort_by", sortBy);
-        newUrl.searchParams.set("sort_order", sortOrder);
-        window.history.replaceState({}, "", newUrl.toString());
-      }
-    })
-    .catch((error) => {
-      console.error("ソートエラー:", error);
-      console.error("リクエストURL:", currentUrl.toString());
-      // エラー時は従来通りページ再読み込み
-      const fallbackUrl = currentUrl
-        .toString()
-        .replace("&format=json", "")
-        .replace("format=json&", "")
-        .replace("format=json", "");
-      window.location.href = fallbackUrl;
-    });
-}
-
-// theadのソート矢印を更新する関数
-function updateSortArrows(sortBy, sortOrder) {
-  // 全てのsortableヘッダーからsort-asc/sort-descクラスを削除
-  const headers = document.querySelectorAll("#tab-list th.sortable");
-  headers.forEach((header) => {
-    header.classList.remove("sort-asc", "sort-desc");
-  });
-
-  // 現在のソート列に矢印クラスを追加
-  const currentHeader = document.querySelector(
-    `#tab-list th.sortable[onclick*="${sortBy}"]`,
-  );
-  if (currentHeader) {
-    currentHeader.classList.add(`sort-${sortOrder}`);
+  // active_tabを保持
+  const activeTab = currentUrl.searchParams.get("active_tab") || getActiveTab();
+  if (activeTab) {
+    currentUrl.searchParams.set("active_tab", activeTab);
   }
+
+  window.location.href = currentUrl.toString();
 }
 
-// グローバルスコープに明示的に登録（onclick属性から呼び出すため）
-window.sort = function (sortBy) {
+function sort(sortBy) {
   const currentUrl = new URL(window.location.href);
   const currentSort = currentUrl.searchParams.get("sort_by");
   const currentOrder = currentUrl.searchParams.get("sort_order");
@@ -192,127 +129,6 @@ window.sort = function (sortBy) {
 
   currentUrl.searchParams.set("sort_by", sortBy);
   currentUrl.searchParams.set("sort_order", newOrder);
-  currentUrl.searchParams.set("format", "json");
-
-  const tbody = document.querySelector("#tab-list tbody");
-
-  fetch(currentUrl.toString(), {
-    headers: {
-      Accept: "application/json",
-    },
-  })
-    .then((response) => {
-      // レスポンスのコンテンツタイプをチェック
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(
-          "サーバーがJSONを返していません。HTMLが返された可能性があります。",
-        );
-      }
-      return response.json().then((data) => ({ data, ok: response.ok }));
-    })
-    .then(({ data, ok }) => {
-      if (!ok && data.error) {
-        // サーバーエラーの詳細を表示
-        console.error("サーバーエラー:", data.error);
-        if (data.backtrace) {
-          console.error("バックトレース:", data.backtrace);
-        }
-        throw new Error(data.error);
-      }
-      if (data.html) {
-        // テーブルのtbody部分のみを更新
-        if (tbody) {
-          tbody.innerHTML = data.html;
-        }
-        // theadのソート矢印を更新
-        updateSortArrows(sortBy, newOrder);
-        // URLのパラメータを更新（ブラウザ履歴に追加せずに）
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set("sort_by", sortBy);
-        newUrl.searchParams.set("sort_order", newOrder);
-        window.history.replaceState({}, "", newUrl.toString());
-      }
-    })
-    .catch((error) => {
-      console.error("ソートエラー:", error);
-      console.error("リクエストURL:", currentUrl.toString());
-      // エラー時は従来通りページ再読み込み
-      const fallbackUrl = currentUrl
-        .toString()
-        .replace("&format=json", "")
-        .replace("format=json&", "")
-        .replace("format=json", "");
-      window.location.href = fallbackUrl;
-    });
-};
-
-function resetSort() {
-  const currentUrl = new URL(window.location);
-  currentUrl.searchParams.delete("sort_by");
-  currentUrl.searchParams.delete("sort_order");
-  currentUrl.searchParams.set("format", "json");
-
-  const tbody = document.querySelector("#tab-list tbody");
-
-  fetch(currentUrl.toString(), {
-    headers: {
-      Accept: "application/json",
-    },
-  })
-    .then((response) => {
-      // レスポンスのコンテンツタイプをチェック
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(
-          "サーバーがJSONを返していません。HTMLが返された可能性があります。",
-        );
-      }
-      return response.json().then((data) => ({ data, ok: response.ok }));
-    })
-    .then(({ data, ok }) => {
-      if (!ok && data.error) {
-        // サーバーエラーの詳細を表示
-        console.error("サーバーエラー:", data.error);
-        if (data.backtrace) {
-          console.error("バックトレース:", data.backtrace);
-        }
-        throw new Error(data.error);
-      }
-      if (data.html) {
-        // テーブルのtbody部分のみを更新
-        if (tbody) {
-          tbody.innerHTML = data.html;
-        }
-        // ソート矢印をリセット（デフォルトの台番号昇順）
-        updateSortArrows("machine_no", "asc");
-        // URLのパラメータを更新（ブラウザ履歴に追加せずに）
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete("sort_by");
-        newUrl.searchParams.delete("sort_order");
-        window.history.replaceState({}, "", newUrl.toString());
-      }
-    })
-    .catch((error) => {
-      console.error("リセットエラー:", error);
-      console.error("リクエストURL:", currentUrl.toString());
-      // エラー時は従来通りページ再読み込み
-      const fallbackUrl = currentUrl
-        .toString()
-        .replace("&format=json", "")
-        .replace("format=json&", "")
-        .replace("format=json", "");
-      window.location.href = fallbackUrl;
-    });
-}
-
-function resetFilter() {
-  const currentUrl = new URL(window.location);
-  Array.from(currentUrl.searchParams.keys()).forEach((key) => {
-    if (key.startsWith("filter_")) {
-      currentUrl.searchParams.delete(key);
-    }
-  });
 
   // active_tabを保持
   const activeTab = currentUrl.searchParams.get("active_tab") || getActiveTab();
@@ -321,6 +137,47 @@ function resetFilter() {
   }
 
   window.location.href = currentUrl.toString();
+}
+
+function resetSort() {
+  const currentUrl = new URL(window.location);
+  currentUrl.searchParams.delete("sort_by");
+  currentUrl.searchParams.delete("sort_order");
+
+  // active_tabを保持
+  const activeTab = currentUrl.searchParams.get("active_tab") || getActiveTab();
+  if (activeTab) {
+    currentUrl.searchParams.set("active_tab", activeTab);
+  }
+
+  window.location.href = currentUrl.toString();
+}
+
+function resetFilter() {
+  const currentUrl = new URL(window.location);
+  const hallId = currentUrl.pathname.split("/")[2];
+  const dateMatch = currentUrl.pathname.match(/\/dates\/([^\/]+)/);
+  const date = dateMatch ? dateMatch[1] : null;
+
+  if (hallId && date) {
+    window.location.href = `/halls/${hallId}/dates/${date}?reset_filters=1`;
+  } else {
+    // 日付がない場合は単純にパラメータをクリア
+    Array.from(currentUrl.searchParams.keys()).forEach((key) => {
+      if (key.startsWith("filter_") || key.startsWith("show_")) {
+        currentUrl.searchParams.delete(key);
+      }
+    });
+
+    // active_tabを保持
+    const activeTab =
+      currentUrl.searchParams.get("active_tab") || getActiveTab();
+    if (activeTab) {
+      currentUrl.searchParams.set("active_tab", activeTab);
+    }
+
+    window.location.href = currentUrl.toString();
+  }
 }
 
 function changeDate(newDate, hallId) {
@@ -381,12 +238,18 @@ function saveMemos() {
   const dateMatch = window.location.pathname.match(/\/dates\/([^\/]+)/);
   const date = dateMatch ? dateMatch[1] : null;
 
+  // デバッグ情報
+  console.log("saveMemos - pathname:", window.location.pathname);
+  console.log("saveMemos - hallId:", hallId);
+  console.log("saveMemos - date:", date);
+
   if (!date) {
     alert("日付情報が取得できません");
     return;
   }
 
   const url = `/halls/${hallId}/dates/${date}/update_machine_memos`;
+  console.log("saveMemos - URL:", url);
   const formData = new FormData();
 
   // 変更されたメモのみを収集
@@ -408,6 +271,8 @@ function saveMemos() {
     alert("変更されたメモはありません");
     return;
   }
+
+  console.log(`saveMemos - 変更件数: ${changedCount}件`);
 
   formData.append(
     "authenticity_token",

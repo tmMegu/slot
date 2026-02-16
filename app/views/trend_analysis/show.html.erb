@@ -194,10 +194,29 @@
             font-size: 16px;
         }
 
+        /* 上位機種セル */
+        .top-machine-cell {
+            padding: 8px 6px !important;
+        }
+
+        .top-machine-cell .machine-name {
+            font-size: 12px;
+            margin-bottom: 3px;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .top-machine-cell .machine-diff {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
         /* スマホ対応 */
         @media (max-width: 768px) {
             body {
-                padding: 5px;
+                padding: 0;
             }
 
             .container {
@@ -256,7 +275,7 @@
     <script>
         // フィルターのリセット
         function resetFilters() {
-            window.location.href = "<%= hall_trend_analysis_path(@hall) %>";
+            window.location.href = "<%= hall_trend_analysis_path(@hall, reset_filters: 1) %>";
         }
 
         // 折りたたみパネルの制御

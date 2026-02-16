@@ -19,9 +19,37 @@
             <th>平均差枚</th>
             <th>平均回転数</th>
             <th>勝率</th>
+            <% if @show_top_machines_1 %><th>1位機種</th><% end %>
+            <% if @show_top_machines_2 %><th>2位機種</th><% end %>
+            <% if @show_top_machines_3 %><th>3位機種</th><% end %>
         </tr>
     </thead>
     <tbody>
+        <!-- 合計/平均行を最初に表示 -->
+        <% if @daily_summary.length > 1 %>
+        <tr style="background-color: #e9ecef; font-weight: bold;">
+            <td>📈 合計/平均</td>
+            <td class="<%= @daily_summary.sum { |s| s[:total_diff] } >= 0 ? 'positive' : 'negative' %>">
+                <%= number_with_delimiter(@daily_summary.sum { |s| s[:total_diff] }) %>
+            </td>
+            <td class="<%= (@daily_summary.sum { |s| s[:avg_diff] } / @daily_summary.length.to_f).round >= 0 ? 'positive' : 'negative' %>">
+                <%= number_with_delimiter((@daily_summary.sum { |s| s[:avg_diff] } / @daily_summary.length.to_f).round) %>
+            </td>
+            <td><%= number_with_delimiter((@daily_summary.sum { |s| s[:avg_games] } / @daily_summary.length.to_f).round) %></td>
+            <td>
+                <% avg_win_rate = (@daily_summary.sum { |s| s[:win_rate] } / @daily_summary.length.to_f).round(1) %>
+                <span class="<%= avg_win_rate >= 40 ? 'positive' : 'negative' %>">
+                    <%= sprintf('%.1f', avg_win_rate) %>%
+                </span>
+                (<%= @daily_summary.sum { |s| s[:plus_machines] } %>/<%= @daily_summary.sum { |s| s[:machine_count] } %>)
+            </td>
+            <% if @show_top_machines_1 %><td style="color: #999;">-</td><% end %>
+            <% if @show_top_machines_2 %><td style="color: #999;">-</td><% end %>
+            <% if @show_top_machines_3 %><td style="color: #999;">-</td><% end %>
+        </tr>
+        <% end %>
+
+        <!-- 各日のデータ -->
         <% @daily_summary.each do |summary| %>
         <% 
           wday = summary[:date].wday
@@ -35,45 +63,57 @@
                 <span style="color: <%= wday_colors[wday] %>; font-weight: bold;">(<%= wday_names[wday] %>)</span>
                 <% end %>
             </td>
-            <td class="<%= summary[:total_difference] >= 0 ? 'positive' : 'negative' %>">
-                <%= number_with_delimiter(summary[:total_difference]) %>
+            <td class="<%= summary[:total_diff] >= 0 ? 'positive' : 'negative' %>">
+                <%= number_with_delimiter(summary[:total_diff]) %>
             </td>
-            <td class="<%= summary[:avg_difference] >= 0 ? 'positive' : 'negative' %>">
-                <%= number_with_delimiter(summary[:avg_difference]) %>
+            <td class="<%= summary[:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                <%= number_with_delimiter(summary[:avg_diff]) %>
             </td>
             <td><%= number_with_delimiter(summary[:avg_games]) %></td>
             <td>
-                <span style="color: <%= summary[:win_rate] >= 40 ? '#10b981' : '#dc3545' %>; font-weight: bold;">
-                    <%= summary[:win_rate] %>%
+                <span class="<%= summary[:win_rate] >= 40 ? 'positive' : 'negative' %>">
+                    <%= sprintf('%.1f', summary[:win_rate]) %>%
                 </span>
-                (<%= summary[:win_count] %>/<%= summary[:machine_count] %>)
+                (<%= summary[:plus_machines] %>/<%= summary[:machine_count] %>)
             </td>
+            <% if @show_top_machines_1 %>
+            <td class="top-machine-cell">
+                <% if summary[:top_machine_1] %>
+                <div class="machine-name"><%= summary[:top_machine_1][:name] %></div>
+                <div class="machine-diff <%= summary[:top_machine_1][:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                    <%= number_with_delimiter(summary[:top_machine_1][:avg_diff]) %>
+                </div>
+                <% else %>
+                -
+                <% end %>
+            </td>
+            <% end %>
+            <% if @show_top_machines_2 %>
+            <td class="top-machine-cell">
+                <% if summary[:top_machine_2] %>
+                <div class="machine-name"><%= summary[:top_machine_2][:name] %></div>
+                <div class="machine-diff <%= summary[:top_machine_2][:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                    <%= number_with_delimiter(summary[:top_machine_2][:avg_diff]) %>
+                </div>
+                <% else %>
+                -
+                <% end %>
+            </td>
+            <% end %>
+            <% if @show_top_machines_3 %>
+            <td class="top-machine-cell">
+                <% if summary[:top_machine_3] %>
+                <div class="machine-name"><%= summary[:top_machine_3][:name] %></div>
+                <div class="machine-diff <%= summary[:top_machine_3][:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                    <%= number_with_delimiter(summary[:top_machine_3][:avg_diff]) %>
+                </div>
+                <% else %>
+                -
+                <% end %>
+            </td>
+            <% end %>
         </tr>
         <% end %>
     </tbody>
-    <% if @daily_summary.length > 1 %>
-    <tfoot style="background-color: #e9ecef; font-weight: bold;">
-        <tr>
-            <td>📈 合計/平均</td>
-            <td class="<%= @daily_summary.sum { |s| s[:total_difference] } >= 0 ? 'positive' : 'negative' %>">
-                <%= number_with_delimiter(@daily_summary.sum { |s| s[:total_difference] }) %>
-            </td>
-            <td class="<%= (@daily_summary.sum { |s| s[:avg_difference] } / @daily_summary.length.to_f).round >= 0 ? 'positive' : 'negative' %>">
-                <%= number_with_delimiter((@daily_summary.sum { |s| s[:avg_difference] } / @daily_summary.length.to_f).round) %>
-            </td>
-            <td><%= number_with_delimiter((@daily_summary.sum { |s| s[:avg_games] } / @daily_summary.length.to_f).round) %></td>
-            <td>
-                <% 
-              total_machines = @daily_summary.sum { |s| s[:machine_count] }
-              total_wins = @daily_summary.sum { |s| s[:win_count] }
-              overall_win_rate = total_machines > 0 ? (total_wins.to_f / total_machines * 100).round(1) : 0
-            %>
-                <span style="color: <%= overall_win_rate >= 40 ? '#10b981' : '#dc3545' %>; font-weight: bold;">
-                    <%= overall_win_rate %>%
-                </span>
-            </td>
-        </tr>
-    </tfoot>
-    <% end %>
 </table>
 <% end %>

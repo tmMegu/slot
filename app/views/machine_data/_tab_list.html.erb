@@ -4,6 +4,38 @@
 <!-- ソートとメモ更新 -->
 <%= render 'sort_controls' %>
 
+<!-- 検索結果の平均テーブル -->
+<% if @data_exists && @filtered_summary %>
+<div style="margin: 5px 0; background-color: #e8f9f3; border-radius: 4px; border: 1px solid #d1f5e8;">
+    <table border="1" style="border-collapse: collapse; width: 100%; background-color: white;">
+        <thead>
+            <tr>
+                <th style="padding: 8px; background-color: #d1f5e8; text-align: center;"></th>
+                <th style="padding: 8px; background-color: #d1f5e8; text-align: center;">平均G数</th>
+                <th style="padding: 8px; background-color: #d1f5e8; text-align: center;">平均差枚</th>
+                <th style="padding: 8px; background-color: #d1f5e8; text-align: center;">勝率</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 8px; text-align: center; font-weight: bold;">
+                    検索結果の平均
+                </td>
+                <td style="padding: 8px; text-align: right; font-weight: bold;">
+                    <%= number_with_delimiter(@filtered_summary[:avg_games]) %>
+                </td>
+                <td style="padding: 8px; text-align: right; font-weight: bold; <%= @filtered_summary[:avg_diff] >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %>">
+                    <%= number_with_delimiter(@filtered_summary[:avg_diff]) %>
+                </td>
+                <td style="padding: 8px; text-align: center; font-weight: bold; <%= @filtered_summary[:win_rate] >= 40 ? 'color: #10b981;' : 'color: #dc3545;' %>">
+                    <%= @filtered_summary[:win_rate] %>% (<%= @filtered_summary[:plus_machines] %>/<%= @filtered_summary[:count] %>)
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<% end %>
+
 <!-- データテーブル -->
 <div class="table-wrapper" style="margin-top: 5px;">
     <% if @machine_data.empty? %>
@@ -16,9 +48,9 @@
                 <th style="padding: 8px; background-color: #d1f5e8;" class="sortable machine-name-header <%= 'sort-' + @sort_order if @sort_by == 'machine_name' %>" onclick="sort('machine_name')">機種名</th>
                 <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'game_count' %>" onclick="sort('game_count')">G数</th>
                 <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'difference_count' %>" onclick="sort('difference_count')">差枚</th>
-                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'bb_count' %>" onclick="sort('bb_count')">BB</th>
-                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'rb_count' %>" onclick="sort('rb_count')">RB</th>
-                <th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'art_count' %>" onclick="sort('art_count')">ART</th>
+                <% if @show_bb %><th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'bb_count' %>" onclick="sort('bb_count')">BB</th><% end %>
+                <% if @show_rb %><th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'rb_count' %>" onclick="sort('rb_count')">RB</th><% end %>
+                <% if @show_art %><th style="padding: 8px; background-color: #d1f5e8;" class="sortable <%= 'sort-' + @sort_order if @sort_by == 'art_count' %>" onclick="sort('art_count')">ART</th><% end %>
 
                 <!-- 過去差枚の列（表示が有効な場合のみ） -->
                 <% if @show_difference && @display_days.any? %>

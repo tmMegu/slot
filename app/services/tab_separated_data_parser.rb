@@ -54,8 +54,23 @@ class TabSeparatedDataParser
     # 一括insert実行
     if records_to_insert.any?
       begin
+        # 既存データのメモを保存
+        existing_memos = {}
+        existing_date_memo = nil
+        MachineData.where(hall_id: hall.id, date: date).each do |data|
+          existing_memos[data.machine_number] = data.machine_memo if data.machine_memo.present?
+          existing_date_memo ||= data.date_memo if data.date_memo.present?
+        end
+
         # 該当日付のデータを先に削除（SQLite互換性）
         MachineData.where(hall_id: hall.id, date: date).delete_all
+
+        # メモを復元
+        records_to_insert.each do |record|
+          record[:machine_memo] = existing_memos[record[:machine_number]] if existing_memos[record[:machine_number]].present?
+          record[:date_memo] = existing_date_memo if existing_date_memo.present?
+        end
+
         # 一括insert
         MachineData.insert_all(records_to_insert)
         { success: true, count: records_to_insert.size }

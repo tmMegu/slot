@@ -79,12 +79,18 @@
                 </label>
                 <label>
                     機種名検索:
-                    <input type="text" name="filter_machine_name_search" value="<%= @filter_machine_name_search %>" placeholder="機種名で検索" />
+                    <input type="text" name="filter_machine_name_search" value="<%= @filter_machine_name_search %>" placeholder="空白区切りで複数指定可" style="width: 200px;" />
                 </label>
                 <label>
                     <select name="filter_machine_name_search_type">
                         <option value="include" <%= 'selected' if @filter_machine_name_search_type == 'include' %>>含む</option>
                         <option value="exclude" <%= 'selected' if @filter_machine_name_search_type == 'exclude' %>>含まない</option>
+                    </select>
+                </label>
+                <label>
+                    <select name="filter_machine_name_operator">
+                        <option value="or" <%= 'selected' if @filter_machine_name_operator == 'or' %>>OR検索</option>
+                        <option value="and" <%= 'selected' if @filter_machine_name_operator == 'and' %>>AND検索</option>
                     </select>
                 </label>
             </div>
@@ -111,6 +117,14 @@
                 <label>
                     <input type="checkbox" name="filter_machine_double_digit" value="1" <%= 'checked' if @filter_machine_double_digit %> />
                     2桁ぞろ目
+                </label>
+                <label>
+                    偶奇:
+                    <select name="filter_machine_parity">
+                        <option value="">指定なし</option>
+                        <option value="even" <%= 'selected' if @filter_machine_parity == 'even' %>>偶数</option>
+                        <option value="odd" <%= 'selected' if @filter_machine_parity == 'odd' %>>奇数</option>
+                    </select>
                 </label>
             </div>
         </div>
@@ -181,6 +195,55 @@
         </div>
     </div>
 
+    <!-- 過去差枚がマイナスの台フィルター -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>📉 過去差枚がマイナスの台</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content">
+            <div class="filter-controls">
+                <label>
+                    過去:
+                    <input type="number" name="filter_past_negative_days" value="<%= @filter_past_negative_days %>" placeholder="日数" style="width: 60px;" />
+                    日間の差枚合計がマイナスの台のみ表示
+                </label>
+            </div>
+            <div style="margin-top: 8px; padding: 8px; background-color: #fff3cd; border-radius: 4px; font-size: 11px; color: #856404;">
+                💡 例：過去7日間に7と入力 → 直近7日間の差枚合計がマイナスの台のみを表示
+            </div>
+        </div>
+    </div>
+
+    <!-- 過去マイナスになった日数フィルター -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>📊 マイナスになった日数で絞り込み</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content">
+            <div class="filter-controls">
+                <label>
+                    過去:
+                    <input type="number" name="filter_negative_count_days" value="<%= @filter_negative_count_days || 7 %>" placeholder="7" style="width: 60px;" />
+                    日間で
+                </label>
+            </div>
+            <div class="filter-controls" style="margin-top: 8px;">
+                <label>
+                    マイナスになった日数:
+                    <input type="number" name="filter_negative_count_min" value="<%= @filter_negative_count_min %>" placeholder="最小" style="width: 60px;" />
+                    ～
+                    <input type="number" name="filter_negative_count_max" value="<%= @filter_negative_count_max %>" placeholder="最大" style="width: 60px;" />
+                    日
+                </label>
+            </div>
+            <div style="margin-top: 8px; padding: 8px; background-color: #f8d7da; border-radius: 4px; font-size: 11px; color: #721c24;">
+                💡 例：過去7日間で、最小3日、最大5日 → 直近7日間でマイナスになった日が3〜5日の台を表示
+            </div>
+        </div>
+    </div>
+
     <!-- 機種毎台数フィルター -->
     <div class="accordion-section">
         <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
@@ -216,6 +279,33 @@
                     <input type="radio" name="sort_order" value="asc" <%= 'checked' if @sort_order == 'asc' %> />
                     古い順
                 </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上位機種表示 -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>🏆 上位機種表示</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content">
+            <div class="filter-controls">
+                <label>
+                    <input type="checkbox" name="show_top_machines_1" value="1" <%= 'checked' if @show_top_machines_1 %> />
+                    1位表示
+                </label>
+                <label>
+                    <input type="checkbox" name="show_top_machines_2" value="1" <%= 'checked' if @show_top_machines_2 %> />
+                    2位表示
+                </label>
+                <label>
+                    <input type="checkbox" name="show_top_machines_3" value="1" <%= 'checked' if @show_top_machines_3 %> />
+                    3位表示
+                </label>
+                <span style="color: #6c757d; font-size: 12px;">
+                    ※各日の検索条件に合致する機種の平均差枚上位を表示します
+                </span>
             </div>
         </div>
     </div>
