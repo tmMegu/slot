@@ -439,7 +439,7 @@ function initializeMapZoom() {
   // Safari用: gestureイベント（iOS Safari専用）
   let lastGestureScale = 1;
 
-  mapTable.addEventListener(
+  mapContainer.addEventListener(
     "gesturestart",
     function (e) {
       e.preventDefault();
@@ -449,7 +449,7 @@ function initializeMapZoom() {
     { passive: false },
   );
 
-  mapTable.addEventListener(
+  mapContainer.addEventListener(
     "gesturechange",
     function (e) {
       e.preventDefault();
@@ -463,7 +463,7 @@ function initializeMapZoom() {
     { passive: false },
   );
 
-  mapTable.addEventListener(
+  mapContainer.addEventListener(
     "gestureend",
     function (e) {
       e.preventDefault();
@@ -474,23 +474,26 @@ function initializeMapZoom() {
   );
 
   // スマホ用: ピンチイン・ピンチアウト（Android Chrome用）
-  mapTable.addEventListener(
+  mapContainer.addEventListener(
     "touchstart",
     function (e) {
       if (e.touches.length === 2) {
+        // 2本指の場合のみpreventDefault（横スクロールは許可）
         e.preventDefault();
         isZooming = true;
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialScale = scale;
       }
+      // 1本指の場合は何もしない（スクロール可能）
     },
     { passive: false },
   );
 
-  mapTable.addEventListener(
+  mapContainer.addEventListener(
     "touchmove",
     function (e) {
       if (e.touches.length === 2 && isZooming) {
+        // 2本指の場合のみpreventDefault（ズーム処理）
         e.preventDefault();
 
         const currentDistance = getDistance(e.touches[0], e.touches[1]);
@@ -502,11 +505,12 @@ function initializeMapZoom() {
 
         applyZoom(mapTable, scale);
       }
+      // 1本指の場合は何もしない（スクロール可能）
     },
     { passive: false },
   );
 
-  mapTable.addEventListener(
+  mapContainer.addEventListener(
     "touchend",
     function (e) {
       if (e.touches.length < 2) {
