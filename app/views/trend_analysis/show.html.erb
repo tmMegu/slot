@@ -197,20 +197,22 @@
         /* 上位機種セル */
         .top-machine-cell {
             padding: 8px 6px !important;
+            text-align: left;
         }
 
         .top-machine-cell .machine-name {
             font-size: 12px;
-            margin-bottom: 3px;
-            color: #333;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            line-height: 1.4;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
         }
 
         .top-machine-cell .machine-diff {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
+            white-space: nowrap;
         }
 
         /* スマホ対応 */
@@ -250,6 +252,19 @@
             .summary-table th,
             .summary-table td {
                 padding: 6px 4px;
+            }
+
+            .top-machine-cell .machine-name {
+                font-size: 10px;
+                gap: 4px;
+            }
+
+            .top-machine-cell .machine-diff {
+                font-size: 10px;
+            }
+
+            .top-machine-cell .machine-name span {
+                font-size: 9px !important;
             }
         }
     </style>

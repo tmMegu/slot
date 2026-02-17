@@ -79,9 +79,18 @@
             <% if @show_top_machines_1 %>
             <td class="top-machine-cell">
                 <% if summary[:top_machine_1] %>
-                <div class="machine-name"><%= summary[:top_machine_1][:name] %></div>
-                <div class="machine-diff <%= summary[:top_machine_1][:avg_diff] >= 0 ? 'positive' : 'negative' %>">
-                    <%= number_with_delimiter(summary[:top_machine_1][:avg_diff]) %>
+                <div class="machine-name" style="font-family: monospace;">
+                    <span style="color: #333; display: inline-block; width: 8em;"><%= summary[:top_machine_1][:name] %></span>
+                    <span class="machine-diff <%= summary[:top_machine_1][:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                        <%= number_with_delimiter(summary[:top_machine_1][:avg_diff]) %>
+                    </span>
+                    <span style="font-size: 10px; color: #666;">
+                        <%= number_with_delimiter(summary[:top_machine_1][:avg_games]) %>G
+                    </span>
+                    <span style="font-size: 10px; color: #666;">
+                        <%= summary[:top_machine_1][:plus_count] %>/<%= summary[:top_machine_1][:count] %>
+                        (<%= sprintf('%.1f', summary[:top_machine_1][:win_rate]) %>%)
+                    </span>
                 </div>
                 <% else %>
                 -
@@ -91,9 +100,18 @@
             <% if @show_top_machines_2 %>
             <td class="top-machine-cell">
                 <% if summary[:top_machine_2] %>
-                <div class="machine-name"><%= summary[:top_machine_2][:name] %></div>
-                <div class="machine-diff <%= summary[:top_machine_2][:avg_diff] >= 0 ? 'positive' : 'negative' %>">
-                    <%= number_with_delimiter(summary[:top_machine_2][:avg_diff]) %>
+                <div class="machine-name" style="font-family: monospace;">
+                    <span style="color: #333; display: inline-block; width: 8em;"><%= summary[:top_machine_2][:name] %></span>
+                    <span class="machine-diff <%= summary[:top_machine_2][:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                        <%= number_with_delimiter(summary[:top_machine_2][:avg_diff]) %>
+                    </span>
+                    <span style="font-size: 10px; color: #666;">
+                        <%= number_with_delimiter(summary[:top_machine_2][:avg_games]) %>G
+                    </span>
+                    <span style="font-size: 10px; color: #666;">
+                        <%= summary[:top_machine_2][:plus_count] %>/<%= summary[:top_machine_2][:count] %>
+                        (<%= sprintf('%.1f', summary[:top_machine_2][:win_rate]) %>%)
+                    </span>
                 </div>
                 <% else %>
                 -
@@ -103,9 +121,18 @@
             <% if @show_top_machines_3 %>
             <td class="top-machine-cell">
                 <% if summary[:top_machine_3] %>
-                <div class="machine-name"><%= summary[:top_machine_3][:name] %></div>
-                <div class="machine-diff <%= summary[:top_machine_3][:avg_diff] >= 0 ? 'positive' : 'negative' %>">
-                    <%= number_with_delimiter(summary[:top_machine_3][:avg_diff]) %>
+                <div class="machine-name" style="font-family: monospace;">
+                    <span style="color: #333; display: inline-block; width: 8em;"><%= summary[:top_machine_3][:name] %></span>
+                    <span class="machine-diff <%= summary[:top_machine_3][:avg_diff] >= 0 ? 'positive' : 'negative' %>">
+                        <%= number_with_delimiter(summary[:top_machine_3][:avg_diff]) %>
+                    </span>
+                    <span style="font-size: 10px; color: #666;">
+                        <%= number_with_delimiter(summary[:top_machine_3][:avg_games]) %>G
+                    </span>
+                    <span style="font-size: 10px; color: #666;">
+                        <%= summary[:top_machine_3][:plus_count] %>/<%= summary[:top_machine_3][:count] %>
+                        (<%= sprintf('%.1f', summary[:top_machine_3][:win_rate]) %>%)
+                    </span>
                 </div>
                 <% else %>
                 -

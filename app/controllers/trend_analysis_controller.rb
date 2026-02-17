@@ -45,7 +45,7 @@ class TrendAnalysisController < ApplicationController
 
   def initialize_analysis_parameters
     # データ分析対象期間（どのデータを使って分析するか）
-    @analysis_start_date = get_param_or_session_date(:analysis_start_date, Date.today - 90.days)
+    @analysis_start_date = get_param_or_session_date(:analysis_start_date, Date.today - 365.days)
     @analysis_end_date = get_param_or_session_date(:analysis_end_date, Date.today)
 
     # 表示日付範囲（どの日付を一覧に表示するか）
@@ -335,14 +335,29 @@ class TrendAnalysisController < ApplicationController
   end
 
   def calculate_top_machines(machines)
-    # 機種ごとの平均差枚を計算
+    # 機種ごとの平均差枚、平均回転数、勝率を計算
     machine_stats = machines.group_by(&:machine_name).map do |name, ms|
       avg_diff = (ms.sum(&:difference_count).to_f / ms.size).round
+      avg_games = (ms.sum(&:game_count).to_f / ms.size).round
+      plus_count = ms.count { |m| m.difference_count > 0 }
+      total_count = ms.size
+      win_rate = total_count > 0 ? (plus_count.to_f / total_count * 100).round(1) : 0
+
+      # 機種名を8文字に調整（不足分は全角空白で埋める）
+      formatted_name = if name.length > 8
+                         name[0, 8]
+      else
+                         name + "　" * (8 - name.length)
+      end
+
       {
-        name: name.length > 10 ? name[0, 10] : name,
+        name: formatted_name,
         full_name: name,
         avg_diff: avg_diff,
-        count: ms.size
+        avg_games: avg_games,
+        count: total_count,
+        plus_count: plus_count,
+        win_rate: win_rate
       }
     end
 
