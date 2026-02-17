@@ -92,6 +92,14 @@
   table-layout: fixed; /* セルを均等に配置 */
 }
 
+/* PC版のみ：画面幅いっぱいを使用 */
+@media (min-width: 769px) {
+  .hall-map-table, .map-table {
+    width: 100%;
+    table-layout: fixed;
+  }
+}
+
 .hall-map-table td, .map-table td {
   border: 1px solid #ddd;
 }
@@ -1032,9 +1040,18 @@
 
   /* スマホではマップグリッドコンテナで横スクロール可能にする */
   .map-grid-container {
-    overflow-x: auto;
-    overflow-y: visible;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  /* マップテーブルをスマホで固定幅に */
+  .hall-map-table, .map-table {
+    width: auto !important; /* スマホではセル幅の合計分の幅 */
+    table-layout: fixed !important; /* 固定レイアウトでズーム時の崩れを防ぐ */
+    min-width: 0 !important;
+    max-width: none !important;
   }
 
   .map-toolbar {
@@ -1187,12 +1204,6 @@
   .map-scroll-container {
     max-height: 60vh;
     border-radius: 4px;
-  }
-
-  /* マップテーブルをスマホで固定幅に */
-  .hall-map-table, .map-table {
-    width: auto; /* スマホでは自動幅 */
-    table-layout: fixed; /* 固定レイアウトでズーム時の崩れを防ぐ */
   }
 
   /* マップセルサイズをスマホ用に縮小 */
