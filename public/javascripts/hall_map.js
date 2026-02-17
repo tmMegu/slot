@@ -196,8 +196,8 @@ window.updateCellSize = function () {
   const widthDisplay = document.getElementById("cell-width-display");
   const heightDisplay = document.getElementById("cell-height-display");
 
-  const width = widthSlider ? widthSlider.value : 80;
-  const height = heightSlider ? heightSlider.value : 64;
+  const width = widthSlider ? widthSlider.value : 40;
+  const height = heightSlider ? heightSlider.value : 20;
 
   // テーブルにtable-layout: fixedを設定して、セル幅を固定
   // さらにテーブル全体の幅も明示的に制御
@@ -322,8 +322,8 @@ function initializeMapDisplay() {
     // セルサイズの初期化
     updateCellSize();
 
-    // フォントサイズの初期化（18pxに設定）
-    updateFontSize(18);
+    // フォントサイズの初期化（8pxに設定）
+    updateFontSize(8);
 
     // グリッド線の初期化
     const gridCheckbox = document.getElementById("show-grid");
@@ -388,9 +388,122 @@ function setupDisplayCheckboxes() {
 document.addEventListener("turbo:load", function () {
   window.mapIsInitialized = false;
   initializeMapDisplay();
+  initializeMapZoom(); // ズーム機能を初期化
 });
 
 document.addEventListener("turbo:frame-load", function () {
   window.mapIsInitialized = false;
   initializeMapDisplay();
+  initializeMapZoom(); // ズーム機能を初期化
 });
+
+// ========================================
+// マップズーム機能
+// ========================================
+
+function initializeMapZoom() {
+  const mapContainer = document.querySelector(".map-grid-container");
+  const mapTable = document.querySelector(".map-table");
+
+  if (!mapContainer || !mapTable) {
+    return;
+  }
+
+  let scale = 1;
+  const minScale = 0.5;
+  const maxScale = 3;
+  const scaleStep = 0.1;
+
+  // タッチ関連の変数
+  let initialDistance = 0;
+  let initialScale = 1;
+
+  // PC用: Ctrl + ホイールでズーム
+  mapContainer.addEventListener(
+    "wheel",
+    function (e) {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+
+        const delta = -e.deltaY;
+        const scaleChange = delta > 0 ? scaleStep : -scaleStep;
+        scale = Math.min(Math.max(scale + scaleChange, minScale), maxScale);
+
+        applyZoom(mapTable, scale);
+      }
+    },
+    { passive: false },
+  );
+
+  // スマホ用: ピンチイン・ピンチアウト
+  mapContainer.addEventListener(
+    "touchstart",
+    function (e) {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        initialDistance = getDistance(e.touches[0], e.touches[1]);
+        initialScale = scale;
+      }
+    },
+    { passive: false },
+  );
+
+  mapContainer.addEventListener(
+    "touchmove",
+    function (e) {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+
+        const currentDistance = getDistance(e.touches[0], e.touches[1]);
+        const scaleChange = currentDistance / initialDistance;
+        scale = Math.min(
+          Math.max(initialScale * scaleChange, minScale),
+          maxScale,
+        );
+
+        applyZoom(mapTable, scale);
+      }
+    },
+    { passive: false },
+  );
+
+  mapContainer.addEventListener("touchend", function (e) {
+    if (e.touches.length < 2) {
+      initialDistance = 0;
+    }
+  });
+
+  // 2点間の距離を計算
+  function getDistance(touch1, touch2) {
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  // ズームを適用
+  function applyZoom(element, scale) {
+    element.style.transform = `scale(${scale})`;
+    element.style.transformOrigin = "top left";
+
+    // スケール後のサイズに合わせてコンテナを調整
+    // offsetの値は現在のスケールを含むため、元のサイズを計算
+    const computedStyle = window.getComputedStyle(element);
+    const matrix = new DOMMatrix(computedStyle.transform);
+    const currentScale = matrix.a; // 現在のスケール値
+
+    const originalWidth = element.offsetWidth / currentScale;
+    const originalHeight = element.offsetHeight / currentScale;
+
+    const scaledWidth = originalWidth * scale;
+    const scaledHeight = originalHeight * scale;
+
+    // 高さを調整
+    mapContainer.style.minHeight = scaledHeight + "px";
+
+    // スマホの場合は横幅も調整（横スクロールを有効にする）
+    if (window.innerWidth <= 768) {
+      mapContainer.style.minWidth = scaledWidth + "px";
+      mapContainer.style.overflowX = "auto";
+    }
+  }
+}

@@ -3,7 +3,13 @@
    ======================================== */
 
 .map-tab-container {
-  padding: 20px;
+  /* 画面幅いっぱいを使用するため、containerの制約を解除 */
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  padding: 20px 20px;
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .map-toolbar {
@@ -62,9 +68,19 @@
 
 /* マップグリチE��コンチE�� */
 .map-grid-container {
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden; /* 横スクロール無効化 */
+  overflow-y: auto;
+  position: relative; /* ズーム用のポジショニング */
+  touch-action: pan-x pan-y pinch-zoom; /* タッチ操作を許可 */
+}
+
+/* ズーム機能用のテーブルスタイル */
+.map-table {
+  transition: transform 0.1s ease-out;
+  transform-origin: top left;
+  touch-action: none; /* テーブル上でのデフォルトタッチ動作を無効化 */
 }
 
 /* マップテーブル */
@@ -72,6 +88,8 @@
   border-collapse: collapse;
   background: white;
   margin: 0 auto;
+  width: 100%; /* 画面幅いっぱいを使用 */
+  table-layout: fixed; /* セルを均等に配置 */
 }
 
 .hall-map-table td, .map-table td {
@@ -87,9 +105,8 @@
 /* セルサイズ - 封E*/
 .hall-map-table.size-small .map-cell,
 .map-table.size-small .map-cell {
-  width: 80px;
-  min-width: 80px;
-  max-width: 80px;
+  width: auto; /* 自動調整 */
+  min-width: 60px;
   height: 70px;
   font-size: 9px;
   padding: 3px;
@@ -100,9 +117,8 @@
 .map-table .map-cell,
 .hall-map-table.size-medium .map-cell,
 .map-table.size-medium .map-cell {
-  width: 120px;
-  min-width: 120px;
-  max-width: 120px;
+  width: auto; /* 自動調整 */
+  min-width: 80px;
   height: 100px;
   font-size: 11px;
   padding: 5px;
@@ -111,9 +127,8 @@
 /* セルサイズ - 大 */
 .hall-map-table.size-large .map-cell,
 .map-table.size-large .map-cell {
-  width: 160px;
-  min-width: 160px;
-  max-width: 160px;
+  width: auto; /* 自動調整 */
+  min-width: 100px;
   height: 130px;
   font-size: 13px;
   padding: 8px;
@@ -1010,6 +1025,16 @@
   /* マップタブコンテナ */
   .map-tab-container {
     padding: 8px;
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+  }
+
+  /* スマホではマップグリッドコンテナで横スクロール可能にする */
+  .map-grid-container {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
   }
 
   .map-toolbar {
@@ -1162,6 +1187,12 @@
   .map-scroll-container {
     max-height: 60vh;
     border-radius: 4px;
+  }
+
+  /* マップテーブルをスマホで固定幅に */
+  .hall-map-table, .map-table {
+    width: auto; /* スマホでは自動幅 */
+    table-layout: auto; /* 自動レイアウト */
   }
 
   /* マップセルサイズをスマホ用に縮小 */

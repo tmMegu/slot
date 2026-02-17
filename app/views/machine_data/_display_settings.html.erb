@@ -40,17 +40,17 @@
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                     <span style="font-size: 12px; color: #666; min-width: 50px;">横幅:</span>
                     <span style="font-size: 12px; color: #666;">小</span>
-                    <input type="range" id="cell-width-slider" min="20" max="200" step="5" value="80" style="flex: 1; max-width: 300px;" oninput="updateCellSize()">
+                    <input type="range" id="cell-width-slider" min="20" max="200" step="5" value="40" style="flex: 1; max-width: 300px;" oninput="updateCellSize()">
                     <span style="font-size: 12px; color: #666;">大</span>
-                    <span id="cell-width-display" style="margin-left: 10px; font-weight: bold; min-width: 50px;">80px</span>
+                    <span id="cell-width-display" style="margin-left: 10px; font-weight: bold; min-width: 50px;">40px</span>
                 </div>
                 <!-- 縦幅 -->
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 12px; color: #666; min-width: 50px;">縦幅:</span>
                     <span style="font-size: 12px; color: #666;">小</span>
-                    <input type="range" id="cell-height-slider" min="20" max="200" step="5" value="64" style="flex: 1; max-width: 300px;" oninput="updateCellSize()">
+                    <input type="range" id="cell-height-slider" min="20" max="200" step="5" value="20" style="flex: 1; max-width: 300px;" oninput="updateCellSize()">
                     <span style="font-size: 12px; color: #666;">大</span>
-                    <span id="cell-height-display" style="margin-left: 10px; font-weight: bold; min-width: 50px;">64px</span>
+                    <span id="cell-height-display" style="margin-left: 10px; font-weight: bold; min-width: 50px;">20px</span>
                 </div>
             </div>
 
@@ -58,17 +58,26 @@
             <div style="margin-bottom: 5px;">
                 <label style="font-weight: bold; display: block; margin-bottom: 5px;">📝 文字サイズ:</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="range" id="font-size-slider" min="5" max="50" step="0.5" value="18" style="flex: 1; max-width: 300px;" oninput="updateFontSize(this.value)">
-                    <span id="font-size-display" style="margin-left: 10px; font-weight: bold;">18px</span>
+                    <input type="range" id="font-size-slider" min="5" max="50" step="0.5" value="8" style="flex: 1; max-width: 300px;" oninput="updateFontSize(this.value)">
+                    <span id="font-size-display" style="margin-left: 10px; font-weight: bold;">8px</span>
                 </div>
             </div>
 
             <!-- グリッド線表示 -->
-            <div>
+            <div style="margin-bottom: 10px;">
                 <label style="font-weight: bold;">
                     <input type="checkbox" id="show-grid" checked onchange="toggleGrid()">
                     グリッド線を表示
                 </label>
+            </div>
+
+            <!-- ズーム機能の説明 -->
+            <div style="background-color: #d1ecf1; border-left: 3px solid #17a2b8; padding: 10px; margin-top: 10px; border-radius: 3px;">
+                <div style="font-weight: bold; margin-bottom: 5px; color: #0c5460;">🔍 ズーム機能</div>
+                <div style="font-size: 11px; color: #0c5460; line-height: 1.5;">
+                    <strong>PC:</strong> Ctrl + マウスホイール<br>
+                    <strong>スマホ:</strong> ピンチイン・ピンチアウト
+                </div>
             </div>
         </div>
     </div>
