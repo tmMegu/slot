@@ -417,6 +417,7 @@ function initializeMapZoom() {
   // タッチ関連の変数
   let initialDistance = 0;
   let initialScale = 1;
+  let isZooming = false;
 
   // PC用: Ctrl + ホイールでズーム
   mapContainer.addEventListener(
@@ -435,12 +436,50 @@ function initializeMapZoom() {
     { passive: false },
   );
 
-  // スマホ用: ピンチイン・ピンチアウト
-  mapContainer.addEventListener(
+  // Safari用: gestureイベント（iOS Safari専用）
+  let lastGestureScale = 1;
+
+  mapTable.addEventListener(
+    "gesturestart",
+    function (e) {
+      e.preventDefault();
+      lastGestureScale = 1;
+      isZooming = true;
+    },
+    { passive: false },
+  );
+
+  mapTable.addEventListener(
+    "gesturechange",
+    function (e) {
+      e.preventDefault();
+      scale = Math.min(
+        Math.max(scale * (e.scale / lastGestureScale), minScale),
+        maxScale,
+      );
+      lastGestureScale = e.scale;
+      applyZoom(mapTable, scale);
+    },
+    { passive: false },
+  );
+
+  mapTable.addEventListener(
+    "gestureend",
+    function (e) {
+      e.preventDefault();
+      isZooming = false;
+      lastGestureScale = 1;
+    },
+    { passive: false },
+  );
+
+  // スマホ用: ピンチイン・ピンチアウト（Android Chrome用）
+  mapTable.addEventListener(
     "touchstart",
     function (e) {
       if (e.touches.length === 2) {
         e.preventDefault();
+        isZooming = true;
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialScale = scale;
       }
@@ -448,10 +487,10 @@ function initializeMapZoom() {
     { passive: false },
   );
 
-  mapContainer.addEventListener(
+  mapTable.addEventListener(
     "touchmove",
     function (e) {
-      if (e.touches.length === 2) {
+      if (e.touches.length === 2 && isZooming) {
         e.preventDefault();
 
         const currentDistance = getDistance(e.touches[0], e.touches[1]);
@@ -467,11 +506,16 @@ function initializeMapZoom() {
     { passive: false },
   );
 
-  mapContainer.addEventListener("touchend", function (e) {
-    if (e.touches.length < 2) {
-      initialDistance = 0;
-    }
-  });
+  mapTable.addEventListener(
+    "touchend",
+    function (e) {
+      if (e.touches.length < 2) {
+        initialDistance = 0;
+        isZooming = false;
+      }
+    },
+    { passive: false },
+  );
 
   // 2点間の距離を計算
   function getDistance(touch1, touch2) {

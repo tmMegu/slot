@@ -73,14 +73,14 @@
   overflow-x: hidden; /* 横スクロール無効化 */
   overflow-y: auto;
   position: relative; /* ズーム用のポジショニング */
-  touch-action: pan-x pan-y pinch-zoom; /* タッチ操作を許可 */
+  touch-action: manipulation; /* Safari対応: 基本的なタッチ操作のみ許可 */
 }
 
 /* ズーム機能用のテーブルスタイル */
 .map-table {
   transition: transform 0.1s ease-out;
   transform-origin: top left;
-  touch-action: none; /* テーブル上でのデフォルトタッチ動作を無効化 */
+  touch-action: manipulation; /* Safari対応 */
 }
 
 /* マップテーブル */
@@ -120,7 +120,7 @@
   width: auto; /* 自動調整 */
   min-width: 80px;
   height: 100px;
-  font-size: 11px;
+  font-size: 8px; /* 初期サイズを8pxに変更 */
   padding: 5px;
 }
 
