@@ -33,12 +33,54 @@ window.updateMapColors = function () {
 
   const condition = conditionElement.value;
 
-  // 機種ごとのワーストランキング色分け
+  // 色の説明を更新
+  updateColorDescription(condition);
+
+  // 各条件に応じた色分けを適用
   if (condition === "worst_7days") {
     applyWorstRankColors();
-    return;
+  } else if (condition === "past_7days_minus") {
+    applyPast7DaysMinusColors();
+  } else if (condition === "past_7days_plus") {
+    applyPast7DaysPlusColors();
+  } else if (condition === "worst_model_7days") {
+    applyWorstModelColors();
+  } else if (condition === "today_diff_levels") {
+    applyTodayDiffLevelColors();
   }
 };
+
+// 色の説明を更新
+function updateColorDescription(condition) {
+  const descElement = document.getElementById("color-description");
+  if (!descElement) return;
+
+  let html = "<strong>色の意味:</strong><br>";
+
+  switch (condition) {
+    case "worst_7days":
+      html += "🔴 赤色 = 機種ごとのワースト1位（最も差枚が悪い台）<br>";
+      html += "🟢 緑色 = 機種ごとのワースト2位（2番目に差枚が悪い台）";
+      break;
+    case "past_7days_minus":
+      html += "🔴 赤色 = 過去7日間の合計差枚がマイナスの台";
+      break;
+    case "past_7days_plus":
+      html += "🟢 緑色 = 過去7日間の合計差枚がプラスの台";
+      break;
+    case "worst_model_7days":
+      html += "🔴 赤色 = 過去7日間で最も機種総差枚が低い機種の全台";
+      break;
+    case "today_diff_levels":
+      html += "💚 薄い緑 = +1,000～+1,999<br>";
+      html += "🟢 濃い緑 = +2,000～+2,999<br>";
+      html += "🟠 薄い赤 = +3,000～+3,999<br>";
+      html += "🔴 濃い赤 = +4,000以上";
+      break;
+  }
+
+  descElement.innerHTML = html;
+}
 
 // マップ切り替え（グローバルスコープで定義）
 window.changeMap = function (mapId) {
@@ -86,23 +128,62 @@ function initializeColorMode() {
 // DOMContentLoadedイベント（初回読み込み時）
 // 以下は削除：重複していたため
 
-// 機種ごとのワーストランキング色分けを適用
+// 機種ごとのワーストランキング色分けを適用（フィルター後に動的計算）
 function applyWorstRankColors() {
   const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
 
+  // まず全ての色をクリア
   cells.forEach((cell) => {
-    // 既存の色クラスを削除
-    cell.classList.remove("color-red", "color-green", "color-yellow");
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+  });
 
-    const worstRank = cell.dataset.worstRank;
+  // フィルター対象の台を収集し、機種ごとにグループ化
+  const machineGroups = {};
+  cells.forEach((cell) => {
+    if (!shouldApplyColorToCell(cell)) {
+      return; // フィルター条件を満たさない
+    }
 
-    // data-worst-rank が "1" または "2" の場合のみ色を適用
-    if (worstRank === "1") {
-      // ワースト1は赤
-      cell.classList.add("color-red");
-    } else if (worstRank === "2") {
-      // ワースト2は緑
-      cell.classList.add("color-green");
+    const machineName = cell.getAttribute("data-machine-name") || "";
+    const past7DaysDiffStr = cell.getAttribute("data-past-7days-diff");
+    const past7DaysDiff =
+      past7DaysDiffStr !== undefined &&
+      past7DaysDiffStr !== null &&
+      past7DaysDiffStr !== ""
+        ? parseFloat(past7DaysDiffStr)
+        : 0;
+
+    if (isNaN(past7DaysDiff)) {
+      return; // 無効な値はスキップ
+    }
+
+    if (!machineGroups[machineName]) {
+      machineGroups[machineName] = [];
+    }
+    machineGroups[machineName].push({ cell, diff: past7DaysDiff });
+  });
+
+  // 各機種内でワースト1,2を計算して色を適用
+  Object.values(machineGroups).forEach((group) => {
+    // 差枚で昇順ソート（小さい方がワースト）
+    group.sort((a, b) => a.diff - b.diff);
+
+    // ワースト1は赤
+    if (group.length >= 1) {
+      group[0].cell.classList.add("color-red");
+    }
+
+    // ワースト2は緑
+    if (group.length >= 2) {
+      group[1].cell.classList.add("color-green");
     }
   });
 }
@@ -111,7 +192,245 @@ function applyWorstRankColors() {
 function clearAllColors() {
   const cells = document.querySelectorAll(".map-cell");
   cells.forEach((cell) => {
-    cell.classList.remove("color-red", "color-green", "color-yellow");
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+  });
+}
+
+// フィルター条件をチェックする関数
+function shouldApplyColorToCell(cell) {
+  // 機種名フィルター（複数キーワード対応）
+  const modelFilterType =
+    document.getElementById("model-filter-type")?.value || "none";
+  const modelFilterText =
+    document.getElementById("model-filter-text")?.value || "";
+
+  if (modelFilterType !== "none" && modelFilterText.trim()) {
+    const machineName = cell.getAttribute("data-machine-name") || "";
+    // 空白で分割してキーワードの配列を作成
+    const keywords = modelFilterText.trim().split(/\s+/);
+
+    if (modelFilterType === "include") {
+      // 「含む」: いずれかのキーワードが機種名に含まれていればOK (OR検索)
+      const matchesAny = keywords.some((keyword) =>
+        machineName.includes(keyword),
+      );
+      if (!matchesAny) {
+        return false;
+      }
+    } else if (modelFilterType === "exclude") {
+      // 「含まない」: すべてのキーワードが機種名に含まれていなければOK
+      const matchesAny = keywords.some((keyword) =>
+        machineName.includes(keyword),
+      );
+      if (matchesAny) {
+        return false;
+      }
+    }
+  }
+
+  // 台数範囲フィルター
+  const countFilterEnabled =
+    document.getElementById("machine-count-filter-enabled")?.checked || false;
+
+  if (countFilterEnabled) {
+    const machineName = cell.getAttribute("data-machine-name") || "";
+    const minCount =
+      parseInt(document.getElementById("machine-count-min")?.value) || 0;
+    const maxCount =
+      parseInt(document.getElementById("machine-count-max")?.value) || Infinity;
+
+    // 同じ機種名の台数をカウント
+    const allCells = document.querySelectorAll(
+      '.map-cell[data-type="machine"]',
+    );
+    const machineCount = Array.from(allCells).filter(
+      (c) => c.getAttribute("data-machine-name") === machineName,
+    ).length;
+
+    if (machineCount < minCount || machineCount > maxCount) {
+      return false; // 台数が範囲外
+    }
+  }
+
+  return true; // すべての条件を満たす
+}
+
+// 過去7日間マイナスの台を赤色にする
+function applyPast7DaysMinusColors() {
+  const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+
+  cells.forEach((cell) => {
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+
+    if (!shouldApplyColorToCell(cell)) {
+      return; // フィルター条件を満たさない
+    }
+
+    const past7DaysDiffStr = cell.getAttribute("data-past-7days-diff");
+    if (
+      past7DaysDiffStr !== undefined &&
+      past7DaysDiffStr !== null &&
+      past7DaysDiffStr !== ""
+    ) {
+      const past7DaysDiff = parseFloat(past7DaysDiffStr);
+      if (!isNaN(past7DaysDiff) && past7DaysDiff < 0) {
+        cell.classList.add("color-red");
+      }
+    }
+  });
+}
+
+// 過去7日間プラスの台を緑色にする
+function applyPast7DaysPlusColors() {
+  const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+
+  cells.forEach((cell) => {
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+
+    if (!shouldApplyColorToCell(cell)) {
+      return; // フィルター条件を満たさない
+    }
+
+    const past7DaysDiffStr = cell.getAttribute("data-past-7days-diff");
+    if (
+      past7DaysDiffStr !== undefined &&
+      past7DaysDiffStr !== null &&
+      past7DaysDiffStr !== ""
+    ) {
+      const past7DaysDiff = parseFloat(past7DaysDiffStr);
+      if (!isNaN(past7DaysDiff) && past7DaysDiff > 0) {
+        cell.classList.add("color-green");
+      }
+    }
+  });
+}
+
+// 過去7日間で最も差枚が低い機種を赤色にする（フィルター後に動的計算）
+function applyWorstModelColors() {
+  const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+
+  // まず全ての色をクリア
+  cells.forEach((cell) => {
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+  });
+
+  // フィルター対象の台を収集し、機種ごとの合計差枚を計算
+  const modelTotals = {};
+  const modelCells = {};
+
+  cells.forEach((cell) => {
+    if (!shouldApplyColorToCell(cell)) {
+      return; // フィルター条件を満たさない
+    }
+
+    const machineName = cell.getAttribute("data-machine-name") || "";
+    const past7DaysDiffStr = cell.getAttribute("data-past-7days-diff");
+    const past7DaysDiff =
+      past7DaysDiffStr !== undefined &&
+      past7DaysDiffStr !== null &&
+      past7DaysDiffStr !== ""
+        ? parseFloat(past7DaysDiffStr)
+        : 0;
+
+    if (isNaN(past7DaysDiff)) {
+      return; // 無効な値はスキップ
+    }
+
+    if (!modelTotals[machineName]) {
+      modelTotals[machineName] = 0;
+      modelCells[machineName] = [];
+    }
+    modelTotals[machineName] += past7DaysDiff;
+    modelCells[machineName].push(cell);
+  });
+
+  // 機種総差枚が最も低い機種を特定
+  let worstModelName = null;
+  let worstTotal = Infinity;
+
+  Object.entries(modelTotals).forEach(([modelName, total]) => {
+    if (total < worstTotal) {
+      worstTotal = total;
+      worstModelName = modelName;
+    }
+  });
+
+  // 最も差枚が低い機種の全台に赤色を適用
+  if (worstModelName && modelCells[worstModelName]) {
+    modelCells[worstModelName].forEach((cell) => {
+      cell.classList.add("color-red");
+    });
+  }
+}
+
+// 当日の差枚を段階的に色分け
+function applyTodayDiffLevelColors() {
+  const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+
+  cells.forEach((cell) => {
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+
+    if (!shouldApplyColorToCell(cell)) {
+      return; // フィルター条件を満たさない
+    }
+
+    const level = cell.dataset.todayDiffLevel;
+    if (level) {
+      switch (level) {
+        case "1":
+          cell.classList.add("color-light-green"); // +1000～+1999
+          break;
+        case "2":
+          cell.classList.add("color-dark-green"); // +2000～+2999
+          break;
+        case "3":
+          cell.classList.add("color-light-red"); // +3000～+3999
+          break;
+        case "4":
+          cell.classList.add("color-dark-red"); // +4000～
+          break;
+      }
+    }
   });
 }
 

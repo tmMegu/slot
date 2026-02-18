@@ -70,10 +70,11 @@
 .map-grid-container {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden; /* 横スクロール無効化 */
+  overflow-x: auto; /* PC でも横スクロール有効化 */
   overflow-y: auto;
   position: relative; /* ズーム用のポジショニング */
   touch-action: manipulation; /* Safari対応: 基本的なタッチ操作のみ許可 */
+  -webkit-overflow-scrolling: touch; /* iOS でスムーズスクロール */
 }
 
 /* ズーム機能用のテーブルスタイル */
@@ -196,6 +197,27 @@
   border: 2px solid #28a745 !important;
 }
 
+/* 段階的な色分け用の追加クラス */
+.map-cell.color-light-green {
+  background-color: #d4edda !important;
+  border: 2px solid #88c999 !important;
+}
+
+.map-cell.color-dark-green {
+  background-color: #a8e6b8 !important;
+  border: 2px solid #28a745 !important;
+}
+
+.map-cell.color-light-red {
+  background-color: #ffe6e6 !important;
+  border: 2px solid #ff6b6b !important;
+}
+
+.map-cell.color-dark-red {
+  background-color: #ffb3b3 !important;
+  border: 2px solid #dc3545 !important;
+}
+
 /* 機種セルの冁E�� */
 .machine-cell {
   display: flex;
@@ -242,13 +264,13 @@
   display: flex;
   flex-direction: column;
   gap: 0px;
-  font-size: 6px; /* 8pxベースの0.7倍 */
+  font-size: 8px; /* 台番や機種名と同じサイズ */
   line-height: 1.1;
 }
 
 .stat-diff {
   font-weight: bold;
-  font-size: 6px; /* 8pxベースの0.7倍 */
+  font-size: 8px; /* 台番や機種名と同じサイズ */
   line-height: 1.1;
   margin: 0;
   padding: 1px 0;
@@ -263,7 +285,7 @@
 }
 
 .stat-games {
-  font-size: 6px; /* 8pxベースの0.7倍 */
+  font-size: 8px; /* 台番や機種名と同じサイズ */
   color: #666;
   line-height: 1.1;
   margin: 0;
@@ -271,7 +293,7 @@
 }
 
 .stat-bb {
-  font-size: 6px; /* 8pxベースの0.7倍 */
+  font-size: 8px; /* 台番や機種名と同じサイズ */
   color: #666;
   line-height: 1.1;
   margin: 0;

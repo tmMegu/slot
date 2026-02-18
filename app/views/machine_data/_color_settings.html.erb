@@ -4,10 +4,10 @@
         <span class="collapsible-toggle">▼</span>
     </div>
     <div id="map-color-settings" class="collapsible-content">
-        <div class="collapsible-inner" style="background-color: #e8f4f8; padding: 20px;">
+        <div class="collapsible-inner" style="background-color: #e8f4f8; padding: 10px;">
 
             <!-- 色分け有効/無効 -->
-            <div style="margin-bottom: 20px;">
+            <div style="margin-bottom: 5px;">
                 <label style="font-weight: bold; font-size: 16px;">
                     <input type="checkbox" id="color-enabled" checked onchange="toggleColorMode()">
                     色分けを有効にする
@@ -16,20 +16,95 @@
 
             <div id="color-settings-content" style="display: block;">
                 <!-- 色分け条件選択 -->
-                <div style="margin-bottom: 20px;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 10px;">📊 色分け条件:</label>
+                <div style="margin-bottom: 5px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">📊 色分け条件:</label>
                     <select id="color-condition" onchange="updateMapColors()" style="padding: 8px; font-size: 14px; width: 100%; max-width: 400px;">
                         <optgroup label="機種ごとのワースト">
                             <option value="worst_7days" selected>機種ごと過去7日間総差枚ワースト1,2</option>
                         </optgroup>
+                        <optgroup label="過去7日間の差枚">
+                            <option value="past_7days_minus">過去7日間マイナスの台を赤色</option>
+                            <option value="past_7days_plus">過去7日間プラスの台を緑色</option>
+                        </optgroup>
+                        <optgroup label="機種ごとの成績">
+                            <option value="worst_model_7days">過去7日間で最も差枚が低い機種を赤色</option>
+                        </optgroup>
+                        <optgroup label="当日の差枚">
+                            <option value="today_diff_levels">当日の差枚を段階的に色分け</option>
+                        </optgroup>
                     </select>
-                    <div style="margin-top: 10px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; font-size: 13px;">
+                    <div id="color-description" style="margin-top: 10px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; font-size: 13px;">
                         <strong>色の意味:</strong><br>
                         🔴 赤色 = 機種ごとのワースト1位（最も差枚が悪い台）<br>
                         🟢 緑色 = 機種ごとのワースト2位（2番目に差枚が悪い台）
+                    </div>
+                </div>
+
+                <!-- フィルター条件 -->
+                <div style="border-top: 2px solid #0066cc;">
+                    <h4 style="margin-bottom: 5px; color: #0066cc;">🔍 フィルター条件</h4>
+
+                    <!-- 機種名フィルター -->
+                    <div style="margin-bottom: 5px;">
+                        <label style="font-weight: bold; display: block; margin-bottom: 5px;">機種名:</label>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <select id="model-filter-type" style="padding: 6px; font-size: 13px;">
+                                <option value="none">フィルターなし</option>
+                                <option value="include">含む</option>
+                                <option value="exclude">含まない</option>
+                            </select>
+                            <input type="text" id="model-filter-text" placeholder="機種名を入力（空白区切りで複数可）" style="padding: 6px; font-size: 13px; width: 250px;" disabled>
+                        </div>
+                        <div style="font-size: 11px; color: #666; margin-top: 5px; margin-left: 130px;">
+                            例: 「北斗 ジャグラー」と入力すると、北斗またはジャグラーを含む機種が対象
+                        </div>
+                    </div>
+
+                    <!-- 台数範囲フィルター -->
+                    <div style="margin-bottom: 5px;">
+                        <label style="font-weight: bold; display: block; margin-bottom: 5px;">台数範囲:</label>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <label>
+                                <input type="checkbox" id="machine-count-filter-enabled"> 台数で絞り込む
+                            </label>
+                            <input type="number" id="machine-count-min" placeholder="最小" min="0" style="padding: 6px; font-size: 13px; width: 80px;" disabled>
+                            <span>～</span>
+                            <input type="number" id="machine-count-max" placeholder="最大" min="0" style="padding: 6px; font-size: 13px; width: 80px;" disabled>
+                            <span style="font-size: 12px; color: #666;">台</span>
+                        </div>
+                    </div>
+
+                    <!-- フィルター適用ボタン -->
+                    <div style="margin-top: 5px;">
+                        <button onclick="updateMapColors()" style="padding: 8px 20px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+                            ✅ フィルター適用
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    // 機種名フィルタータイプが変更されたらテキスト入力の有効/無効を切り替え
+    document.getElementById('model-filter-type')?.addEventListener('change', function() {
+        const textInput = document.getElementById('model-filter-text');
+        textInput.disabled = this.value === 'none';
+        if (this.value === 'none') {
+            textInput.value = '';
+        }
+    });
+
+    // 台数範囲フィルターのチェックボックスで入力欄の有効/無効を切り替え
+    document.getElementById('machine-count-filter-enabled')?.addEventListener('change', function() {
+        const minInput = document.getElementById('machine-count-min');
+        const maxInput = document.getElementById('machine-count-max');
+        minInput.disabled = !this.checked;
+        maxInput.disabled = !this.checked;
+        if (!this.checked) {
+            minInput.value = '';
+            maxInput.value = '';
+        }
+    });
+</script>

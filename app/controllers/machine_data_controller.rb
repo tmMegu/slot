@@ -170,8 +170,11 @@ class MachineDataController < ApplicationController
     machine_data = MachineData.where(hall_id: @hall.id, date: @date)
     @machine_data_by_number = machine_data.index_by(&:machine_number)
 
-    # ワーストランク情報を取得（カラーリング用） - デフォルト7日間
+    # 色分け用データ（全条件対応）
     @color_worst_ranks = calculate_color_worst_ranks(7)
+    @color_past_7days_diff = calculate_past_period_diff(7)
+    @color_worst_machine_ranks = calculate_worst_machine_by_model(7)
+    @color_today_diff_levels = calculate_today_diff_levels
 
     # 表示設定パラメータ
     display_settings = {
@@ -194,6 +197,9 @@ class MachineDataController < ApplicationController
       hall_map: @current_map,
       machine_data_by_number: @machine_data_by_number,
       color_worst_ranks: @color_worst_ranks,
+      color_past_7days_diff: @color_past_7days_diff,
+      color_worst_machine_ranks: @color_worst_machine_ranks,
+      color_today_diff_levels: @color_today_diff_levels,
       display_settings: display_settings,
       color_settings: color_settings
     )
@@ -1351,6 +1357,9 @@ class MachineDataController < ApplicationController
 
     # 色分け用データ
     @color_worst_ranks = calculate_color_worst_ranks(7)
+    @color_past_7days_diff = calculate_past_period_diff(7)
+    @color_worst_machine_ranks = calculate_worst_machine_by_model(7)
+    @color_today_diff_levels = calculate_today_diff_levels
   end
 
   # 色分け用：機種ごとの過去N日間総差枚ワーストランキング（全台対象）
@@ -1367,5 +1376,58 @@ class MachineDataController < ApplicationController
 
     # ランキング計算
     calculate_ranks_by_machine_name(machines, past_data, :worst)
+  end
+
+  # 共通メソッド：過去N日間の合計差枚（台番号ごと）
+  def calculate_past_period_diff(days)
+    past_data = calculate_sum_for_period(days, :difference_count)
+
+    # 当日存在するすべての台番号について、過去データがない場合は0を設定
+    result = {}
+    @machine_data_by_number.keys.each do |machine_number|
+      result[machine_number] = past_data[machine_number] || 0
+    end
+    result
+  end
+
+  # 共通メソッド：過去N日間の機種ごと総差枚が最も低い機種の全台にフラグを付ける
+  def calculate_worst_machine_by_model(days)
+    past_data = calculate_sum_for_period(days, :difference_count)
+    machines = @machine_data_by_number.values
+
+    # 機種ごとの総差枚を計算（過去データがない場合は0として扱う）
+    model_totals = machines.group_by(&:machine_name).transform_values do |ms|
+      ms.sum { |m| past_data[m.machine_number] || 0 }
+    end
+
+    # 最も差枚が低い機種を特定
+    worst_model = model_totals.min_by { |_name, total| total }&.first
+
+    # その機種の全台番号にフラグを付ける
+    result = {}
+    if worst_model
+      machines.select { |m| m.machine_name == worst_model }.each do |m|
+        result[m.machine_number] = true
+      end
+    end
+    result
+  end
+
+  # 共通メソッド：当日の差枚レベル（段階的な色分け用）
+  def calculate_today_diff_levels
+    result = {}
+    @machine_data_by_number.each do |number, machine|
+      diff = machine.difference_count.to_i
+      if diff >= 4000
+        result[number] = 4 # 濃いめの赤
+      elsif diff >= 3000
+        result[number] = 3 # 薄めの赤
+      elsif diff >= 2000
+        result[number] = 2 # 濃い緑
+      elsif diff >= 1000
+        result[number] = 1 # 薄めの緑
+      end
+    end
+    result
   end
 end

@@ -42,8 +42,11 @@
                           label = cell['label']
                           machine = @machine_data_by_number[machine_number] if machine_number
                           worst_rank = machine_number && @color_worst_ranks ? @color_worst_ranks[machine_number] : nil
+                          past_7days_diff = machine_number && @color_past_7days_diff ? @color_past_7days_diff[machine_number] : 0
+                          is_worst_model = machine_number && @color_worst_machine_ranks ? @color_worst_machine_ranks[machine_number] : nil
+                          today_diff_level = machine_number && @color_today_diff_levels ? @color_today_diff_levels[machine_number] : nil
                         %>
-                    <td class="map-cell <%= cell_type %>" data-row="<%= row %>" data-col="<%= col %>" data-type="<%= cell_type %>" data-machine-number="<%= machine_number %>" <% if machine %> data-difference="<%= machine.difference_count %>" data-games="<%= machine.game_count %>" <% end %> <% if worst_rank %>data-worst-rank="<%= worst_rank %>" <% end %>>
+                    <td class="map-cell <%= cell_type %>" data-row="<%= row %>" data-col="<%= col %>" data-type="<%= cell_type %>" data-machine-number="<%= machine_number %>" <% if machine %> data-difference="<%= machine.difference_count %>" data-games="<%= machine.game_count %>" data-machine-name="<%= machine.machine_name %>" data-past-7days-diff="<%= past_7days_diff %>" <% end %> <% if worst_rank %>data-worst-rank="<%= worst_rank %>" <% end %> <% if is_worst_model %>data-worst-model="true" <% end %> <% if today_diff_level %>data-today-diff-level="<%= today_diff_level %>" <% end %>>
 
                         <% if cell_type == 'machine' && machine %>
                         <div class="cell-content machine" title="<%= machine.machine_name %>">
