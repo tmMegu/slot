@@ -1,4 +1,18 @@
+# 台データの表示・管理を行うコントローラー
+#
+# 主な機能:
+#   - show: 日別台データの表示（フィルタリング・ソート・色分け・ランキング付き）
+#   - import / batch_import: 外部URLからの台データ取込
+#   - manual_import: 手動データ入力
+#   - export_map_pdf: マップPDF出力
+#   - update_machine_memo(s): 台メモの個別・一括更新
+#   - machine_history: 台番号ごとの履歴表示
+#
+# フィルタリング・集計の共通処理は MachineDataFilterable をincludeして利用
+# セッションに検索条件を保存し、ページ遷移後も条件を維持する
 class MachineDataController < ApplicationController
+  include MachineDataFilterable
+
   # インポート関連アクション
   def import_form
     @halls = Hall.all
@@ -472,10 +486,9 @@ class MachineDataController < ApplicationController
     end
   end
 
-  def parse_int_param(key)
-    params[key].present? ? params[key].to_i : nil
-  end
+  # parse_int_param は MachineDataFilterable から継承
 
+  # セッション対応版: パラメータまたはセッションから整数値を取得する
   def parse_int_param_with_session(key)
     if params[key].present?
       params[key].to_i
@@ -671,26 +684,7 @@ class MachineDataController < ApplicationController
     result
   end
 
-  # 機種名ごとにランキングを計算（汎用メソッド）
-  # rank_type: :worst（デフォルト、昇順でワースト）または :best（降順でベスト）
-  def calculate_ranks_by_machine_name(machine_data, aggregated_data, rank_type = :worst)
-    grouped = machine_data.group_by(&:machine_name)
-    ranks = {}
-
-    grouped.each do |machine_name, machines|
-      sorted = machines
-        .select { |m| aggregated_data[m.machine_number] }
-        .sort_by { |m| rank_type == :best ? -aggregated_data[m.machine_number] : aggregated_data[m.machine_number] }
-
-      ranks[sorted[0].machine_number] = 1 if sorted[0]
-      ranks[sorted[1].machine_number] = 2 if sorted[1]
-      ranks[sorted[2].machine_number] = 3 if sorted[2]
-      ranks[sorted[3].machine_number] = 4 if sorted[3]
-      ranks[sorted[4].machine_number] = 5 if sorted[4]
-    end
-
-    ranks
-  end
+  # calculate_ranks_by_machine_name は MachineDataFilterable から継承
 
   # ============================================================
   # 集計データの生成
@@ -830,22 +824,7 @@ class MachineDataController < ApplicationController
          .pluck(:date)
   end
 
-  def calculate_daily_stats(date, machines)
-    total_diff = machines.sum(&:difference_count)
-    total_games = machines.sum(&:game_count)
-    win_count = machines.count { |m| m.difference_count > 0 }
-    machine_count = machines.size
-
-    {
-      date: date,
-      machine_count: machine_count,
-      total_difference: total_diff,
-      win_count: win_count,
-      win_rate: (win_count.to_f / machine_count * 100).round(1),
-      avg_games: (total_games.to_f / machine_count).round,
-      avg_difference: (total_diff.to_f / machine_count).round
-    }
-  end
+  # calculate_daily_stats は MachineDataFilterable から継承
 
   # 【最適化】日別集計用の過去データを事前に一括取得
   def preload_past_data_for_summary(target_dates)
@@ -990,55 +969,13 @@ class MachineDataController < ApplicationController
     filtered
   end
 
-  def apply_machine_name_filter(filtered)
-    # ドロップダウンフィルター
-    if @filter_machine_name.present?
-      filtered = filtered.select { |m| m.machine_name == @filter_machine_name }
-    end
+  # apply_machine_name_filter は MachineDataFilterable から継承
+  # （AND/OR検索対応の上位互換版を使用）
 
-    # 検索フィルター
-    if @filter_machine_name_search.present?
-      if @filter_machine_name_search_type == "include"
-        filtered = filtered.select { |m| m.machine_name.include?(@filter_machine_name_search) }
-      else
-        filtered = filtered.select { |m| !m.machine_name.include?(@filter_machine_name_search) }
-      end
-    end
+  # apply_numeric_filters は MachineDataFilterable から継承
+  # （台番号偶数・奇数フィルターも追加対応）
 
-    filtered
-  end
-
-  def apply_numeric_filters(filtered)
-    # G数フィルター
-    filtered = apply_range_filter(filtered, :game_count, @filter_game_count_min, @filter_game_count_max)
-
-    # 当日差枚フィルター
-    filtered = apply_range_filter(filtered, :difference_count, @filter_difference_min, @filter_difference_max)
-
-    # BB数フィルター
-    filtered = apply_range_filter(filtered, :bb_count, @filter_bb_count_min, @filter_bb_count_max)
-
-    # 台番号末尾フィルター
-    if @filter_machine_last_digit.present?
-      filtered = filtered.select { |m| m.machine_number.to_s[-1] == @filter_machine_last_digit }
-    end
-
-    # 台番号末尾2桁ぞろ目フィルター
-    if @filter_machine_double_digit
-      filtered = filtered.select do |m|
-        number_str = m.machine_number.to_s
-        number_str.length >= 2 && number_str[-1] == number_str[-2]
-      end
-    end
-
-    filtered
-  end
-
-  def apply_range_filter(data, attribute, min_value, max_value)
-    data = data.select { |m| m.send(attribute) >= min_value } if min_value.present?
-    data = data.select { |m| m.send(attribute) <= max_value } if max_value.present?
-    data
-  end
+  # apply_range_filter は MachineDataFilterable から継承
 
   def apply_past_data_filters(filtered, diff_days, game_count_days)
     # 過去差枚フィルター
@@ -1078,24 +1015,8 @@ class MachineDataController < ApplicationController
     filtered
   end
 
-  def value_in_range?(value, min_value, max_value)
-    passes_min = min_value.blank? || value >= min_value
-    passes_max = max_value.blank? || value <= max_value
-    passes_min && passes_max
-  end
-
-  def apply_machine_count_filter(filtered)
-    if @filter_machine_count_min.present? || @filter_machine_count_max.present?
-      machine_counts = filtered.group_by(&:machine_name).transform_values(&:count)
-
-      filtered = filtered.select do |m|
-        count = machine_counts[m.machine_name]
-        value_in_range?(count, @filter_machine_count_min, @filter_machine_count_max)
-      end
-    end
-
-    filtered
-  end
+  # value_in_range? は MachineDataFilterable から継承
+  # apply_machine_count_filter は MachineDataFilterable から継承
 
   def apply_rank_filter(filtered)
     # ワーストランクフィルター（@filter_rank_daysは既にcalculate_rank_filter_dataで計算済み）

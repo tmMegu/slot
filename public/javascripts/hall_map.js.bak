@@ -1,0 +1,886 @@
+﻿// 繧ｰ繝ｭ繝ｼ繝舌Ν螟画焚
+var colorEnabled = true;
+
+// 濶ｲ蛻・￠繝｢繝ｼ繝峨・蛻・ｊ譖ｿ縺茨ｼ医げ繝ｭ繝ｼ繝舌Ν繧ｹ繧ｳ繝ｼ繝励〒遒ｺ螳溘↓螳夂ｾｩ・・
+window.toggleColorMode = function () {
+  const checkbox = document.getElementById("color-enabled");
+  if (checkbox) {
+    colorEnabled = checkbox.checked;
+
+    // 險ｭ螳壹さ繝ｳ繝・Φ繝・・陦ｨ遉ｺ/髱櫁｡ｨ遉ｺ
+    const content = document.getElementById("color-settings-content");
+    if (content) {
+      content.style.display = colorEnabled ? "block" : "none";
+    }
+
+    // 濶ｲ繧呈峩譁ｰ
+    updateMapColors();
+  }
+};
+
+// 繝槭ャ繝励・濶ｲ繧呈峩譁ｰ・医げ繝ｭ繝ｼ繝舌Ν繧ｹ繧ｳ繝ｼ繝励〒螳夂ｾｩ・・
+window.updateMapColors = function () {
+  if (!colorEnabled) {
+    // 濶ｲ蛻・￠辟｡蜉ｹ譎ゅ・蜈ｨ縺ｦ繧ｯ繝ｪ繧｢
+    clearAllColors();
+    return;
+  }
+
+  const conditionElement = document.getElementById("color-condition");
+  if (!conditionElement) {
+    return;
+  }
+
+  const condition = conditionElement.value;
+
+  // 濶ｲ縺ｮ隱ｬ譏弱ｒ譖ｴ譁ｰ
+  updateColorDescription(condition);
+
+  // 蜷・擅莉ｶ縺ｫ蠢懊§縺溯牡蛻・￠繧帝←逕ｨ
+  if (condition === "worst_7days") {
+    applyWorstRankColors();
+  } else if (condition === "past_7days_minus") {
+    applyPast7DaysMinusColors();
+  } else if (condition === "past_7days_plus") {
+    applyPast7DaysPlusColors();
+  } else if (condition === "worst_model_7days") {
+    applyWorstModelColors();
+  } else if (condition === "today_diff_levels") {
+    applyTodayDiffLevelColors();
+  }
+};
+
+// 濶ｲ縺ｮ隱ｬ譏弱ｒ譖ｴ譁ｰ
+function updateColorDescription(condition) {
+  const descElement = document.getElementById("color-description");
+  if (!descElement) return;
+
+  let html = "<strong>濶ｲ縺ｮ諢丞袖:</strong><br>";
+
+  switch (condition) {
+    case "worst_7days":
+      html += "閥 襍､濶ｲ = 讖溽ｨｮ縺斐→縺ｮ繝ｯ繝ｼ繧ｹ繝・菴搾ｼ域怙繧ょｷｮ譫壹′謔ｪ縺・床・・br>";
+      html += "泙 邱題牡 = 讖溽ｨｮ縺斐→縺ｮ繝ｯ繝ｼ繧ｹ繝・菴搾ｼ・逡ｪ逶ｮ縺ｫ蟾ｮ譫壹′謔ｪ縺・床・・;
+      break;
+    case "past_7days_minus":
+      html += "閥 襍､濶ｲ = 驕主悉7譌･髢薙・蜷郁ｨ亥ｷｮ譫壹′繝槭う繝翫せ縺ｮ蜿ｰ";
+      break;
+    case "past_7days_plus":
+      html += "泙 邱題牡 = 驕主悉7譌･髢薙・蜷郁ｨ亥ｷｮ譫壹′繝励Λ繧ｹ縺ｮ蜿ｰ";
+      break;
+    case "worst_model_7days":
+      html += "閥 襍､濶ｲ = 驕主悉7譌･髢薙〒譛繧よｩ溽ｨｮ邱丞ｷｮ譫壹′菴弱＞讖溽ｨｮ縺ｮ蜈ｨ蜿ｰ";
+      break;
+    case "today_diff_levels":
+      html += "丁 阮・＞邱・= +1,000・・1,999<br>";
+      html += "泙 豼・＞邱・= +2,000・・2,999<br>";
+      html += "泛 阮・＞襍､ = +3,000・・3,999<br>";
+      html += "閥 豼・＞襍､ = +4,000莉･荳・;
+      break;
+  }
+
+  descElement.innerHTML = html;
+}
+
+// 繝槭ャ繝怜・繧頑崛縺茨ｼ医げ繝ｭ繝ｼ繝舌Ν繧ｹ繧ｳ繝ｼ繝励〒螳夂ｾｩ・・
+window.changeMap = function (mapId) {
+  location.reload();
+};
+
+// 繝代ロ繝ｫ縺ｮ髢矩哩・医げ繝ｭ繝ｼ繝舌Ν繧ｹ繧ｳ繝ｼ繝励〒螳夂ｾｩ・・
+window.togglePanel = function (panelId) {
+  const content = document.getElementById(panelId);
+  if (!content) {
+    return;
+  }
+
+  // .collapsible-toggle繧呈爾縺呻ｼ育峩蜑阪・蜈・ｼ溯ｦ∫ｴ縺九ｉ・・
+  const prevSibling = content.previousElementSibling;
+  const toggle = prevSibling?.querySelector(".collapsible-toggle");
+
+  // active繧ｯ繝ｩ繧ｹ繧偵ヨ繧ｰ繝ｫ
+  if (content.classList.contains("active")) {
+    content.classList.remove("active");
+    if (toggle) toggle.textContent = "笆ｼ";
+  } else {
+    content.classList.add("active");
+    if (toggle) toggle.textContent = "笆ｲ";
+  }
+};
+
+// 繝壹・繧ｸ隱ｭ縺ｿ霎ｼ縺ｿ譎ゅ・閾ｪ蜍募・譛溷喧
+function initializeColorMode() {
+  const container = document.querySelector(".map-tab-container");
+  if (container) {
+    // 濶ｲ蛻・￠繝｢繝ｼ繝峨・繝√ぉ繝・け繝懊ャ繧ｯ繧ｹ繧堤｢ｺ隱・
+    const colorEnabledCheckbox = document.getElementById("color-enabled");
+    if (colorEnabledCheckbox) {
+      colorEnabled = colorEnabledCheckbox.checked;
+
+      // 濶ｲ蛻・￠繧帝←逕ｨ
+      if (colorEnabled) {
+        window.updateMapColors();
+      }
+    }
+  }
+}
+
+// DOMContentLoaded繧､繝吶Φ繝茨ｼ亥・蝗櫁ｪｭ縺ｿ霎ｼ縺ｿ譎ゑｼ・
+// 莉･荳九・蜑企勁・夐㍾隍・＠縺ｦ縺・◆縺溘ａ
+
+// 讖溽ｨｮ縺斐→縺ｮ繝ｯ繝ｼ繧ｹ繝医Λ繝ｳ繧ｭ繝ｳ繧ｰ濶ｲ蛻・￠繧帝←逕ｨ・医ヵ繧｣繝ｫ繧ｿ繝ｼ蠕後↓蜍慕噪險育ｮ暦ｼ・
+function applyWorstRankColors() {
+  const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+
+  // 縺ｾ縺壼・縺ｦ縺ｮ濶ｲ繧偵け繝ｪ繧｢
+  cells.forEach((cell) => {
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+  });
+
+  // 繝輔ぅ繝ｫ繧ｿ繝ｼ蟇ｾ雎｡縺ｮ蜿ｰ繧貞庶髮・＠縲∵ｩ溽ｨｮ縺斐→縺ｫ繧ｰ繝ｫ繝ｼ繝怜喧
+  const machineGroups = {};
+  cells.forEach((cell) => {
+    if (!shouldApplyColorToCell(cell)) {
+      return; // 繝輔ぅ繝ｫ繧ｿ繝ｼ譚｡莉ｶ繧呈ｺ縺溘＆縺ｪ縺・
+    }
+
+    const machineName = cell.getAttribute("data-machine-name") || "";
+    const past7DaysDiffStr = cell.getAttribute("data-past-7days-diff");
+    const past7DaysDiff =
+      past7DaysDiffStr !== undefined &&
+      past7DaysDiffStr !== null &&
+      past7DaysDiffStr !== ""
+        ? parseFloat(past7DaysDiffStr)
+        : 0;
+
+    if (isNaN(past7DaysDiff)) {
+      return; // 辟｡蜉ｹ縺ｪ蛟､縺ｯ繧ｹ繧ｭ繝・・
+    }
+
+    if (!machineGroups[machineName]) {
+      machineGroups[machineName] = [];
+    }
+    machineGroups[machineName].push({ cell, diff: past7DaysDiff });
+  });
+
+  // 蜷・ｩ溽ｨｮ蜀・〒繝ｯ繝ｼ繧ｹ繝・,2繧定ｨ育ｮ励＠縺ｦ濶ｲ繧帝←逕ｨ
+  Object.values(machineGroups).forEach((group) => {
+    // 蟾ｮ譫壹〒譏・・た繝ｼ繝茨ｼ亥ｰ上＆縺・婿縺後Ρ繝ｼ繧ｹ繝茨ｼ・
+    group.sort((a, b) => a.diff - b.diff);
+
+    // 繝ｯ繝ｼ繧ｹ繝・縺ｯ襍､
+    if (group.length >= 1) {
+      group[0].cell.classList.add("color-red");
+    }
+
+    // 繝ｯ繝ｼ繧ｹ繝・縺ｯ邱・
+    if (group.length >= 2) {
+      group[1].cell.classList.add("color-green");
+    }
+  });
+}
+
+// 蜈ｨ縺ｦ縺ｮ濶ｲ繧偵け繝ｪ繧｢
+function clearAllColors() {
+  const cells = document.querySelectorAll(".map-cell");
+  cells.forEach((cell) => {
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+  });
+}
+
+// 繝輔ぅ繝ｫ繧ｿ繝ｼ譚｡莉ｶ繧偵メ繧ｧ繝・け縺吶ｋ髢｢謨ｰ
+function shouldApplyColorToCell(cell) {
+  // 讖溽ｨｮ蜷阪ヵ繧｣繝ｫ繧ｿ繝ｼ・郁､・焚繧ｭ繝ｼ繝ｯ繝ｼ繝牙ｯｾ蠢懶ｼ・
+  const modelFilterType =
+    document.getElementById("model-filter-type")?.value || "none";
+  const modelFilterText =
+    document.getElementById("model-filter-text")?.value || "";
+
+  if (modelFilterType !== "none" && modelFilterText.trim()) {
+    const machineName = cell.getAttribute("data-machine-name") || "";
+    // 遨ｺ逋ｽ縺ｧ蛻・牡縺励※繧ｭ繝ｼ繝ｯ繝ｼ繝峨・驟榊・繧剃ｽ懈・
+    const keywords = modelFilterText.trim().split(/\s+/);
+
+    if (modelFilterType === "include") {
+      // 縲悟性繧縲・ 縺・★繧後°縺ｮ繧ｭ繝ｼ繝ｯ繝ｼ繝峨′讖溽ｨｮ蜷阪↓蜷ｫ縺ｾ繧後※縺・ｌ縺ｰOK (OR讀懃ｴ｢)
+      const matchesAny = keywords.some((keyword) =>
+        machineName.includes(keyword),
+      );
+      if (!matchesAny) {
+        return false;
+      }
+    } else if (modelFilterType === "exclude") {
+      // 縲悟性縺ｾ縺ｪ縺・・ 縺吶∋縺ｦ縺ｮ繧ｭ繝ｼ繝ｯ繝ｼ繝峨′讖溽ｨｮ蜷阪↓蜷ｫ縺ｾ繧後※縺・↑縺代ｌ縺ｰOK
+      const matchesAny = keywords.some((keyword) =>
+        machineName.includes(keyword),
+      );
+      if (matchesAny) {
+        return false;
+      }
+    }
+  }
+
+  // 蜿ｰ謨ｰ遽・峇繝輔ぅ繝ｫ繧ｿ繝ｼ
+  const countFilterEnabled =
+    document.getElementById("machine-count-filter-enabled")?.checked || false;
+
+  if (countFilterEnabled) {
+    const machineName = cell.getAttribute("data-machine-name") || "";
+    const minCount =
+      parseInt(document.getElementById("machine-count-min")?.value) || 0;
+    const maxCount =
+      parseInt(document.getElementById("machine-count-max")?.value) || Infinity;
+
+    // 蜷後§讖溽ｨｮ蜷阪・蜿ｰ謨ｰ繧偵き繧ｦ繝ｳ繝・
+    const allCells = document.querySelectorAll(
+      '.map-cell[data-type="machine"]',
+    );
+    const machineCount = Array.from(allCells).filter(
+      (c) => c.getAttribute("data-machine-name") === machineName,
+    ).length;
+
+    if (machineCount < minCount || machineCount > maxCount) {
+      return false; // 蜿ｰ謨ｰ縺檎ｯ・峇螟・
+    }
+  }
+
+  return true; // 縺吶∋縺ｦ縺ｮ譚｡莉ｶ繧呈ｺ縺溘☆
+}
+
+// 驕主悉7譌･髢薙・繧､繝翫せ縺ｮ蜿ｰ繧定ｵ､濶ｲ縺ｫ縺吶ｋ
+function applyPast7DaysMinusColors() {
+  const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+
+  cells.forEach((cell) => {
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+
+    if (!shouldApplyColorToCell(cell)) {
+      return; // 繝輔ぅ繝ｫ繧ｿ繝ｼ譚｡莉ｶ繧呈ｺ縺溘＆縺ｪ縺・
+    }
+
+    const past7DaysDiffStr = cell.getAttribute("data-past-7days-diff");
+    if (
+      past7DaysDiffStr !== undefined &&
+      past7DaysDiffStr !== null &&
+      past7DaysDiffStr !== ""
+    ) {
+      const past7DaysDiff = parseFloat(past7DaysDiffStr);
+      if (!isNaN(past7DaysDiff) && past7DaysDiff < 0) {
+        cell.classList.add("color-red");
+      }
+    }
+  });
+}
+
+// 驕主悉7譌･髢薙・繝ｩ繧ｹ縺ｮ蜿ｰ繧堤ｷ題牡縺ｫ縺吶ｋ
+function applyPast7DaysPlusColors() {
+  const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+
+  cells.forEach((cell) => {
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+
+    if (!shouldApplyColorToCell(cell)) {
+      return; // 繝輔ぅ繝ｫ繧ｿ繝ｼ譚｡莉ｶ繧呈ｺ縺溘＆縺ｪ縺・
+    }
+
+    const past7DaysDiffStr = cell.getAttribute("data-past-7days-diff");
+    if (
+      past7DaysDiffStr !== undefined &&
+      past7DaysDiffStr !== null &&
+      past7DaysDiffStr !== ""
+    ) {
+      const past7DaysDiff = parseFloat(past7DaysDiffStr);
+      if (!isNaN(past7DaysDiff) && past7DaysDiff > 0) {
+        cell.classList.add("color-green");
+      }
+    }
+  });
+}
+
+// 驕主悉7譌･髢薙〒譛繧ょｷｮ譫壹′菴弱＞讖溽ｨｮ繧定ｵ､濶ｲ縺ｫ縺吶ｋ・医ヵ繧｣繝ｫ繧ｿ繝ｼ蠕後↓蜍慕噪險育ｮ暦ｼ・
+function applyWorstModelColors() {
+  const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+
+  // 縺ｾ縺壼・縺ｦ縺ｮ濶ｲ繧偵け繝ｪ繧｢
+  cells.forEach((cell) => {
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+  });
+
+  // 繝輔ぅ繝ｫ繧ｿ繝ｼ蟇ｾ雎｡縺ｮ蜿ｰ繧貞庶髮・＠縲∵ｩ溽ｨｮ縺斐→縺ｮ蜷郁ｨ亥ｷｮ譫壹ｒ險育ｮ・
+  const modelTotals = {};
+  const modelCells = {};
+
+  cells.forEach((cell) => {
+    if (!shouldApplyColorToCell(cell)) {
+      return; // 繝輔ぅ繝ｫ繧ｿ繝ｼ譚｡莉ｶ繧呈ｺ縺溘＆縺ｪ縺・
+    }
+
+    const machineName = cell.getAttribute("data-machine-name") || "";
+    const past7DaysDiffStr = cell.getAttribute("data-past-7days-diff");
+    const past7DaysDiff =
+      past7DaysDiffStr !== undefined &&
+      past7DaysDiffStr !== null &&
+      past7DaysDiffStr !== ""
+        ? parseFloat(past7DaysDiffStr)
+        : 0;
+
+    if (isNaN(past7DaysDiff)) {
+      return; // 辟｡蜉ｹ縺ｪ蛟､縺ｯ繧ｹ繧ｭ繝・・
+    }
+
+    if (!modelTotals[machineName]) {
+      modelTotals[machineName] = 0;
+      modelCells[machineName] = [];
+    }
+    modelTotals[machineName] += past7DaysDiff;
+    modelCells[machineName].push(cell);
+  });
+
+  // 讖溽ｨｮ邱丞ｷｮ譫壹′譛繧ゆｽ弱＞讖溽ｨｮ繧堤音螳・
+  let worstModelName = null;
+  let worstTotal = Infinity;
+
+  Object.entries(modelTotals).forEach(([modelName, total]) => {
+    if (total < worstTotal) {
+      worstTotal = total;
+      worstModelName = modelName;
+    }
+  });
+
+  // 譛繧ょｷｮ譫壹′菴弱＞讖溽ｨｮ縺ｮ蜈ｨ蜿ｰ縺ｫ襍､濶ｲ繧帝←逕ｨ
+  if (worstModelName && modelCells[worstModelName]) {
+    modelCells[worstModelName].forEach((cell) => {
+      cell.classList.add("color-red");
+    });
+  }
+}
+
+// 蠖捺律縺ｮ蟾ｮ譫壹ｒ谿ｵ髫守噪縺ｫ濶ｲ蛻・￠
+function applyTodayDiffLevelColors() {
+  const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+
+  cells.forEach((cell) => {
+    cell.classList.remove(
+      "color-red",
+      "color-green",
+      "color-yellow",
+      "color-light-green",
+      "color-dark-green",
+      "color-light-red",
+      "color-dark-red",
+    );
+
+    if (!shouldApplyColorToCell(cell)) {
+      return; // 繝輔ぅ繝ｫ繧ｿ繝ｼ譚｡莉ｶ繧呈ｺ縺溘＆縺ｪ縺・
+    }
+
+    const level = cell.dataset.todayDiffLevel;
+    if (level) {
+      switch (level) {
+        case "1":
+          cell.classList.add("color-light-green"); // +1000・・1999
+          break;
+        case "2":
+          cell.classList.add("color-dark-green"); // +2000・・2999
+          break;
+        case "3":
+          cell.classList.add("color-light-red"); // +3000・・3999
+          break;
+        case "4":
+          cell.classList.add("color-dark-red"); // +4000・・
+          break;
+      }
+    }
+  });
+}
+
+// ============================================================
+// 陦ｨ遉ｺ險ｭ螳壽ｩ溯・
+// ============================================================
+
+// 繝槭ャ繝励・陦ｨ遉ｺ蜀・ｮｹ繧呈峩譁ｰ
+window.updateMapDisplay = function () {
+  const nameCheckbox = document.getElementById("show-machine-name");
+  const numberCheckbox = document.getElementById("show-machine-number");
+  const diffCheckbox = document.getElementById("show-diff");
+  const gamesCheckbox = document.getElementById("show-map-games");
+  const bbCheckbox = document.getElementById("show-bb");
+
+  const showMachineName = nameCheckbox?.checked ?? true;
+  const showMachineNumber = numberCheckbox?.checked ?? true;
+  const showDiff = diffCheckbox?.checked ?? false;
+  const showGames = gamesCheckbox?.checked ?? false;
+  const showBb = bbCheckbox?.checked ?? false;
+
+  const cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+
+  cells.forEach((cell) => {
+    const machineInfo = cell.querySelector(".machine-info");
+    if (!machineInfo) return;
+
+    // 蜷・ｦ∫ｴ縺ｮ陦ｨ遉ｺ/髱櫁｡ｨ遉ｺ繧貞・繧頑崛縺・
+    const nameElement = machineInfo.querySelector(".machine-name");
+    const numberElement = machineInfo.querySelector(".machine-number");
+    let statsElement = machineInfo.querySelector(".machine-stats");
+
+    if (nameElement) {
+      nameElement.style.display = showMachineName ? "block" : "none";
+    }
+
+    if (numberElement) {
+      numberElement.style.display = showMachineNumber ? "block" : "none";
+    }
+
+    // statsElement縺悟ｭ伜惠縺励↑縺・ｴ蜷医・菴懈・
+    if (!statsElement) {
+      statsElement = document.createElement("div");
+      statsElement.className = "machine-stats";
+      machineInfo.appendChild(statsElement);
+    }
+
+    // 蟾ｮ譫壹∝屓霆｢謨ｰ縲。B縺ｮ陦ｨ遉ｺ繧貞・讒狗ｯ・
+    const difference = cell.dataset.difference || "0";
+    const games = cell.dataset.games || "0";
+
+    let statsHtml = "";
+
+    if (showDiff) {
+      const diffNum = parseInt(difference);
+      const diffClass =
+        diffNum > 0 ? "positive" : diffNum < 0 ? "negative" : "";
+      statsHtml += `<div class="stat-diff ${diffClass}">${diffNum > 0 ? "+" : ""}${difference}</div>`;
+    }
+
+    if (showGames) {
+      statsHtml += `<div class="stat-games">${games}G</div>`;
+    }
+
+    if (showBb) {
+      // BB諠・ｱ縺ｯ霑ｽ蜉縺ｮ繝・・繧ｿ縺悟ｿ・ｦ・ｼ育樟迥ｶ縺ｯ髱櫁｡ｨ遉ｺ・・
+      statsHtml += `<div class="stat-bb">BB: -</div>`;
+    }
+
+    statsElement.innerHTML = statsHtml;
+    statsElement.style.display =
+      showDiff || showGames || showBb ? "flex" : "none";
+  });
+};
+
+// 繧ｻ繝ｫ繧ｵ繧､繧ｺ繧呈峩譁ｰ・域ｨｪ蟷・・邵ｦ蟷・挨縲・↓謖・ｮ夲ｼ・
+window.updateCellSize = function () {
+  const cells = document.querySelectorAll(".map-cell");
+  const tables = document.querySelectorAll(".map-table, #map-table");
+  const widthSlider = document.getElementById("cell-width-slider");
+  const heightSlider = document.getElementById("cell-height-slider");
+  const widthDisplay = document.getElementById("cell-width-display");
+  const heightDisplay = document.getElementById("cell-height-display");
+
+  const width = widthSlider ? widthSlider.value : 40;
+  const height = heightSlider ? heightSlider.value : 20;
+
+  // 繝・・繝悶Ν縺ｫtable-layout: fixed繧定ｨｭ螳壹＠縺ｦ縲√そ繝ｫ蟷・ｒ蝗ｺ螳・
+  tables.forEach((table) => {
+    table.style.setProperty("table-layout", "fixed", "important");
+    table.style.setProperty("width", "auto", "important");
+    table.style.setProperty("max-width", "none", "important");
+    table.style.setProperty("display", "table", "important");
+    // 繧ｺ繝ｼ繝縺ｮtransform繧剃ｿ晄戟・医Μ繧ｻ繝・ヨ縺励↑縺・ｼ・
+  });
+
+  cells.forEach((cell) => {
+    cell.style.setProperty("width", `${width}px`, "important");
+    cell.style.setProperty("min-width", `${width}px`, "important");
+    cell.style.setProperty("max-width", `${width}px`, "important");
+    cell.style.setProperty("height", `${height}px`, "important");
+    cell.style.setProperty("box-sizing", "border-box", "important");
+  });
+
+  if (widthDisplay) {
+    widthDisplay.textContent = `${width}px`;
+  }
+  if (heightDisplay) {
+    heightDisplay.textContent = `${height}px`;
+  }
+
+  // 繧ｻ繝ｫ繧ｵ繧､繧ｺ螟画峩蠕後√ぜ繝ｼ繝縺ｮ繧ｵ繧､繧ｺ隱ｿ謨ｴ繧貞・險育ｮ・
+  const mapTable = document.querySelector(".map-table");
+  if (mapTable && window.currentMapZoomScale) {
+    applyZoomWithCurrentScale(mapTable, window.currentMapZoomScale);
+  }
+};
+
+// 繝輔か繝ｳ繝医し繧､繧ｺ繧呈峩譁ｰ
+window.updateFontSize = function (size) {
+  const display = document.getElementById("font-size-display");
+  const slider = document.getElementById("font-size-slider");
+  const sizeNum = parseFloat(size);
+
+  // 繧ｹ繝ｩ繧､繝繝ｼ縺ｮ蛟､繧呈峩譁ｰ
+  if (slider) {
+    slider.value = sizeNum;
+  }
+
+  // machine-info蜀・・蜈ｨ隕∫ｴ縺ｫ繝輔か繝ｳ繝医し繧､繧ｺ繧帝←逕ｨ・亥・縺ｦ蜷後§繧ｵ繧､繧ｺ縺ｫ邨ｱ荳・・
+  const machineInfos = document.querySelectorAll(".machine-info");
+
+  machineInfos.forEach((info) => {
+    const nameElement = info.querySelector(".machine-name");
+    const numberElement = info.querySelector(".machine-number");
+    const statsElement = info.querySelector(".machine-stats");
+
+    if (nameElement) {
+      nameElement.style.fontSize = `${sizeNum}px`;
+    }
+    if (numberElement) {
+      // 蜿ｰ逡ｪ蜿ｷ繧ょ酔縺倥し繧､繧ｺ縺ｫ邨ｱ荳
+      numberElement.style.fontSize = `${sizeNum}px`;
+    }
+    if (statsElement) {
+      // 蟾ｮ譫壹・蝗櫁ｻ｢謨ｰ繧ょ酔縺倥し繧､繧ｺ縺ｫ邨ｱ荳
+      statsElement.style.fontSize = `${sizeNum}px`;
+      // 蛟句挨隕∫ｴ縺ｫ繧る←逕ｨ
+      const statItems = statsElement.querySelectorAll(
+        ".stat-diff, .stat-games, .stat-bb",
+      );
+      statItems.forEach((item) => {
+        item.style.fontSize = `${sizeNum}px`;
+      });
+    }
+  });
+
+  if (display) {
+    display.textContent = `${sizeNum}px`;
+  }
+};
+
+// 繧ｰ繝ｪ繝・ラ邱壹・陦ｨ遉ｺ蛻・ｊ譖ｿ縺・
+window.toggleGrid = function () {
+  const checkbox = document.getElementById("show-grid");
+  if (!checkbox) return;
+
+  const showGrid = checkbox.checked;
+  const tables = document.querySelectorAll(".map-table, #map-table");
+
+  tables.forEach((table) => {
+    if (showGrid) {
+      table.classList.remove("no-grid");
+    } else {
+      table.classList.add("no-grid");
+    }
+  });
+};
+
+// 繝代ロ繝ｫ縺ｮ髢矩哩
+function togglePanel(panelId) {
+  const panel = document.getElementById(panelId);
+  const header = panel.previousElementSibling;
+  const toggle = header.querySelector(".collapsible-toggle");
+
+  if (panel.style.display === "none" || !panel.style.display) {
+    panel.style.display = "block";
+    toggle.textContent = "笆ｲ";
+  } else {
+    panel.style.display = "none";
+    toggle.textContent = "笆ｼ";
+  }
+}
+
+// ============================================================
+// 蛻晄悄蛹・
+// ============================================================
+
+// 蛻晄悄蛹匁ｸ医∩繝輔Λ繧ｰ・医せ繧ｯ繝ｪ繝励ヨ縺ｮ驥崎､・ｪｭ縺ｿ霎ｼ縺ｿ蟇ｾ遲厄ｼ・
+if (typeof window.mapIsInitialized === "undefined") {
+  window.mapIsInitialized = false;
+}
+
+// 繝壹・繧ｸ繝ｭ繝ｼ繝画凾縺ｮ邨ｱ蜷亥・譛溷喧
+function initializeMapDisplay() {
+  if (window.mapIsInitialized) {
+    return;
+  }
+
+  window.mapIsInitialized = true;
+
+  setTimeout(() => {
+    // 繧ｻ繝ｫ繧ｵ繧､繧ｺ縺ｮ蛻晄悄蛹・
+    updateCellSize();
+
+    // 繝輔か繝ｳ繝医し繧､繧ｺ縺ｮ蛻晄悄蛹厄ｼ・px縺ｫ險ｭ螳夲ｼ・
+    updateFontSize(8);
+
+    // 繧ｰ繝ｪ繝・ラ邱壹・蛻晄悄蛹・
+    const gridCheckbox = document.getElementById("show-grid");
+    if (gridCheckbox && gridCheckbox.checked) {
+      const tables = document.querySelectorAll(".map-table, #map-table");
+      tables.forEach((table) => {
+        table.classList.remove("no-grid");
+      });
+    }
+
+    // 陦ｨ遉ｺ險ｭ螳壹・繝√ぉ繝・け繝懊ャ繧ｯ繧ｹ縺ｫ繧､繝吶Φ繝医Μ繧ｹ繝翫・繧定ｿｽ蜉
+    setupDisplayCheckboxes();
+
+    // 陦ｨ遉ｺ鬆・岼縺ｮ蛻晄悄蛹・
+    updateMapDisplay();
+
+    // 濶ｲ蛻・￠繝｢繝ｼ繝峨・蛻晄悄蛹厄ｼ域怙蠕後↓螳溯｡鯉ｼ・
+    initializeColorMode();
+  }, 100);
+}
+
+// 陦ｨ遉ｺ險ｭ螳壹・繝√ぉ繝・け繝懊ャ繧ｯ繧ｹ縺ｫ繧､繝吶Φ繝医Μ繧ｹ繝翫・繧定ｿｽ蜉
+function setupDisplayCheckboxes() {
+  const checkboxIds = [
+    "show-machine-name",
+    "show-machine-number",
+    "show-diff",
+    "show-map-games",
+    "show-bb",
+  ];
+
+  checkboxIds.forEach((id) => {
+    const checkbox = document.getElementById(id);
+    if (checkbox) {
+      // 譌｢蟄倥・繝ｪ繧ｹ繝翫・繧貞炎髯､・磯㍾隍・亟豁｢・・
+      checkbox.removeEventListener("change", updateMapDisplay);
+      // 譁ｰ縺励＞繝ｪ繧ｹ繝翫・繧定ｿｽ蜉
+      checkbox.addEventListener("change", function () {
+        updateMapDisplay();
+      });
+
+      
+    }
+  });
+}
+
+// Turbo繝輔Ξ繝ｼ繝繝ｯ繝ｼ繧ｯ繧剃ｽｿ逕ｨ縺励※縺・ｋ縺溘ａ縲》urbo:load縺ｮ縺ｿ繧剃ｽｿ逕ｨ
+// DOMContentLoaded縺ｨturbo:load縺御ｸ｡譁ｹ逋ｺ轣ｫ縺吶ｋ縺溘ａ縲》urbo:load縺ｮ縺ｿ繧剃ｽｿ逕ｨ
+document.addEventListener("turbo:load", function () {
+  window.mapIsInitialized = false;
+  initializeMapDisplay();
+  initializeMapZoom(); // 繧ｺ繝ｼ繝讖溯・繧貞・譛溷喧
+});
+
+document.addEventListener("turbo:frame-load", function () {
+  window.mapIsInitialized = false;
+  initializeMapDisplay();
+  initializeMapZoom(); // 繧ｺ繝ｼ繝讖溯・繧貞・譛溷喧
+});
+
+// ========================================
+// 繝槭ャ繝励ぜ繝ｼ繝讖溯・
+// ========================================
+
+// 繧ｰ繝ｭ繝ｼ繝舌Ν螟画焚縺ｨ縺励※繧ｺ繝ｼ繝繧ｹ繧ｱ繝ｼ繝ｫ繧剃ｿ晄戟
+window.currentMapZoomScale = 1;
+
+// applyZoom縺ｮ繝倥Ν繝代・髢｢謨ｰ・医せ繧ｱ繝ｼ繝ｫ繧剃ｿ晄戟縺励※菴ｿ逕ｨ・・
+function applyZoomWithCurrentScale(element, scale) {
+  applyZoom(element, scale);
+}
+
+function initializeMapZoom() {
+  const mapContainer = document.querySelector(".map-grid-container");
+  const mapTable = document.querySelector(".map-table");
+
+  if (!mapContainer || !mapTable) {
+    return;
+  }
+
+  let scale = 1;
+  const minScale = 0.5;
+  const maxScale = 3;
+  const scaleStep = 0.1;
+
+  // 繧ｿ繝・メ髢｢騾｣縺ｮ螟画焚
+  let initialDistance = 0;
+  let initialScale = 1;
+  let isZooming = false;
+
+  // PC逕ｨ: Ctrl + 繝帙う繝ｼ繝ｫ縺ｧ繧ｺ繝ｼ繝
+  mapContainer.addEventListener(
+    "wheel",
+    function (e) {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+
+        const delta = -e.deltaY;
+        const scaleChange = delta > 0 ? scaleStep : -scaleStep;
+        scale = Math.min(Math.max(scale + scaleChange, minScale), maxScale);
+
+        window.currentMapZoomScale = scale;
+        applyZoom(mapTable, scale);
+      }
+      // Ctrl/Cmd 縺梧款縺輔ｌ縺ｦ縺・↑縺・ｴ蜷医・騾壼ｸｸ縺ｮ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧定ｨｱ蜿ｯ・井ｽ輔ｂ縺励↑縺・ｼ・
+    },
+    { passive: false },
+  );
+
+  // Safari逕ｨ: gesture繧､繝吶Φ繝茨ｼ・OS Safari蟆ら畑・・
+  let lastGestureScale = 1;
+
+  mapContainer.addEventListener(
+    "gesturestart",
+    function (e) {
+      e.preventDefault();
+      lastGestureScale = 1;
+      isZooming = true;
+    },
+    { passive: false },
+  );
+
+  mapContainer.addEventListener(
+    "gesturechange",
+    function (e) {
+      e.preventDefault();
+      scale = Math.min(
+        Math.max(scale * (e.scale / lastGestureScale), minScale),
+        maxScale,
+      );
+      lastGestureScale = e.scale;
+      window.currentMapZoomScale = scale;
+      applyZoom(mapTable, scale);
+    },
+    { passive: false },
+  );
+
+  mapContainer.addEventListener(
+    "gestureend",
+    function (e) {
+      e.preventDefault();
+      isZooming = false;
+      lastGestureScale = 1;
+    },
+    { passive: false },
+  );
+
+  // 繧ｹ繝槭・逕ｨ: 繝斐Φ繝√う繝ｳ繝ｻ繝斐Φ繝√い繧ｦ繝茨ｼ・ndroid Chrome逕ｨ・・
+  mapContainer.addEventListener(
+    "touchstart",
+    function (e) {
+      if (e.touches.length === 2) {
+        // 2譛ｬ謖・・蝣ｴ蜷医・縺ｿpreventDefault・医ぜ繝ｼ繝謫堺ｽ懶ｼ・
+        e.preventDefault();
+        isZooming = true;
+        initialDistance = getDistance(e.touches[0], e.touches[1]);
+        initialScale = scale;
+      }
+      // 1譛ｬ謖・・蝣ｴ蜷医・菴輔ｂ縺励↑縺・ｼ医せ繧ｯ繝ｭ繝ｼ繝ｫ蜿ｯ閭ｽ・・
+    },
+    { passive: false },
+  );
+
+  mapContainer.addEventListener(
+    "touchmove",
+    function (e) {
+      if (e.touches.length === 2 && isZooming) {
+        // 2譛ｬ謖・・蝣ｴ蜷医・縺ｿpreventDefault・医ぜ繝ｼ繝蜃ｦ逅・ｼ・
+        e.preventDefault();
+
+        const currentDistance = getDistance(e.touches[0], e.touches[1]);
+        const scaleChange = currentDistance / initialDistance;
+        scale = Math.min(
+          Math.max(initialScale * scaleChange, minScale),
+          maxScale,
+        );
+
+        window.currentMapZoomScale = scale;
+        applyZoom(mapTable, scale);
+      }
+      // 1譛ｬ謖・・蝣ｴ蜷医・菴輔ｂ縺励↑縺・ｼ医せ繧ｯ繝ｭ繝ｼ繝ｫ蜿ｯ閭ｽ・・
+    },
+    { passive: false },
+  );
+
+  mapContainer.addEventListener(
+    "touchend",
+    function (e) {
+      if (e.touches.length < 2) {
+        initialDistance = 0;
+        isZooming = false;
+      }
+    },
+    { passive: false },
+  );
+
+  // 2轤ｹ髢薙・霍晞屬繧定ｨ育ｮ・
+  function getDistance(touch1, touch2) {
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  // 繧ｺ繝ｼ繝繧帝←逕ｨ・医せ繧ｯ繝ｭ繝ｼ繝ｫ繧堤ｶｭ謖√☆繧九ｈ縺・↓謾ｹ蝟・ｼ・
+  function applyZoom(element, scale) {
+    window.currentMapZoomScale = scale;
+    element.style.transform = `scale(${scale})`;
+    element.style.transformOrigin = "top left";
+
+    // 繧ｳ繝ｳ繝・リ縺ｮ繧ｵ繧､繧ｺ繧定ｪｿ謨ｴ縺励※縲√せ繧ｯ繝ｭ繝ｼ繝ｫ蜿ｯ閭ｽ縺ｫ縺吶ｋ
+    // 繝・・繝悶Ν縺ｮ螳滄圀縺ｮ繧ｵ繧､繧ｺ繧貞叙蠕暦ｼ・ransform驕ｩ逕ｨ蜑阪・繧ｵ繧､繧ｺ・・
+    const rect = element.getBoundingClientRect();
+    const actualWidth = rect.width / scale; // transform蜑阪・螳滄圀縺ｮ蟷・
+    const actualHeight = rect.height / scale; // transform蜑阪・螳滄圀縺ｮ鬮倥＆
+
+    const scaledWidth = actualWidth * scale;
+    const scaledHeight = actualHeight * scale;
+
+    // 繧ｳ繝ｳ繝・リ縺ｮ譛蟆上し繧､繧ｺ繧定ｨｭ螳壹＠縺ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ蜿ｯ閭ｽ縺ｫ縺吶ｋ
+    mapContainer.style.minHeight = `${scaledHeight}px`;
+    mapContainer.style.overflowY = "auto";
+
+    // 讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧呈怏蜉ｹ縺ｫ縺吶ｋ・・C繝ｻ繧ｹ繝槭・蜈ｱ騾夲ｼ・
+    mapContainer.style.minWidth = "100%"; // 繧ｳ繝ｳ繝・リ閾ｪ菴薙・100%
+    mapContainer.style.overflowX = "auto";
+
+    // 繝・・繝悶Ν縺ｫ驕ｩ蛻・↑蟷・ｒ險ｭ螳・
+    if (scale > 1) {
+      // 繧ｺ繝ｼ繝繧､繝ｳ譎ゅ・縺ｿ縲√せ繧ｯ繝ｭ繝ｼ繝ｫ蜿ｯ閭ｽ縺ｫ縺吶ｋ縺溘ａ縺ｫ蟷・ｒ險ｭ螳・
+      element.style.width = `${actualWidth}px`;
+    } else {
+      // 繧ｺ繝ｼ繝繧｢繧ｦ繝域凾縺ｯ閾ｪ蜍戊ｪｿ謨ｴ
+      element.style.width = "auto";
+    }
+  }
+}

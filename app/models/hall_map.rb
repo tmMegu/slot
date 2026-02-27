@@ -1,3 +1,19 @@
+# ホールのフロアマップを表すモデル
+#
+# カラム:
+#   id             - 主キー
+#   hall_id         - ホールID（外部キー）
+#   name           - マップ名
+#   rows           - 行数（1〜100）
+#   cols           - 列数（1〜100）
+#   layout_data    - セル配置データ（JSON形式）
+#                    キー: "行_列" (例: "0_3")
+#                    値: { type: "machine"/"wall"/"counter", machine_number: 台番号, label: ラベル }
+#   color_settings - 色分け設定（JSON形式）
+#   created_at, updated_at - タイムスタンプ
+#
+# 関連:
+#   belongs_to :hall - 所属ホール
 class HallMap < ApplicationRecord
   belongs_to :hall
 

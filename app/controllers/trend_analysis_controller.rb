@@ -1,3 +1,14 @@
+# 傾向分析を行うコントローラー
+#
+# 主な機能:
+#   - show: 過去データから高設定の傾向を分析
+#     - 機種名フィルタリング（AND/OR検索）
+#     - 数値範囲フィルタリング（G数・差枚・BB回数）
+#     - 台番号末尾・ぞろ目・偶奇フィルタリング
+#     - 過去差枚のワースト/ベスト分析
+#     - 日別集計統計の表示
+#
+# フィルタリング・集計の共通処理は MachineDataFilterable をincludeして利用
 class TrendAnalysisController < ApplicationController
   include MachineDataFilterable
 

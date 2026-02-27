@@ -1,3 +1,8 @@
+// ============================================================
+// マップエディタのJavaScript
+// セル選択・配置・行列操作・ズーム・保存を担当
+// ============================================================
+
 // グローバル変数（存在しない場合のみ宣言）
 if (typeof editorLayoutData === "undefined") {
   var editorLayoutData = {};
@@ -38,7 +43,6 @@ document.addEventListener("DOMContentLoaded", function () {
         layoutData = JSON.parse(jsonText);
       }
     } catch (e) {
-      console.error("Failed to parse layout data:", e);
       layoutData = {};
     }
 
@@ -53,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const key = `${row}_${col}`;
 
-      // 既存のJSONデータが空、またはこのセルがJSONに存在しない場合、HTMLから構築
+      // 既存のJSONデータが空、またはこのセルがJSONに存在しない場合HTMLから構築
       if (!layoutData[key] && cellType !== "empty") {
         layoutData[key] = {
           row: row,
@@ -75,7 +79,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    console.log("Initialized editor with layout data:", layoutData);
     initializeEditor(hallId, mapId, layoutData, rows, cols);
   }
 });
@@ -88,10 +91,6 @@ function initializeEditor(hallId, mapId, layoutData, rows, cols) {
   mapRows = rows;
   mapCols = cols;
   selectTool("select");
-  console.log(
-    "Editor initialized. Current editorLayoutData:",
-    editorLayoutData,
-  );
 }
 
 // ツール選択
@@ -116,7 +115,7 @@ function selectTool(tool) {
     }
   }
 
-  // 行列編集は「選択」ツールの時のみ表示
+  // 行列編集パネルは「選択」ツールの時のみ表示
   if (rowColPanel) {
     if (tool === "select") {
       rowColPanel.style.display = "inline-flex";
@@ -160,7 +159,7 @@ function selectCell(row, col) {
       cell.className = "editor-cell machine";
       cell.innerHTML = `<div class="cell-content"><span class="cell-number">${machineNumber}</span></div>`;
 
-      // 自動増減の設定を取得
+      // 自動増分の設定を取得
       const autoIncrement = getAutoIncrementValue();
       if (autoIncrement !== 0) {
         const newValue = parseInt(machineNumber) + autoIncrement;
@@ -173,11 +172,11 @@ function selectCell(row, col) {
     // 壁ツールの場合、即座に壁を配置
     updateCellData(row, col, {
       type: "wall",
-      label: "■",
+      label: "█",
     });
     cell.dataset.type = "wall";
     cell.className = "editor-cell wall";
-    cell.innerHTML = `<div class="cell-content wall">■</div>`;
+    cell.innerHTML = `<div class="cell-content wall">█</div>`;
   } else if (currentTool === "counter") {
     // カウンターツールの場合、即座にカウンターを配置
     updateCellData(row, col, {
@@ -237,6 +236,7 @@ function updateSelectionDisplay(row, col) {
   display.textContent = info;
 }
 
+// セルタイプの表示ラベルを取得
 function getTypeLabel(type) {
   const labels = {
     machine: "🎰 台",
@@ -247,7 +247,7 @@ function getTypeLabel(type) {
   return labels[type] || type;
 }
 
-// 自動増減の値を取得
+// 自動増分の値を取得
 function getAutoIncrementValue() {
   const selected = document.querySelector(
     'input[name="auto-increment"]:checked',
@@ -255,7 +255,7 @@ function getAutoIncrementValue() {
   return selected ? parseInt(selected.value) : 0;
 }
 
-// 台番号を適用
+// 台番号を適用（ボタンクリック用）
 function applyMachineNumber() {
   if (!selectedCell) {
     alert("セルを選択してください");
@@ -280,13 +280,13 @@ function applyMachineNumber() {
   selectedCell.dataset.type = "machine";
   selectedCell.dataset.machineNumber = machineNumber;
   selectedCell.className = "editor-cell machine";
-  selectedCell.innerHTML = `<div class="cell-content"><span class="cell-number">台${machineNumber}</span></div>`;
+  selectedCell.innerHTML = `<div class="cell-content"><span class="cell-number">${machineNumber}</span></div>`;
 
   document.getElementById("machine-number-input").value =
     parseInt(machineNumber) + 1;
 }
 
-// セルデータを更新
+// セルデータを更新（メモリ内のeditorLayoutDataを変更）
 function updateCellData(row, col, data) {
   const key = `${row}_${col}`;
   editorLayoutData[key] = data;
@@ -298,13 +298,9 @@ function saveMapData() {
   saveBtn.disabled = true;
   saveBtn.textContent = "保存中...";
 
-  // データの検証（editorLayoutDataが空の場合、HTMLから再構築を試みる）
+  // データの検証：editorLayoutDataが空の場合HTMLから再構築を試みる
   if (!editorLayoutData || Object.keys(editorLayoutData).length === 0) {
-    console.warn(
-      "editorLayoutData is empty, attempting to rebuild from HTML...",
-    );
-
-    // HTMLテーブルから再度セルデータを読み取り
+    // HTMLテーブルから全セルデータを読み取り
     const cellElements = document.querySelectorAll(".editor-cell");
     const rebuiltData = {};
 
@@ -339,13 +335,9 @@ function saveMapData() {
 
     if (Object.keys(rebuiltData).length > 0) {
       editorLayoutData = rebuiltData;
-      console.log(
-        "Successfully rebuilt layout data from HTML:",
-        editorLayoutData,
-      );
     } else {
       alert(
-        "保存するデータがありません。マップが正しく読み込まれていない可能性があります。",
+        "保存するデータがありません。データが正しく読み込まれていない可能性があります。",
       );
       saveBtn.disabled = false;
       saveBtn.textContent = "💾 保存";
@@ -353,13 +345,11 @@ function saveMapData() {
     }
   }
 
-  console.log("Saving layout data:", editorLayoutData);
-
   // hidden fieldにデータを設定
   document.getElementById("layout-data-field").value =
     JSON.stringify(editorLayoutData);
 
-  // 行・列のサイズも更新
+  // 行と列のサイズも更新
   document.getElementById("rows-field").value = mapRows;
   document.getElementById("cols-field").value = mapCols;
 
@@ -367,7 +357,10 @@ function saveMapData() {
   document.getElementById("map-save-form").submit();
 }
 
+// ============================================================
 // ズーム機能
+// ============================================================
+
 function zoomIn() {
   zoomLevel = Math.min(zoomLevel + 0.1, 2.0);
   applyZoom();
@@ -432,11 +425,9 @@ function syncLayoutDataFromDOM() {
       }
     }
   });
-
-  console.log(`Synced ${syncCount} cells from DOM to editorLayoutData`);
 }
 
-// 選択中のセルの行/列を取得
+// 選択中のセルの行・列を取得
 function getSelectedRowCol() {
   if (!selectedCell) {
     alert("セルを選択してから操作してください");
@@ -565,10 +556,10 @@ function removeRowAtSelection(position) {
   updateMapInfo();
   reloadMapTable();
 
-  // 削除後、寄ってきたセルを選択
+  // 削除後、残ってきたセルを選択
   let newRow = selected.row;
   if (position === "current") {
-    // 現在の行を削除した場合、次の行（寄ってくる）を選択
+    // 現在の行を削除した場合、次の行（繰り上ってくる）を選択
     newRow = Math.min(selected.row, mapRows);
   } else {
     // 下の行を削除した場合、元のセルはそのまま
@@ -699,10 +690,10 @@ function removeColumnAtSelection(position) {
   updateMapInfo();
   reloadMapTable();
 
-  // 削除後、寄ってきたセルを選択
+  // 削除後、残ってきたセルを選択
   let newCol = selected.col;
   if (position === "current") {
-    // 現在の列を削除した場合、次の列（寄ってくる）を選択
+    // 現在の列を削除した場合、次の列（繰り上ってくる）を選択
     newCol = Math.min(selected.col, mapCols);
   } else {
     // 右の列を削除した場合、元のセルはそのまま
@@ -715,11 +706,11 @@ function removeColumnAtSelection(position) {
   }, 10);
 }
 
-// マップ情報の更新
+// マップ情報の表示更新
 function updateMapInfo() {
   const infoElement = document.querySelector(".map-info");
   if (infoElement) {
-    infoElement.textContent = `📐 ${mapRows}行 × ${mapCols}列`;
+    infoElement.textContent = `🗺 ${mapRows}行 × ${mapCols}列`;
   }
 
   // hidden fieldも更新
@@ -763,7 +754,7 @@ function reloadMapTable() {
         td.dataset.label = cellData.label || "";
         const content = document.createElement("div");
         content.className = "cell-content wall";
-        content.textContent = cellData.label || "■";
+        content.textContent = cellData.label || "█";
         td.appendChild(content);
       } else if (cellData.type === "counter") {
         td.dataset.label = cellData.label || "";

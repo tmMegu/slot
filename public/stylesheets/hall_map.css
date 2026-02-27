@@ -66,22 +66,22 @@
   background: #f8f9fa;
 }
 
-/* マップグリチE��コンチE�� */
+/* マップグリッドコンテナ */
 .map-grid-container {
   width: 100%;
   max-width: 100%;
   overflow-x: auto; /* PC でも横スクロール有効化 */
   overflow-y: auto;
   position: relative; /* ズーム用のポジショニング */
-  touch-action: manipulation; /* Safari対応: 基本的なタッチ操作のみ許可 */
+  touch-action: pan-x pan-y pinch-zoom; /* Safari対応: スクロールとピンチズームを許可 */
   -webkit-overflow-scrolling: touch; /* iOS でスムーズスクロール */
 }
 
 /* ズーム機能用のテーブルスタイル */
 .map-table {
-  transition: transform 0.1s ease-out;
+  transition: none; /* ズーム時のちらつきを防止 */
   transform-origin: top left;
-  touch-action: manipulation; /* Safari対応 */
+  touch-action: pan-x pan-y pinch-zoom; /* Safari対応 */
 }
 
 /* マップテーブル */
@@ -252,7 +252,7 @@
 }
 
 .machine-number {
-  font-size: 10px; /* 8px × 1.2 ≈ 10px */
+  font-size: 8px; /* 機種名と同じサイズに統一 */
   color: #10b981;
   font-weight: bold;
   line-height: 1.1;
@@ -1063,8 +1063,9 @@
   /* スマホではマップグリッドコンテナで横スクロール可能にする */
   .map-grid-container {
     overflow-x: auto !important;
-    overflow-y: visible !important;
+    overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y pinch-zoom !important;
     width: 100%;
   }
 

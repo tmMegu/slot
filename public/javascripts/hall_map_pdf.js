@@ -1,12 +1,8 @@
-/**
- * ホールマップPDF出力機能
- *
- * ブラウザの印刷機能を使用してマップをPDF出力します。
- * 既存の処理には影響を与えず、独立して動作します。
- */
-
 // ============================================================
-// グローバル変数
+// ホールマップPDF出力機能
+//
+// ブラウザの印刷機能を使用してマップをPDF出力します。
+// 既存の処理には影響を与えず、独立して動作します。
 // ============================================================
 
 // 印刷準備中フラグ（スクリプトの重複読み込み対策）
@@ -21,7 +17,7 @@ if (typeof window.pdfIsPrintPreparing === "undefined") {
 /**
  * PDF出力を実行する（表部分のみ）
  *
- * 【処理の流れ】
+ * 処理の流れ:
  * 1. 不要な要素を非表示にする
  * 2. ユーザー指定のスケールを適用
  * 3. 印刷ダイアログを表示
@@ -33,20 +29,15 @@ window.exportMapToPDF = function () {
   }
 
   try {
-    console.log("=== PDF出力開始 ===");
-
     // セルサイズと余白を固定値で設定
     const cellWidthMm = 34;
     const cellHeightMm = 34;
     const marginMm = 0;
 
-    console.log(`セルサイズ: ${cellWidthMm}mm x ${cellHeightMm}mm`);
-
     // 動的にページサイズを設定するスタイルを追加
     addDynamicPrintStyle(cellWidthMm, cellHeightMm, marginMm);
 
     // 印刷準備（不要な要素を非表示）
-    console.log("preparePrint()を呼び出します");
     preparePrint();
 
     // 少し遅延させてから印刷ダイアログを表示
@@ -59,7 +50,6 @@ window.exportMapToPDF = function () {
       }, 1000);
     }, 100);
   } catch (error) {
-    console.error("PDF出力エラー:", error);
     alert("PDF出力に失敗しました。もう一度お試しください。");
     cleanupPrint();
   }
@@ -85,7 +75,6 @@ function getDisplaySettings() {
     showBB: document.getElementById("show-bb")?.checked ?? false,
   };
 
-  console.log("表示設定:", settings);
   return settings;
 }
 
@@ -218,30 +207,10 @@ function addDynamicPrintStyle(cellWidthMm, cellHeightMm, marginMm) {
   `;
   document.head.appendChild(style);
 
-  console.log(
-    `PDF設定: ${rows}行 x ${cols}列, セルサイズ: ${cellWidthMm}mm x ${cellHeightMm}mm, 余白: ${marginMm}mm, 用紙: ${pageWidthMm}mm x ${pageHeightMm}mm`,
-  );
-
-  const machineNameFontSize = Math.max(Math.floor(cellHeightMm / 1.8), 16);
-  const machineNumberFontSize = Math.max(Math.floor(cellHeightMm / 1.1), 24);
-  console.log(
-    `.machine-name のCSS設定: display: ${displaySettings.showMachineName ? "block" : "none"} !important, font-size: ${machineNameFontSize}pt (上)`,
-  );
-  console.log(
-    `.machine-number のCSS設定: font-size: ${machineNumberFontSize}pt (下)`,
-  );
-  console.log(
-    `34mm ÷ 1.1 = ${Math.floor(34 / 1.1)}pt (台番号・下), 34mm ÷ 1.8 = ${Math.floor(34 / 1.8)}pt (機種名・上)`,
-  );
-
   // 実際に機種名要素が存在するか確認
   const machineNames = document.querySelectorAll(".machine-name");
-  console.log(`画面上の.machine-name要素数: ${machineNames.length}`);
   if (machineNames.length > 0) {
-    const firstMachineName = machineNames[0];
-    console.log(
-      `最初の機種名: "${firstMachineName.textContent}", display: ${getComputedStyle(firstMachineName).display}`,
-    );
+    // 機種名要素あり（確認のみ）
   }
 }
 
@@ -252,7 +221,7 @@ function addDynamicPrintStyle(cellWidthMm, cellHeightMm, marginMm) {
 /**
  * 印刷前の準備を行う
  *
- * 【処理内容】
+ * 処理内容:
  * - 表部分以外のすべての要素を非表示
  * - 表部分のみを印刷対象にする
  * - ユーザー指定のスケールを適用
@@ -271,21 +240,13 @@ function preparePrint(scaleX = 1.0, scaleY = 1.0) {
   }
 
   // 画面上で設定されたインラインスタイルをクリア（印刷CSSを優先させるため）
-  const elementsWithInlineStyle = mapTable.querySelectorAll(
-    ".machine-name, .machine-number, .stat-diff, .stat-games, .stat-bb, .machine-stats",
-  );
-
-  console.log(
-    `インラインスタイルをクリアする要素数: ${elementsWithInlineStyle.length}`,
-  );
+  const elementsWithInlineStyle = mapTable.querySelectorAll("[style]");
 
   // 表示設定を取得
   const displaySettings = getDisplaySettings();
-  console.log("preparePrint: 表示設定", displaySettings);
 
   // 各machine-info内の要素順序を入れ替える（機種名を上、台番号を下に）
   const machineInfos = mapTable.querySelectorAll(".machine-info");
-  console.log(`machine-info要素数: ${machineInfos.length}`);
 
   machineInfos.forEach((info) => {
     const machineNumber = info.querySelector(".machine-number");
@@ -302,10 +263,6 @@ function preparePrint(scaleX = 1.0, scaleY = 1.0) {
       if (machineStats) {
         info.appendChild(machineStats); // 最後に移動
       }
-
-      console.log(
-        `要素を並び替え: ${machineName.textContent} → ${machineNumber.textContent}`,
-      );
     }
   });
 
@@ -316,7 +273,7 @@ function preparePrint(scaleX = 1.0, scaleY = 1.0) {
     el.setAttribute("data-original-display", originalDisplay);
     el.setAttribute("data-original-csstext", originalCssText);
 
-    // 全てのインラインスタイルをクリア（重なりを防ぐため）
+    // 全てのインラインスタイルをクリア（競合なりを防ぐため）
     el.style.cssText = "";
 
     // クラスに応じて表示設定を適用
@@ -324,42 +281,37 @@ function preparePrint(scaleX = 1.0, scaleY = 1.0) {
       el.style.setProperty(
         "display",
         displaySettings.showMachineName ? "block" : "none",
-        "important",
-      );
-      console.log(
-        `machine-name: ${displaySettings.showMachineName ? "block" : "none"} !important`,
+        "important"
       );
     } else if (el.classList.contains("machine-number")) {
       el.style.setProperty(
         "display",
         displaySettings.showMachineNumber ? "block" : "none",
-        "important",
+        "important"
       );
     } else if (el.classList.contains("stat-diff")) {
       el.style.setProperty(
         "display",
         displaySettings.showDiff ? "block" : "none",
-        "important",
+        "important"
       );
     } else if (el.classList.contains("stat-games")) {
       el.style.setProperty(
         "display",
         displaySettings.showGames ? "block" : "none",
-        "important",
+        "important"
       );
     } else if (el.classList.contains("stat-bb")) {
       el.style.setProperty(
         "display",
         displaySettings.showBB ? "block" : "none",
-        "important",
+        "important"
       );
     } else if (el.classList.contains("machine-stats")) {
       // machine-statsは常に表示（子要素で制御）
       el.style.setProperty("display", "block", "important");
     }
   });
-
-  console.log("印刷準備: 表示設定を!importantで適用しました");
 
   // スケールを適用（縦横別々に指定）
   const mapGridContainer = document.querySelector(".map-grid-container");
@@ -373,7 +325,7 @@ function preparePrint(scaleX = 1.0, scaleY = 1.0) {
   // body直下の全要素を取得
   const bodyChildren = document.body.children;
 
-  // マップテーブルの親要素を特定（.map-grid-container または .map-tab-container）
+  // マップテーブルの親要素を特定（map-grid-container または .map-tab-container）
   let mapContainer =
     mapTable.closest(".map-grid-container") ||
     mapTable.closest(".map-tab-container");
@@ -412,7 +364,7 @@ function preparePrint(scaleX = 1.0, scaleY = 1.0) {
     "h1",
     "h2",
     ".page-title",
-    "a", // すべてのリンク（「日付一覧に戻る」など）
+    "a", // すべてのリンク（「前日一覧に戻る」など）
     ".back-link",
     ".breadcrumb",
     ".navigation",
@@ -432,12 +384,11 @@ function preparePrint(scaleX = 1.0, scaleY = 1.0) {
 // ============================================================
 // クリーンアップ処理
 // ============================================================
-// ============================================================
 
 /**
  * 印刷後のクリーンアップを行う
  *
- * 【処理内容】
+ * 処理内容:
  * - 非表示にした要素を元に戻す
  * - スケールをリセット
  * - 動的スタイルを削除
@@ -454,8 +405,9 @@ function cleanupPrint() {
   if (mapTable) {
     // 要素の順序を元に戻す
     const machineInfosWithOrder = mapTable.querySelectorAll(
-      ".machine-info[data-original-order]",
+      "[data-original-order]"
     );
+
     machineInfosWithOrder.forEach((info) => {
       const machineNumber = info.querySelector(".machine-number");
       const machineName = info.querySelector(".machine-name");
@@ -470,15 +422,15 @@ function cleanupPrint() {
     });
 
     const elementsWithOriginalStyle = mapTable.querySelectorAll(
-      "[data-original-csstext]",
+      "[data-original-csstext]"
     );
+
     elementsWithOriginalStyle.forEach((el) => {
       const originalCssText = el.getAttribute("data-original-csstext");
       el.style.cssText = originalCssText;
       el.removeAttribute("data-original-display");
       el.removeAttribute("data-original-csstext");
     });
-    console.log(`復元した要素数: ${elementsWithOriginalStyle.length}`);
   }
 
   // スケールをリセット
@@ -495,8 +447,6 @@ function cleanupPrint() {
     dynamicStyle.remove();
   }
 
-  console.log("印刷後のクリーンアップ完了");
-
   // フラグをリセット
   window.pdfIsPrintPreparing = false;
 }
@@ -511,7 +461,7 @@ window.addEventListener("afterprint", () => {
 });
 
 // ============================================================
-// 旧処理（使用していません）
+// 旧処理（互換性のため残す - 使用していません）
 // ============================================================
 
 /**
@@ -534,7 +484,6 @@ function captureStyles() {
       }
     } catch (e) {
       // 外部スタイルシートでCORSエラーが発生する場合はスキップ
-      console.warn("スタイルシートの読み込みエラー:", e);
     }
   }
 
@@ -661,10 +610,6 @@ function createPrintHTML(tableHTML, scale, styles) {
 // 旧処理（互換性のため残す - 使用していません）
 // ============================================================
 
-// ============================================================
-// 旧処理（互換性のため残す - 使用していません）
-// ============================================================
-
 /**
  * 印刷前の準備を行う（旧処理 - 現在は使用していません）
  */
@@ -739,7 +684,7 @@ function calculateAndApplyScale(mapTable) {
   const mapWidth = mapTable.offsetWidth;
   const mapHeight = mapTable.offsetHeight;
 
-  // 印刷可能領域のサイズを推定（A4横向きを基準、余白を考慮）
+  // 印刷可能領域のサイズを推定（A4横向きを前提、余白を引く）
   // A4横向き: 297mm x 210mm = 約1123px x 794px（96dpi）
   // 余白を引いた印刷可能領域: 約1073px x 744px（余白各5mm）
   const printableWidth = 1073; // px
@@ -780,7 +725,7 @@ function executePrint() {
   window.print();
 
   // 印刷ダイアログが閉じられた後にクリーンアップ
-  // （印刷完了/キャンセルを検知）
+  // （印刷完了・キャンセルを検知）
   setTimeout(() => {
     cleanupPrint();
   }, 1000);
@@ -881,7 +826,7 @@ function cleanupPrint() {
  *
  * @returns {string} YYYY-MM-DD_HH-mm-ss 形式の文字列
  *
- * 【使用例】
+ * 使用例:
  * getCurrentDateTime() → "2026-01-30_14-30-45"
  */
 function getCurrentDateTime() {
@@ -899,7 +844,7 @@ function getCurrentDateTime() {
 /**
  * PDFファイル名を生成する
  *
- * @returns {string} ファイル名（例：map_2026-01-30_14-30-45.pdf）
+ * @returns {string} ファイル名（例: map_2026-01-30_14-30-45.pdf）
  */
 function generatePDFFilename() {
   const mapName =

@@ -1,3 +1,8 @@
+// ============================================================
+// 台データ画面のJavaScript
+// タブ切替・ソート・フィルター・日付操作・メモ保存を担当
+// ============================================================
+
 // 開閉パネル（グローバルスコープで定義 - HTMLから直接呼び出すため最初に定義）
 window.togglePanel = function (panelId) {
   const content = document.getElementById(panelId);
@@ -63,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // ここでは何もしない（すでにHTMLにactiveクラスが設定されている）
 });
 
-// 表示日数の複数選択
+// 表示日数の複数選択プリセット
 function selectPreset(preset) {
   const checkboxes = document.querySelectorAll(
     '.day-checkbox-group input[type="checkbox"]',
@@ -91,13 +96,13 @@ function selectPreset(preset) {
   }
 }
 
-// アクティブなタブを取得する関数
+// アクティブなタブ名を取得する
 function getActiveTab() {
   const activeButton = document.querySelector(".tab-button.active");
   return activeButton ? activeButton.getAttribute("data-tab") : "list";
 }
 
-// ソートセレクトボックスから更新する関数
+// ソートセレクトボックスからソートを更新する
 function updateSort() {
   const sortBy = document.getElementById("sort-select").value;
   const sortOrder = document.getElementById("sort-order").value;
@@ -115,6 +120,7 @@ function updateSort() {
   window.location.href = currentUrl.toString();
 }
 
+// テーブルヘッダーのクリックでソートを切り替える
 function sort(sortBy) {
   const currentUrl = new URL(window.location.href);
   const currentSort = currentUrl.searchParams.get("sort_by");
@@ -139,6 +145,7 @@ function sort(sortBy) {
   window.location.href = currentUrl.toString();
 }
 
+// ソートをリセット
 function resetSort() {
   const currentUrl = new URL(window.location);
   currentUrl.searchParams.delete("sort_by");
@@ -153,6 +160,7 @@ function resetSort() {
   window.location.href = currentUrl.toString();
 }
 
+// フィルターをリセット
 function resetFilter() {
   const currentUrl = new URL(window.location);
   const hallId = currentUrl.pathname.split("/")[2];
@@ -162,7 +170,7 @@ function resetFilter() {
   if (hallId && date) {
     window.location.href = `/halls/${hallId}/dates/${date}?reset_filters=1`;
   } else {
-    // 日付がない場合は単純にパラメータをクリア
+    // 日付がない場合は単純にフィルターパラメータをクリア
     Array.from(currentUrl.searchParams.keys()).forEach((key) => {
       if (key.startsWith("filter_") || key.startsWith("show_")) {
         currentUrl.searchParams.delete(key);
@@ -180,6 +188,7 @@ function resetFilter() {
   }
 }
 
+// 日付変更（前日・翌日遷移）
 function changeDate(newDate, hallId) {
   const baseUrl = `/halls/${hallId}/dates/${newDate}`;
 
@@ -197,6 +206,7 @@ function changeDate(newDate, hallId) {
   window.location.href = newUrl;
 }
 
+// 表示日数レンジの変更
 function changeDateRange(days) {
   const currentUrl = new URL(window.location.href);
   currentUrl.searchParams.set("date_range", days);
@@ -210,7 +220,7 @@ function changeDateRange(days) {
   window.location.href = currentUrl.toString();
 }
 
-// 日付選択モードの切り替え
+// 日付選択モードの切り替え（プリセット ⇔ カスタム）
 function toggleDateSelectionMode(mode) {
   const presetSelector = document.getElementById("preset-selector");
   const customSelector = document.getElementById("custom-date-selector");
@@ -224,6 +234,7 @@ function toggleDateSelectionMode(mode) {
   }
 }
 
+// 全日付チェックボックスをクリア
 function clearAllDays() {
   const checkboxes = document.querySelectorAll(
     '.day-checkbox-group input[type="checkbox"]',
@@ -238,21 +249,15 @@ function saveMemos() {
   const dateMatch = window.location.pathname.match(/\/dates\/([^\/]+)/);
   const date = dateMatch ? dateMatch[1] : null;
 
-  // デバッグ情報
-  console.log("saveMemos - pathname:", window.location.pathname);
-  console.log("saveMemos - hallId:", hallId);
-  console.log("saveMemos - date:", date);
-
   if (!date) {
     alert("日付情報が取得できません");
     return;
   }
 
   const url = `/halls/${hallId}/dates/${date}/update_machine_memos`;
-  console.log("saveMemos - URL:", url);
   const formData = new FormData();
 
-  // 変更されたメモのみを収集
+  // 変更されたメモのみを送信
   let changedCount = 0;
   memoInputs.forEach((input) => {
     const machineNumber = input.getAttribute("data-machine-number");
@@ -271,8 +276,6 @@ function saveMemos() {
     alert("変更されたメモはありません");
     return;
   }
-
-  console.log(`saveMemos - 変更件数: ${changedCount}件`);
 
   formData.append(
     "authenticity_token",
@@ -309,7 +312,6 @@ function saveMemos() {
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
       alert("エラーが発生しました: " + error.message);
     });
 }
