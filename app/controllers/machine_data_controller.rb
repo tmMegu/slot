@@ -435,12 +435,16 @@ class MachineDataController < ApplicationController
     save_if_present.call(:filter_machine_count_max, @filter_machine_count_max)
     save_if_present.call(:filter_rank_days, @filter_rank_days)
     save_if_present.call(:filter_ranks, @filter_ranks)
+    save_if_present.call(:filter_machine_name_operator, @filter_machine_name_operator)
+    save_if_present.call(:filter_model_most_negative_days, @filter_model_most_negative_days)
+    save_if_present.call(:filter_model_worst_diff_days, @filter_model_worst_diff_days)
   end
 
   def setup_filter_parameters
     @filter_machine_name = get_param_or_session(:filter_machine_name, nil)
     @filter_machine_name_search = get_param_or_session(:filter_machine_name_search, nil)
     @filter_machine_name_search_type = get_param_or_session(:filter_machine_name_search_type, "include")
+    @filter_machine_name_operator = get_param_or_session(:filter_machine_name_operator, "or")
     @filter_game_count_min = parse_int_param_with_session(:filter_game_count_min)
     @filter_game_count_max = parse_int_param_with_session(:filter_game_count_max)
     @filter_difference_min = parse_int_param_with_session(:filter_difference_min)
@@ -484,6 +488,10 @@ class MachineDataController < ApplicationController
     else
       @filter_ranks = []
     end
+
+    # 機種名検索モデルランキングフィルター
+    @filter_model_most_negative_days = parse_int_param_with_session(:filter_model_most_negative_days)
+    @filter_model_worst_diff_days = parse_int_param_with_session(:filter_model_worst_diff_days)
   end
 
   # parse_int_param は MachineDataFilterable から継承
@@ -966,6 +974,10 @@ class MachineDataController < ApplicationController
     # ワーストランキングフィルター
     filtered = apply_rank_filter(filtered)
 
+    # 機種別モデルランキングフィルター（他の条件で絞り込んだ後に適用）
+    filtered = apply_model_most_negative_filter(filtered)
+    filtered = apply_model_worst_diff_filter(filtered)
+
     filtered
   end
 
@@ -1037,6 +1049,56 @@ class MachineDataController < ApplicationController
     end
 
     filtered
+  end
+
+  # 過去〇日間で総差枚がマイナスになった台数が最も多い機種のみ表示
+  # 他の検索条件で絞り込んだ結果の中から計算する
+  def apply_model_most_negative_filter(filtered)
+    return filtered unless @filter_model_most_negative_days.present?
+
+    # 過去N日間の台番号ごとの総差枚を計算
+    diff_data = calculate_sum_for_period(@filter_model_most_negative_days, :difference_count)
+
+    # フィルター済みの台のみを対象に、機種ごとのマイナス台数を集計
+    model_negative_counts = Hash.new(0)
+    filtered.each do |m|
+      total_diff = diff_data[m.machine_number] || 0
+      model_negative_counts[m.machine_name] += 1 if total_diff < 0
+    end
+
+    return filtered if model_negative_counts.empty?
+
+    # マイナス台数が最も多い機種を特定
+    best_model = model_negative_counts.max_by { |_, count| count }&.first
+    return filtered unless best_model
+
+    # その機種の台のみ返す
+    filtered.select { |m| m.machine_name == best_model }
+  end
+
+  # 過去〇日間の総差枚合計が最も低い機種のみ表示
+  # 他の検索条件で絞り込んだ結果の中から計算する
+  def apply_model_worst_diff_filter(filtered)
+    return filtered unless @filter_model_worst_diff_days.present?
+
+    # 過去N日間の台番号ごとの総差枚を計算
+    diff_data = calculate_sum_for_period(@filter_model_worst_diff_days, :difference_count)
+
+    # フィルター済みの台のみを対象に、機種ごとの総差枚合計を集計
+    model_total_diff = {}
+    filtered.group_by(&:machine_name).each do |model_name, machines|
+      total = machines.sum { |m| diff_data[m.machine_number] || 0 }
+      model_total_diff[model_name] = total
+    end
+
+    return filtered if model_total_diff.empty?
+
+    # 総差枚合計が最も低い機種を特定
+    worst_model = model_total_diff.min_by { |_, total| total }&.first
+    return filtered unless worst_model
+
+    # その機種の台のみ返す
+    filtered.select { |m| m.machine_name == worst_model }
   end
 
   # 【最適化版】事前にキャッシュした過去データを使用

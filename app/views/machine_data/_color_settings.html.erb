@@ -55,10 +55,20 @@
                             </select>
                             <input type="text" id="model-filter-text" placeholder="機種名を入力（空白区切りで複数可）" style="padding: 6px; font-size: 13px; width: 250px;" disabled>
                         </div>
+                        <!-- プリセット -->
+                        <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                            <span style="font-size: 11px; color: #666;">📋 プリセット:</span>
+                            <button type="button" onclick="applyMapModelPreset('沖 ジャグラー', 'exclude')" style="padding: 3px 8px; font-size: 11px; background-color: #fff3e0; border: 1px solid #ff9800; border-radius: 3px; cursor: pointer;">
+                                沖・ジャグラー除外
+                            </button>
+                            <button type="button" onclick="applyMapModelPreset('', 'none')" style="padding: 3px 8px; font-size: 11px; background-color: #f5f5f5; border: 1px solid #999; border-radius: 3px; cursor: pointer;">
+                                プリセット解除
+                            </button>
+                        </div>
                         <div style="font-size: 11px; color: #666; margin-top: 5px; margin-left: 130px;">
                             例: 「北斗 ジャグラー」と入力すると、北斗またはジャグラーを含む機種が対象
                         </div>
-                    </div>
+                    </!-->
 
                     <!-- 台数範囲フィルター -->
                     <div style="margin-bottom: 5px;">
@@ -95,6 +105,18 @@
             textInput.value = '';
         }
     });
+
+    // マップ機種名プリセット適用
+    function applyMapModelPreset(text, type) {
+        const filterType = document.getElementById('model-filter-type');
+        const filterText = document.getElementById('model-filter-text');
+        if (filterType) filterType.value = type;
+        if (filterText) {
+            filterText.value = text;
+            filterText.disabled = (type === 'none');
+        }
+        updateMapColors();
+    }
 
     // 台数範囲フィルターのチェックボックスで入力欄の有効/無効を切り替え
     document.getElementById('machine-count-filter-enabled')?.addEventListener('change', function() {

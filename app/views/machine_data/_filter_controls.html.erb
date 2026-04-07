@@ -79,15 +79,26 @@
                 </div>
 
                 <!-- 機種名検索フィルター -->
+                <input type="hidden" name="filter_machine_name_operator" id="filter-machine-name-operator" value="<%= @filter_machine_name_operator %>">
                 <div class="filter-row filter-row-inline">
                     <div class="filter-group" style="flex: 1;">
                         <label>機種名検索:</label>
                         <div style="display: flex; gap: 6px; width: 100%;">
-                            <input type="text" name="filter_machine_name_search" placeholder="検索ワード入力" value="<%= @filter_machine_name_search %>" style="flex: 1; border-radius: 6px; padding: 6px 8px;">
-                            <select name="filter_machine_name_search_type" style="width: auto; min-width: 80px; border-radius: 6px; padding: 6px 8px;">
+                            <input type="text" id="filter-machine-name-search" name="filter_machine_name_search" placeholder="検索ワード入力" value="<%= @filter_machine_name_search %>" style="flex: 1; border-radius: 6px; padding: 6px 8px;">
+                            <select id="filter-machine-name-search-type" name="filter_machine_name_search_type" style="width: auto; min-width: 80px; border-radius: 6px; padding: 6px 8px;">
                                 <option value="include" <%= 'selected' if @filter_machine_name_search_type == 'include' %>>含む</option>
                                 <option value="exclude" <%= 'selected' if @filter_machine_name_search_type == 'exclude' %>>含まない</option>
                             </select>
+                        </div>
+                        <!-- プリセット -->
+                        <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                            <span style="font-size: 11px; color: #666;">📋 プリセット:</span>
+                            <button type="button" onclick="applyMachineNamePreset('沖 ジャグラー', 'exclude', 'and')" style="padding: 3px 8px; font-size: 11px; background-color: #fff3e0; border: 1px solid #ff9800; border-radius: 3px; cursor: pointer;">
+                                沖・ジャグラー除外
+                            </button>
+                            <button type="button" onclick="applyMachineNamePreset('', 'include', 'or')" style="padding: 3px 8px; font-size: 11px; background-color: #f5f5f5; border: 1px solid #999; border-radius: 3px; cursor: pointer;">
+                                解除
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -402,6 +413,46 @@
                     </div>
                 </div>
 
+                <!-- 過去N日間マイナス台数最多機種フィルター -->
+                <div class="filter-row" style="border-top: 2px dashed #dc3545; padding-top: 5px; margin-top: 5px;">
+                    <div class="filter-group" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                        <label style="color: #dc3545; font-weight: bold;">📉 マイナス台数最多機種に絞り込み:</label>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <label>過去</label>
+                            <select name="filter_model_most_negative_days" style="width: 70px; padding: 4px;">
+                                <option value="">--なし--</option>
+                                <% (1..31).each do |days| %>
+                                <option value="<%= days %>" <%= 'selected' if @filter_model_most_negative_days == days %>><%= days %>日</option>
+                                <% end %>
+                            </select>
+                            <label>間の総差枚がマイナスになった台数が最も多い機種のみ表示</label>
+                        </div>
+                        <div style="padding: 5px 8px; background-color: #f8d7da; border-radius: 4px; font-size: 11px; color: #721c24;">
+                            💡 他の検索条件で絞り込んだ結果の中から、指定期間でマイナス台数が最多の機種1つに絞り込みます
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 過去N日間総差枚最低機種フィルター -->
+                <div class="filter-row" style="border-top: 2px dashed #6f42c1; padding-top: 5px; margin-top: 5px;">
+                    <div class="filter-group" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                        <label style="color: #6f42c1; font-weight: bold;">📊 総差枚最低機種に絞り込み:</label>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <label>過去</label>
+                            <select name="filter_model_worst_diff_days" style="width: 70px; padding: 4px;">
+                                <option value="">--なし--</option>
+                                <% (1..31).each do |days| %>
+                                <option value="<%= days %>" <%= 'selected' if @filter_model_worst_diff_days == days %>><%= days %>日</option>
+                                <% end %>
+                            </select>
+                            <label>間の総差枚合計が最も低い機種のみ表示</label>
+                        </div>
+                        <div style="padding: 5px 8px; background-color: #f3e5ff; border-radius: 4px; font-size: 11px; color: #4a1080;">
+                            💡 他の検索条件で絞り込んだ結果の中から、指定期間の総差枚合計が最低の機種1つに絞り込みます
+                        </div>
+                    </div>
+                </div>
+
                 <!-- フィルターボタン -->
                 <div class="filter-row">
                     <div class="filter-buttons">
@@ -418,7 +469,8 @@
                     params[:filter_bb_count_min].present? || params[:filter_bb_count_max].present? ||
                     params[:filter_diff_days].present? || params[:filter_game_count_days].present? ||
                     params[:filter_rank_days].present? || params[:filter_machine_count_min].present? || 
-                    params[:filter_machine_count_max].present? %>
+                    params[:filter_machine_count_max].present? || params[:filter_model_most_negative_days].present? ||
+                    params[:filter_model_worst_diff_days].present? %>
             <div class="result-info">
                 ✓ フィルター適用済み: <strong><%= @machine_data.length %></strong>台を表示中
             </div>
@@ -426,3 +478,17 @@
         </div>
     </div>
 </div>
+
+<script>
+    // 機種名検索プリセット適用
+    function applyMachineNamePreset(text, type, operator) {
+        const searchInput = document.getElementById('filter-machine-name-search');
+        const typeSelect = document.getElementById('filter-machine-name-search-type');
+        const operatorInput = document.getElementById('filter-machine-name-operator');
+        if (searchInput) searchInput.value = text;
+        if (typeSelect) typeSelect.value = type;
+        if (operatorInput) operatorInput.value = operator;
+        // フォームを自動送信
+        document.getElementById('filter-form')?.submit();
+    }
+</script>

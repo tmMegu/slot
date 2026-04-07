@@ -79,20 +79,30 @@
                 </label>
                 <label>
                     機種名検索:
-                    <input type="text" name="filter_machine_name_search" value="<%= @filter_machine_name_search %>" placeholder="空白区切りで複数指定可" style="width: 200px;" />
+                    <input type="text" id="trend-machine-name-search" name="filter_machine_name_search" value="<%= @filter_machine_name_search %>" placeholder="空白区切りで複数指定可" style="width: 200px;" />
                 </label>
                 <label>
-                    <select name="filter_machine_name_search_type">
+                    <select id="trend-machine-name-search-type" name="filter_machine_name_search_type">
                         <option value="include" <%= 'selected' if @filter_machine_name_search_type == 'include' %>>含む</option>
                         <option value="exclude" <%= 'selected' if @filter_machine_name_search_type == 'exclude' %>>含まない</option>
                     </select>
                 </label>
                 <label>
-                    <select name="filter_machine_name_operator">
+                    <select id="trend-machine-name-operator" name="filter_machine_name_operator">
                         <option value="or" <%= 'selected' if @filter_machine_name_operator == 'or' %>>OR検索</option>
                         <option value="and" <%= 'selected' if @filter_machine_name_operator == 'and' %>>AND検索</option>
                     </select>
                 </label>
+                <!-- プリセット -->
+                <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; width: 100%;">
+                    <span style="font-size: 11px; color: #666;">📋 プリセット:</span>
+                    <button type="button" onclick="applyTrendMachineNamePreset('沖 ジャグラー', 'exclude', 'and')" style="padding: 3px 8px; font-size: 11px; background-color: #fff3e0; border: 1px solid #ff9800; border-radius: 3px; cursor: pointer;">
+                        沖・ジャグラー除外
+                    </button>
+                    <button type="button" onclick="applyTrendMachineNamePreset('', 'include', 'or')" style="padding: 3px 8px; font-size: 11px; background-color: #f5f5f5; border: 1px solid #999; border-radius: 3px; cursor: pointer;">
+                        プリセット解除
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -333,6 +343,18 @@
 
     function resetFilters() {
         window.location.href = '<%= hall_trend_analysis_path(@hall) %>';
+    }
+
+    // 機種名検索プリセット適用（傾向調査）
+    function applyTrendMachineNamePreset(text, type, operator) {
+        const searchInput = document.getElementById('trend-machine-name-search');
+        const typeSelect = document.getElementById('trend-machine-name-search-type');
+        const operatorSelect = document.getElementById('trend-machine-name-operator');
+        if (searchInput) searchInput.value = text;
+        if (typeSelect) typeSelect.value = type;
+        if (operatorSelect) operatorSelect.value = operator;
+        // フォームを自動送信
+        document.querySelector('.filter-panel-accordion')?.submit();
     }
 </script>
 
