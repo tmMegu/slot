@@ -1,0 +1,15 @@
+{
+  "name": "slot-mcp-server",
+  "version": "1.0.0",
+  "description": "スロットデータ分析用 MCP サーバー（Claude Desktop 連携）",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.10.1",
+    "pg": "^8.13.3"
+  }
+}

@@ -33,3 +33,7 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# MCPサーバー関連（DBパスワードを含むため除外）
+/mcp-server/claude_desktop_config.json
+/mcp-server/node_modules/
+
