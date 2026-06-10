@@ -1,49 +1,5 @@
 /* 傾向調査ページ専用スタイル */
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    margin: 0;
-    padding: 10px;
-    background-color: var(--color-bg);
-}
-
-.container {
-    max-width: 1400px;
-    margin: 0 auto;
-    background-color: var(--color-white);
-    padding: 15px;
-    border-radius: var(--radius-lg);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.header h1 {
-    margin: 0;
-    font-size: 24px;
-    color: var(--color-text);
-}
-
-.back-button {
-    padding: var(--space-sm) var(--space-md);
-    background-color: var(--color-secondary);
-    color: var(--color-white);
-    text-decoration: none;
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-}
-
-.back-button:hover {
-    background-color: var(--color-secondary-dark);
-}
-
 /* フィルターパネル */
 .filter-panel {
     background-color: var(--color-bg-panel);
@@ -97,34 +53,6 @@ body {
     display: flex;
     gap: 10px;
     margin-top: 10px;
-}
-
-.btn {
-    padding: var(--space-sm) var(--space-md);
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 14px;
-    text-decoration: none;
-    display: inline-block;
-}
-
-.btn-primary {
-    background-color: var(--color-primary);
-    color: var(--color-white);
-}
-
-.btn-primary:hover {
-    background-color: var(--color-primary-dark);
-}
-
-.btn-secondary {
-    background-color: var(--color-secondary);
-    color: var(--color-white);
-}
-
-.btn-secondary:hover {
-    background-color: var(--color-secondary-dark);
 }
 
 /* 日付一覧テーブル */

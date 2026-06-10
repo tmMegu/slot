@@ -1,51 +1,39 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-    <title><%= @hall.name %> - 傾向調査</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <%= csrf_meta_tags %>
-    <%= csp_meta_tag %>
-    <link rel="stylesheet" href="/stylesheets/application.css">
+<% content_for :head do %>
     <link rel="stylesheet" href="/stylesheets/trend_analysis.css">
-</head>
+<% end %>
 
-<body>
-    <div class="container">
-        <div class="header">
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <%= link_to "← ホール一覧", halls_path, class: "back-button" %>
-                <h1 style="margin: 0;">🔍 <%= @hall.name %> - 傾向調査</h1>
-            </div>
-            <%= link_to "📊 データ分析", hall_data_analysis_path(@hall), class: "back-button", style: "background-color: #28a745;" %>
+<div class="container">
+    <div class="flex-between mb-20">
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <%= link_to "← ホール一覧", halls_path, class: "btn btn-secondary btn-small" %>
+            <h2 style="margin: 0; color: #333;">🔍 <%= @hall.name %> - 傾向調査</h2>
         </div>
-
-        <!-- フィルターパネル -->
-        <%= render "filter_panel" %>
-
-        <!-- 日付一覧テーブル -->
-        <%= render "summary_table" %>
+        <%= link_to "📊 データ分析", hall_data_analysis_path(@hall), class: "btn btn-success btn-small" %>
     </div>
 
-    <script>
-        // フィルターのリセット
-        function resetFilters() {
-            window.location.href = "<%= hall_trend_analysis_path(@hall, reset_filters: 1) %>";
-        }
+    <!-- フィルターパネル -->
+    <%= render "filter_panel" %>
 
-        // 折りたたみパネルの制御
-        function togglePanel(panelId) {
-            const panel = document.getElementById(panelId);
-            const toggle = panel.previousElementSibling.querySelector('.toggle-icon');
-            if (panel.style.display === 'none') {
-                panel.style.display = 'block';
-                toggle.textContent = '▼';
-            } else {
-                panel.style.display = 'none';
-                toggle.textContent = '▶';
-            }
-        }
-    </script>
-</body>
+    <!-- 日付一覧テーブル -->
+    <%= render "summary_table" %>
+</div>
 
-</html>
+<script>
+    // フィルターのリセット
+    function resetFilters() {
+        window.location.href = "<%= hall_trend_analysis_path(@hall, reset_filters: 1) %>";
+    }
+
+    // 折りたたみパネルの制御
+    function togglePanel(panelId) {
+        const panel = document.getElementById(panelId);
+        const toggle = panel.previousElementSibling.querySelector('.toggle-icon');
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            toggle.textContent = '▼';
+        } else {
+            panel.style.display = 'none';
+            toggle.textContent = '▶';
+        }
+    }
+</script>

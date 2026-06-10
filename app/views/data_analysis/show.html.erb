@@ -18,8 +18,8 @@
                 <h1>📊 <%= @hall.name %> - データ分析</h1>
             </div>
             <div style="display: flex; gap: 10px;">
-                <%= link_to "← ホール一覧", halls_path, class: "back-button" %>
-                <%= link_to "傾向調査へ", hall_trend_analysis_path(@hall), class: "back-button", style: "background-color: #28a745;" %>
+                <%= link_to "← ホール一覧", halls_path, class: "btn btn-secondary btn-small" %>
+                <%= link_to "傾向調査へ", hall_trend_analysis_path(@hall), class: "btn btn-success btn-small" %>
             </div>
         </div>
 
