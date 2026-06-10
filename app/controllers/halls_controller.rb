@@ -106,9 +106,9 @@ class HallsController < ApplicationController
       @start_date = Date.parse(params[:start_date])
       @end_date = Date.parse(params[:end_date])
     else
-      # デフォルト: 翌日を終了日、10日間表示
-      @end_date = Date.today + 1.day
-      @start_date = @end_date - 9.days
+      # デフォルト: 本日を終了日、本日を含めず10日前を開始日
+      @end_date = Date.today
+      @start_date = Date.today - 10.days
     end
   end
 

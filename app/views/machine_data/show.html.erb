@@ -1,5 +1,6 @@
+<% content_for :head do %>
 <link rel="stylesheet" href="/stylesheets/machine_data.css">
-<link rel="stylesheet" href="/stylesheets/common.css">
+<% end %>
 <script src="/javascripts/machine_data.js"></script>
 
 <style>
@@ -138,8 +139,8 @@
                      end
           back_text = request.referer && request.referer.include?('trend_analysis') ? "← 傾向調査に戻る" : "← 戻る"
         %>
-        <%= link_to back_text, back_url, class: "btn btn-secondary btn-small" %>
-        <h2 style="margin: 0; color: #333;"><%= @hall.name %> - <%= @date.strftime('%Y年%m月%d日') %></h2>
+        <%= link_to back_text, back_url, class: "btn btn-secondary btn-small", style: "flex-shrink: 0; white-space: nowrap;" %>
+        <h2 style="margin: 0; color: #333; flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;"><%= @hall.name %> - <%= @date.strftime('%Y年%m月%d日') %></h2>
         <div></div>
     </div>
 

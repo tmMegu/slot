@@ -168,57 +168,73 @@ function getPast7DaysDiff(cell) {
 }
 
 /**
- * フィルター条件をチェックして、色分け対象かどうかを判定する
- * - 機種名フィルター（含む/含まない）
- * - 台数範囲フィルター
- * @param {Element} cell - マップセル要素
- * @returns {boolean} 色分け対象ならtrue
+ * フィルター設定を一度だけ読み取り、キャッシュオブジェクトを返す
+ * @returns {{modelFilterType, modelFilterText, keywords, countFilterEnabled, minCount, maxCount, machineNameCounts}}
  */
-function shouldApplyColorToCell(cell) {
-  // --- 機種名フィルター（複数キーワード対応） ---
+function buildColorFilterContext() {
   var modelFilterType =
     document.getElementById("model-filter-type")?.value || "none";
   var modelFilterText =
     document.getElementById("model-filter-text")?.value || "";
+  var keywords =
+    modelFilterType !== "none" && modelFilterText.trim()
+      ? modelFilterText.trim().split(/\s+/)
+      : [];
 
-  if (modelFilterType !== "none" && modelFilterText.trim()) {
+  var countFilterEnabled =
+    document.getElementById("machine-count-filter-enabled")?.checked || false;
+  var minCount =
+    countFilterEnabled
+      ? parseInt(document.getElementById("machine-count-min")?.value) || 0
+      : 0;
+  var maxCount =
+    countFilterEnabled
+      ? parseInt(document.getElementById("machine-count-max")?.value) || Infinity
+      : Infinity;
+
+  // 機種名ごとの台数を事前計算（O(n)）
+  var machineNameCounts = {};
+  if (countFilterEnabled) {
+    document
+      .querySelectorAll('.map-cell[data-type="machine"]')
+      .forEach(function (c) {
+        var name = c.getAttribute("data-machine-name") || "";
+        machineNameCounts[name] = (machineNameCounts[name] || 0) + 1;
+      });
+  }
+
+  return {
+    modelFilterType: modelFilterType,
+    keywords: keywords,
+    countFilterEnabled: countFilterEnabled,
+    minCount: minCount,
+    maxCount: maxCount,
+    machineNameCounts: machineNameCounts,
+  };
+}
+
+/**
+ * フィルター条件をチェックして、色分け対象かどうかを判定する
+ * @param {Element} cell - マップセル要素
+ * @param {Object} ctx - buildColorFilterContext() の戻り値
+ * @returns {boolean} 色分け対象ならtrue
+ */
+function shouldApplyColorToCell(cell, ctx) {
+  // --- 機種名フィルター（複数キーワード対応） ---
+  if (ctx.keywords.length > 0) {
     var machineName = cell.getAttribute("data-machine-name") || "";
-    // 空白で分割してキーワードの配列を作成
-    var keywords = modelFilterText.trim().split(/\s+/);
-
-    if (modelFilterType === "include") {
-      // 「含む」: いずれかのキーワードが機種名に含まれていればOK（OR検索）
-      var matchesAny = keywords.some(function (keyword) {
-        return machineName.includes(keyword);
-      });
-      if (!matchesAny) return false;
-    } else if (modelFilterType === "exclude") {
-      // 「含まない」: いずれかのキーワードが含まれていたらNG
-      var matchesAnyExclude = keywords.some(function (keyword) {
-        return machineName.includes(keyword);
-      });
-      if (matchesAnyExclude) return false;
-    }
+    var matchesAny = ctx.keywords.some(function (keyword) {
+      return machineName.includes(keyword);
+    });
+    if (ctx.modelFilterType === "include" && !matchesAny) return false;
+    if (ctx.modelFilterType === "exclude" && matchesAny) return false;
   }
 
   // --- 台数範囲フィルター ---
-  var countFilterEnabled =
-    document.getElementById("machine-count-filter-enabled")?.checked || false;
-
-  if (countFilterEnabled) {
-    var machineNameForCount = cell.getAttribute("data-machine-name") || "";
-    var minCount =
-      parseInt(document.getElementById("machine-count-min")?.value) || 0;
-    var maxCount =
-      parseInt(document.getElementById("machine-count-max")?.value) || Infinity;
-
-    // 同じ機種名の台数をカウント
-    var allCells = document.querySelectorAll('.map-cell[data-type="machine"]');
-    var machineCount = Array.from(allCells).filter(function (c) {
-      return c.getAttribute("data-machine-name") === machineNameForCount;
-    }).length;
-
-    if (machineCount < minCount || machineCount > maxCount) {
+  if (ctx.countFilterEnabled) {
+    var nameForCount = cell.getAttribute("data-machine-name") || "";
+    var machineCount = ctx.machineNameCounts[nameForCount] || 0;
+    if (machineCount < ctx.minCount || machineCount > ctx.maxCount) {
       return false;
     }
   }
@@ -239,10 +255,12 @@ function applyWorstRankColors() {
   var cells = document.querySelectorAll('.map-cell[data-type="machine"]');
   removeColorClasses(cells);
 
+  var ctx = buildColorFilterContext();
+
   // フィルター対象の台を収集し、機種ごとにグループ化
   var machineGroups = {};
   cells.forEach(function (cell) {
-    if (!shouldApplyColorToCell(cell)) return;
+    if (!shouldApplyColorToCell(cell, ctx)) return;
 
     var machineName = cell.getAttribute("data-machine-name") || "";
     var diff = getPast7DaysDiff(cell);
@@ -280,12 +298,13 @@ function applyWorstRankColors() {
  */
 function applyPast7DaysColors(type) {
   var cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+  var ctx = buildColorFilterContext();
 
   cells.forEach(function (cell) {
     // まず色をクリア
     removeColorClasses([cell]);
 
-    if (!shouldApplyColorToCell(cell)) return;
+    if (!shouldApplyColorToCell(cell, ctx)) return;
 
     var diff = getPast7DaysDiff(cell);
     if (diff === null) return;
@@ -306,12 +325,14 @@ function applyWorstModelColors() {
   var cells = document.querySelectorAll('.map-cell[data-type="machine"]');
   removeColorClasses(cells);
 
+  var ctx = buildColorFilterContext();
+
   // フィルター対象の台を収集し、機種ごとの合計差枚を計算
   var modelTotals = {};
   var modelCells = {};
 
   cells.forEach(function (cell) {
-    if (!shouldApplyColorToCell(cell)) return;
+    if (!shouldApplyColorToCell(cell, ctx)) return;
 
     var machineName = cell.getAttribute("data-machine-name") || "";
     var diff = getPast7DaysDiff(cell);
@@ -353,11 +374,12 @@ function applyWorstModelColors() {
  */
 function applyTodayDiffLevelColors() {
   var cells = document.querySelectorAll('.map-cell[data-type="machine"]');
+  var ctx = buildColorFilterContext();
 
   cells.forEach(function (cell) {
     removeColorClasses([cell]);
 
-    if (!shouldApplyColorToCell(cell)) return;
+    if (!shouldApplyColorToCell(cell, ctx)) return;
 
     var level = cell.dataset.todayDiffLevel;
     if (level) {
@@ -556,10 +578,13 @@ window.toggleGrid = function () {
 };
 
 /**
- * マップ切り替え（ページリロード）
+ * マップ切り替え（map_idをURLに反映して遷移）
  */
 window.changeMap = function (mapId) {
-  location.reload();
+  var currentUrl = new URL(window.location.href);
+  currentUrl.searchParams.set("map_id", mapId);
+  currentUrl.searchParams.set("active_tab", "map");
+  window.location.href = currentUrl.toString();
 };
 
 /**
@@ -671,6 +696,13 @@ function setupDisplayCheckboxes() {
 // Turboフレームワーク使用時、turbo:loadのみを使用
 // （DOMContentLoadedとturbo:loadが両方発火するため）
 // ------------------------------------------------------------
+
+document.addEventListener("DOMContentLoaded", function () {
+  if (!window.mapIsInitialized) {
+    initializeMapDisplay();
+    initializeMapZoom();
+  }
+});
 
 document.addEventListener("turbo:load", function () {
   window.mapIsInitialized = false;

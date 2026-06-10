@@ -1,8 +1,8 @@
 <div class="container">
     <!-- 戻るボタンとタイトル -->
     <div class="flex-between mb-20">
-        <%= link_to "← 戻る", halls_path, class: "btn btn-secondary btn-small" %>
-        <h2 style="margin: 0; color: #333;"><%= @hall.name %> - 日付一覧</h2>
+        <%= link_to "← 戻る", halls_path, class: "btn btn-secondary btn-small", style: "flex-shrink: 0; white-space: nowrap;" %>
+        <h2 style="margin: 0; color: #333; flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;"><%= @hall.name %> - 日付一覧</h2>
         <div></div>
     </div>
 

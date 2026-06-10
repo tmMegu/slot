@@ -50,11 +50,13 @@ function switchTab(tabName) {
     selectedButton.classList.add("active");
   }
 
-  // マップタブの場合、初期化を実行
-  if (tabName === "map" && window.currentMapId) {
+  // マップタブの場合、色分けを適用
+  if (tabName === "map") {
     setTimeout(() => {
-      initializeMap(window.hallId, window.currentMapId, window.currentDate);
-    }, 100);
+      if (typeof window.updateMapColors === "function") {
+        window.updateMapColors();
+      }
+    }, 50);
   }
 }
 

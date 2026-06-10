@@ -1287,7 +1287,11 @@ class MachineDataController < ApplicationController
 
     # マップ用データ
     @hall_maps = @hall.hall_maps.order(:created_at)
-    @current_map = @hall_maps.first
+    @current_map = if params[:map_id].present?
+      @hall_maps.find_by(id: params[:map_id]) || @hall_maps.first
+    else
+      @hall_maps.first
+    end
     # マップタブでは常に全台表示（@machine_data_by_numberは既にapply_filters_and_sortingで作成済み）
 
     # 色分け用データ
