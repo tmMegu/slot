@@ -1,0 +1,15 @@
+{
+  "servers": {
+    "slot-analysis": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        
+        "C:\\MCP\\slot\\src\\index.js"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://postgres.wihqgfurrfvinevovgtz:2MeQU37mheJcvjJD@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"
+      }
+    }
+  }
+}

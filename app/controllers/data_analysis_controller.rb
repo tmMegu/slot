@@ -78,36 +78,32 @@ class DataAnalysisController < ApplicationController
   # ============================================================
 
   def generate_last_digit_matrices
-    # 末尾日の条件：0-9, ぞろ目, 月=日, 月末
     date_conditions = (0..9).to_a + ['ぞろ目', '月=日', '月末']
     machine_conditions = (0..9).to_a + ['ぞろ目', '月=日', '月末']
-    
+
+    # 日付条件ごとにデータを事前グループ化（全データスキャンを13回→169+7回分削減）
+    by_date_cond = {}
+    date_conditions.each do |cond|
+      by_date_cond[cond] = @all_machine_data.select { |m| matches_date_condition?(m.date, cond) }
+    end
+
     # 末尾日×末尾番台
     @last_digit_machine_matrix = {}
-    
     date_conditions.each do |date_cond|
       @last_digit_machine_matrix[date_cond] = {}
-      
       machine_conditions.each do |machine_cond|
-        # 条件に合うデータを抽出
-        filtered_data = filter_by_conditions(date_cond, machine_cond)
-        
-        @last_digit_machine_matrix[date_cond][machine_cond] = calculate_stats(filtered_data)
+        filtered = by_date_cond[date_cond].select { |m| matches_machine_condition?(m.machine_number, m.date, machine_cond) }
+        @last_digit_machine_matrix[date_cond][machine_cond] = calculate_stats(filtered)
       end
     end
-    
+
     # 末尾日×曜日
     @last_digit_weekday_matrix = {}
-    
     date_conditions.each do |date_cond|
       @last_digit_weekday_matrix[date_cond] = {}
-      
       (0..6).each do |wday|
-        filtered_data = @all_machine_data.select do |m|
-          matches_date_condition?(m.date, date_cond) && m.date.wday == wday
-        end
-        
-        @last_digit_weekday_matrix[date_cond][wday] = calculate_stats(filtered_data)
+        filtered = by_date_cond[date_cond].select { |m| m.date.wday == wday }
+        @last_digit_weekday_matrix[date_cond][wday] = calculate_stats(filtered)
       end
     end
   end
@@ -117,18 +113,15 @@ class DataAnalysisController < ApplicationController
   # ============================================================
 
   def generate_week_number_matrix
+    # 週番号ごとに事前グループ化
+    by_week = @all_machine_data.group_by { |m| ((m.date.day - 1) / 7) + 1 }
+
     @week_weekday_matrix = {}
-    
     (1..5).each do |week_num|
       @week_weekday_matrix[week_num] = {}
-      
+      week_data = by_week[week_num] || []
       (0..6).each do |wday|
-        filtered_data = @all_machine_data.select do |m|
-          week_of_month = ((m.date.day - 1) / 7) + 1
-          week_of_month == week_num && m.date.wday == wday
-        end
-        
-        @week_weekday_matrix[week_num][wday] = calculate_stats(filtered_data)
+        @week_weekday_matrix[week_num][wday] = calculate_stats(week_data.select { |m| m.date.wday == wday })
       end
     end
   end
@@ -138,12 +131,9 @@ class DataAnalysisController < ApplicationController
   # ============================================================
 
   def generate_weekday_matrices
-    # 単純な曜日別集計も追加
-    @weekday_stats = {}
-    
-    (0..6).each do |wday|
-      filtered_data = @all_machine_data.select { |m| m.date.wday == wday }
-      @weekday_stats[wday] = calculate_stats(filtered_data)
+    by_wday = @all_machine_data.group_by { |m| m.date.wday }
+    @weekday_stats = (0..6).each_with_object({}) do |wday, h|
+      h[wday] = calculate_stats(by_wday[wday] || [])
     end
   end
 

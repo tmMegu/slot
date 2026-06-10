@@ -1,0 +1,261 @@
+/* 傾向調査ページ専用スタイル */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 10px;
+    background-color: var(--color-bg);
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background-color: var(--color-white);
+    padding: 15px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: var(--color-text);
+}
+
+.back-button {
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-secondary);
+    color: var(--color-white);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+}
+
+.back-button:hover {
+    background-color: var(--color-secondary-dark);
+}
+
+/* フィルターパネル */
+.filter-panel {
+    background-color: var(--color-bg-panel);
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.filter-section {
+    margin-bottom: 15px;
+}
+
+.filter-section:last-child {
+    margin-bottom: 0;
+}
+
+.filter-title {
+    font-weight: bold;
+    margin-bottom: var(--space-sm);
+    color: #495057;
+    font-size: 14px;
+}
+
+.filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-controls label {
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+
+.filter-controls input[type="text"],
+.filter-controls input[type="number"],
+.filter-controls input[type="date"],
+.filter-controls select {
+    padding: 5px var(--space-sm);
+    border: 1px solid #ced4da;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+}
+
+.filter-controls input[type="checkbox"] {
+    margin-right: var(--space-xs);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn {
+    padding: var(--space-sm) var(--space-md);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.btn-secondary {
+    background-color: var(--color-secondary);
+    color: var(--color-white);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-secondary-dark);
+}
+
+/* 日付一覧テーブル */
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.summary-table th,
+.summary-table td {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--color-border);
+}
+
+.summary-table th {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.summary-table tbody tr:nth-child(even) {
+    background-color: var(--color-bg-panel);
+}
+
+.summary-table tbody tr:hover {
+    background-color: #e9ecef;
+}
+
+.date-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.date-link:hover {
+    text-decoration: underline;
+}
+
+.positive {
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+.negative {
+    color: var(--color-danger);
+    font-weight: bold;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: var(--color-secondary);
+    font-size: 16px;
+}
+
+/* 上位機種セル */
+.top-machine-cell {
+    padding: var(--space-sm) 6px !important;
+    text-align: left;
+}
+
+.top-machine-cell .machine-name {
+    font-size: 12px;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.top-machine-cell .machine-diff {
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* スマホ対応 */
+@media (max-width: 768px) {
+    body {
+        padding: 0;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    .header h1 {
+        font-size: 20px;
+    }
+
+    .filter-panel {
+        padding: 10px;
+    }
+
+    .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-controls input[type="text"],
+    .filter-controls input[type="number"],
+    .filter-controls input[type="date"],
+    .filter-controls select {
+        width: 100%;
+    }
+
+    .summary-table {
+        font-size: 12px;
+    }
+
+    .summary-table th,
+    .summary-table td {
+        padding: 6px var(--space-xs);
+    }
+
+    .top-machine-cell .machine-name {
+        font-size: 10px;
+        gap: var(--space-xs);
+    }
+
+    .top-machine-cell .machine-diff {
+        font-size: 10px;
+    }
+
+    .top-machine-cell .machine-name span {
+        font-size: 9px !important;
+    }
+}

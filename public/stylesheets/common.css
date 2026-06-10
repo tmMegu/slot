@@ -1,4 +1,33 @@
 /* 共通スタイル */
+
+/* カラーパレット・スペーシング変数 */
+:root {
+  --color-primary:       #10b981;
+  --color-primary-dark:  #059669;
+  --color-success:       #28a745;
+  --color-success-dark:  #218838;
+  --color-secondary:     #6c757d;
+  --color-secondary-dark:#5a6268;
+  --color-danger:        #dc3545;
+  --color-info:          #0dcaf0;
+  --color-text:          #333;
+  --color-text-muted:    #666;
+  --color-border:        #dee2e6;
+  --color-bg:            #f5f5f5;
+  --color-bg-panel:      #f8f9fa;
+  --color-white:         #ffffff;
+
+  --radius-sm:  4px;
+  --radius-md:  6px;
+  --radius-lg:  8px;
+
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+}
+
 * {
   box-sizing: border-box;
 }

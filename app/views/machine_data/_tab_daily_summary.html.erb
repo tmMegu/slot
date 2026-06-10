@@ -158,16 +158,16 @@
                         <span style="font-size: 11px; color: #666;">(<%= %w[日 月 火 水 木 金 土][day_data[:date].wday] %>)</span>
                     </a>
                 </td>
-                <td style="padding: 2px 6px; text-align: right; <%= day_data[:total_difference] >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %> font-weight: bold; white-space: nowrap;">
-                    <%= number_with_delimiter(day_data[:total_difference]) %>
+                <td style="padding: 2px 6px; text-align: right; <%= day_data[:total_diff] >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %> font-weight: bold; white-space: nowrap;">
+                    <%= number_with_delimiter(day_data[:total_diff]) %>
                 </td>
                 <td style="padding: 2px 6px; text-align: right; white-space: nowrap;">
                     <%= sprintf('%.1f', day_data[:win_rate]) %>%
-                    (<%= day_data[:win_count] %>/<%= day_data[:machine_count] %>)
+                    (<%= day_data[:plus_machines] %>/<%= day_data[:machine_count] %>)
                 </td>
                 <td style="padding: 2px 6px; text-align: right; white-space: nowrap;"><%= number_with_delimiter(day_data[:avg_games].to_i) %>G</td>
-                <td style="padding: 2px 6px; text-align: right; <%= day_data[:avg_difference] >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %> white-space: nowrap;">
-                    <%= number_with_delimiter(day_data[:avg_difference].to_i) %>
+                <td style="padding: 2px 6px; text-align: right; <%= day_data[:avg_diff] >= 0 ? 'color: #10b981;' : 'color: #dc3545;' %> white-space: nowrap;">
+                    <%= number_with_delimiter(day_data[:avg_diff].to_i) %>
                 </td>
             </tr>
             <% end %>

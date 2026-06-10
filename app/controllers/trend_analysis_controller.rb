@@ -102,16 +102,7 @@ class TrendAnalysisController < ApplicationController
     @show_top_machines_3 = params[:show_top_machines_3] == "1" || session[@session_key]&.dig(:show_top_machines_3) == "1"
   end
 
-  # パラメータまたはセッションから値を取得
-  def get_param_or_session(key, default_value)
-    if params[key].present?
-      params[key]
-    elsif session[@session_key] && session[@session_key][key]
-      session[@session_key][key]
-    else
-      default_value
-    end
-  end
+  # get_param_or_session は MachineDataFilterable から継承
 
   # パラメータまたはセッションから日付を取得
   def get_param_or_session_date(key, default_value)
@@ -140,57 +131,51 @@ class TrendAnalysisController < ApplicationController
   # セッションに検索条件を保存（サイズ最適化）
   def save_to_session
     session[@session_key] ||= {}
+    session[@session_key][:analysis_start_date] = @analysis_start_date.to_s
+    session[@session_key][:analysis_end_date] = @analysis_end_date.to_s
 
-    # 空値を保存しないヘルパー
-    save_if_present = lambda do |key, value|
+    session_values = {
+      display_date_mode:            @display_date_mode,
+      display_last_digit:           @display_last_digit,
+      display_day_number:           @display_day_number,
+      display_custom_dates:         @display_custom_dates,
+      sort_order:                   @sort_order,
+      filter_machine_name:          @filter_machine_name,
+      filter_machine_name_search:   @filter_machine_name_search,
+      filter_machine_name_search_type: @filter_machine_name_search_type,
+      filter_machine_name_operator: @filter_machine_name_operator,
+      filter_machine_last_digit:    @filter_machine_last_digit,
+      filter_machine_double_digit:  @filter_machine_double_digit ? "1" : nil,
+      filter_machine_parity:        @filter_machine_parity,
+      filter_difference_min:        @filter_difference_min,
+      filter_difference_max:        @filter_difference_max,
+      filter_game_count_min:        @filter_game_count_min,
+      filter_game_count_max:        @filter_game_count_max,
+      filter_bb_count_min:          @filter_bb_count_min,
+      filter_bb_count_max:          @filter_bb_count_max,
+      filter_machine_count_min:     @filter_machine_count_min,
+      filter_machine_count_max:     @filter_machine_count_max,
+      filter_past_diff_days:        @filter_past_diff_days,
+      filter_past_diff_type:        @filter_past_diff_type,
+      filter_past_diff_ranks:       @filter_past_diff_ranks,
+      filter_past_negative_days:    @filter_past_negative_days,
+      filter_negative_count_days:   @filter_negative_count_days,
+      filter_negative_count_min:    @filter_negative_count_min,
+      filter_negative_count_max:    @filter_negative_count_max,
+      show_top_machines_1:          @show_top_machines_1 ? "1" : nil,
+      show_top_machines_2:          @show_top_machines_2 ? "1" : nil,
+      show_top_machines_3:          @show_top_machines_3 ? "1" : nil
+    }
+
+    session_values.each do |key, value|
       if value.is_a?(Array)
-        session[@session_key][key] = value.join(",") if value.any?
+        value.any? ? session[@session_key][key] = value.join(",") : session[@session_key].delete(key)
       elsif value.present?
         session[@session_key][key] = value
       else
         session[@session_key].delete(key)
       end
     end
-
-    # 分析対象期間（必須）
-    session[@session_key][:analysis_start_date] = @analysis_start_date.to_s
-    session[@session_key][:analysis_end_date] = @analysis_end_date.to_s
-
-    # 表示日付範囲
-    save_if_present.call(:display_date_mode, @display_date_mode)
-    save_if_present.call(:display_last_digit, @display_last_digit)
-    save_if_present.call(:display_day_number, @display_day_number)
-    save_if_present.call(:display_custom_dates, @display_custom_dates)
-
-    # 表示順
-    save_if_present.call(:sort_order, @sort_order)
-
-    # フィルター設定（空値は保存しない）
-    save_if_present.call(:filter_machine_name, @filter_machine_name)
-    save_if_present.call(:filter_machine_name_search, @filter_machine_name_search)
-    save_if_present.call(:filter_machine_name_search_type, @filter_machine_name_search_type)
-    save_if_present.call(:filter_machine_name_operator, @filter_machine_name_operator)
-    save_if_present.call(:filter_machine_last_digit, @filter_machine_last_digit)
-    save_if_present.call(:filter_machine_double_digit, @filter_machine_double_digit ? "1" : nil)
-    save_if_present.call(:filter_machine_parity, @filter_machine_parity)
-    save_if_present.call(:filter_difference_min, @filter_difference_min)
-    save_if_present.call(:filter_difference_max, @filter_difference_max)
-    save_if_present.call(:filter_game_count_min, @filter_game_count_min)
-    save_if_present.call(:filter_game_count_max, @filter_game_count_max)
-    save_if_present.call(:filter_bb_count_min, @filter_bb_count_min)
-    save_if_present.call(:filter_bb_count_max, @filter_bb_count_max)
-    save_if_present.call(:filter_machine_count_min, @filter_machine_count_min)
-    save_if_present.call(:filter_machine_count_max, @filter_machine_count_max)
-    save_if_present.call(:filter_past_diff_days, @filter_past_diff_days)
-    save_if_present.call(:filter_past_diff_type, @filter_past_diff_type)
-    save_if_present.call(:filter_past_diff_ranks, @filter_past_diff_ranks)
-    save_if_present.call(:filter_past_negative_days, @filter_past_negative_days)
-    save_if_present.call(:filter_negative_count_days, @filter_negative_count_days)
-    save_if_present.call(:filter_negative_count_min, @filter_negative_count_min)
-    save_if_present.call(:filter_negative_count_max, @filter_negative_count_max)
-    save_if_present.call(:show_top_machines_1, @show_top_machines_1 ? "1" : nil)
-    save_if_present.call(:show_top_machines_2, @show_top_machines_2 ? "1" : nil)
-    save_if_present.call(:show_top_machines_3, @show_top_machines_3 ? "1" : nil)
   end
 
   # ============================================================
@@ -315,24 +300,7 @@ class TrendAnalysisController < ApplicationController
   end
 
   def calculate_daily_stats(date, filtered_machines)
-    total_diff = filtered_machines.sum(&:difference_count)
-    total_games = filtered_machines.sum(&:game_count)
-    machine_count = filtered_machines.size
-    avg_diff = machine_count > 0 ? (total_diff.to_f / machine_count).round : 0
-    avg_games = machine_count > 0 ? (total_games.to_f / machine_count).round : 0
-    plus_machines = filtered_machines.count { |m| m.difference_count > 0 }
-    win_rate = machine_count > 0 ? ((plus_machines.to_f / machine_count) * 100).round(1) : 0.0
-
-    stats = {
-      date: date,
-      machine_count: machine_count,
-      avg_diff: avg_diff,
-      avg_games: avg_games,
-      total_diff: total_diff,
-      total_games: total_games,
-      plus_machines: plus_machines,
-      win_rate: win_rate
-    }
+    stats = super
 
     # 上位機種の算出（表示フラグがONの場合のみ）
     if @show_top_machines_1 || @show_top_machines_2 || @show_top_machines_3

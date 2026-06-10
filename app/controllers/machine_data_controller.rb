@@ -36,16 +36,9 @@ class MachineDataController < ApplicationController
   end
 
   def batch_import
-    Rails.logger.info "=== batch_import started ==="
-    Rails.logger.info "Params: #{params.inspect}"
-
     start_date = Date.parse(params[:start_date])
     end_date = Date.parse(params[:end_date])
     hall_ids = params[:hall_ids] || []
-
-    Rails.logger.info "Start date: #{start_date}"
-    Rails.logger.info "End date: #{end_date}"
-    Rails.logger.info "Hall IDs: #{hall_ids.inspect}"
 
     if hall_ids.empty?
       flash[:alert] = "ホールを選択してください"
@@ -371,73 +364,58 @@ class MachineDataController < ApplicationController
     end
   end
 
-  # パラメータまたはセッションから値を取得
-  def get_param_or_session(key, default_value)
-    if params[key].present?
-      params[key]
-    elsif session[@session_key] && session[@session_key][key]
-      session[@session_key][key]
-    else
-      default_value
-    end
-  end
+  # get_param_or_session は MachineDataFilterable から継承
 
   # セッションに検索条件を保存（サイズ最適化）
   def save_to_session
     session[@session_key] ||= {}
 
-    # 空値を保存しないヘルパー
-    save_if_present = lambda do |key, value|
+    session_values = {
+      show_difference:              @show_difference ? "1" : "0",
+      show_games:                   @show_games ? "1" : "0",
+      show_bb:                      @show_bb ? "1" : "0",
+      show_rb:                      @show_rb ? "1" : "0",
+      show_art:                     @show_art ? "1" : "0",
+      sort_by:                      @sort_by,
+      sort_order:                   @sort_order,
+      display_days:                 @display_days,
+      filter_machine_name:          @filter_machine_name,
+      filter_machine_name_search:   @filter_machine_name_search,
+      filter_machine_name_search_type: @filter_machine_name_search_type,
+      filter_machine_name_operator: @filter_machine_name_operator,
+      filter_game_count_min:        @filter_game_count_min,
+      filter_game_count_max:        @filter_game_count_max,
+      filter_difference_min:        @filter_difference_min,
+      filter_difference_max:        @filter_difference_max,
+      filter_bb_count_min:          @filter_bb_count_min,
+      filter_bb_count_max:          @filter_bb_count_max,
+      filter_machine_last_digit:    @filter_machine_last_digit,
+      filter_machine_double_digit:  @filter_machine_double_digit ? "1" : nil,
+      filter_best_ranks:            @filter_best_ranks,
+      filter_best_rank_days:        @filter_best_rank_days,
+      filter_diff_days:             @filter_diff_days,
+      filter_diff_value_min:        @filter_diff_value_min,
+      filter_diff_value_max:        @filter_diff_value_max,
+      filter_game_count_days:       @filter_game_count_days,
+      filter_game_count_value_min:  @filter_game_count_value_min,
+      filter_game_count_value_max:  @filter_game_count_value_max,
+      filter_machine_count_min:     @filter_machine_count_min,
+      filter_machine_count_max:     @filter_machine_count_max,
+      filter_rank_days:             @filter_rank_days,
+      filter_ranks:                 @filter_ranks,
+      filter_model_most_negative_days: @filter_model_most_negative_days,
+      filter_model_worst_diff_days: @filter_model_worst_diff_days
+    }
+
+    session_values.each do |key, value|
       if value.is_a?(Array)
-        session[@session_key][key] = value.join(",") if value.any?
+        value.any? ? session[@session_key][key] = value.join(",") : session[@session_key].delete(key)
       elsif value.present? || value == false || value == 0
         session[@session_key][key] = value
       else
         session[@session_key].delete(key)
       end
     end
-
-    # 表示設定
-    save_if_present.call(:show_difference, @show_difference ? "1" : "0")
-    save_if_present.call(:show_games, @show_games ? "1" : "0")
-    save_if_present.call(:show_bb, @show_bb ? "1" : "0")
-    save_if_present.call(:show_rb, @show_rb ? "1" : "0")
-    save_if_present.call(:show_art, @show_art ? "1" : "0")
-
-    # ソート設定
-    save_if_present.call(:sort_by, @sort_by)
-    save_if_present.call(:sort_order, @sort_order)
-
-    # 表示日数
-    save_if_present.call(:display_days, @display_days)
-
-    # フィルター設定（空値は保存しない）
-    save_if_present.call(:filter_machine_name, @filter_machine_name)
-    save_if_present.call(:filter_machine_name_search, @filter_machine_name_search)
-    save_if_present.call(:filter_machine_name_search_type, @filter_machine_name_search_type)
-    save_if_present.call(:filter_game_count_min, @filter_game_count_min)
-    save_if_present.call(:filter_game_count_max, @filter_game_count_max)
-    save_if_present.call(:filter_difference_min, @filter_difference_min)
-    save_if_present.call(:filter_difference_max, @filter_difference_max)
-    save_if_present.call(:filter_bb_count_min, @filter_bb_count_min)
-    save_if_present.call(:filter_bb_count_max, @filter_bb_count_max)
-    save_if_present.call(:filter_machine_last_digit, @filter_machine_last_digit)
-    save_if_present.call(:filter_machine_double_digit, @filter_machine_double_digit ? "1" : nil)
-    save_if_present.call(:filter_best_ranks, @filter_best_ranks)
-    save_if_present.call(:filter_best_rank_days, @filter_best_rank_days)
-    save_if_present.call(:filter_diff_days, @filter_diff_days)
-    save_if_present.call(:filter_diff_value_min, @filter_diff_value_min)
-    save_if_present.call(:filter_diff_value_max, @filter_diff_value_max)
-    save_if_present.call(:filter_game_count_days, @filter_game_count_days)
-    save_if_present.call(:filter_game_count_value_min, @filter_game_count_value_min)
-    save_if_present.call(:filter_game_count_value_max, @filter_game_count_value_max)
-    save_if_present.call(:filter_machine_count_min, @filter_machine_count_min)
-    save_if_present.call(:filter_machine_count_max, @filter_machine_count_max)
-    save_if_present.call(:filter_rank_days, @filter_rank_days)
-    save_if_present.call(:filter_ranks, @filter_ranks)
-    save_if_present.call(:filter_machine_name_operator, @filter_machine_name_operator)
-    save_if_present.call(:filter_model_most_negative_days, @filter_model_most_negative_days)
-    save_if_present.call(:filter_model_worst_diff_days, @filter_model_worst_diff_days)
   end
 
   def setup_filter_parameters
@@ -537,22 +515,6 @@ class MachineDataController < ApplicationController
       @machine_data = create_empty_machine_data_with_memos(reference_data, existing_memo_records)
     else
       @machine_data = []
-    end
-  end
-
-  def create_empty_machine_data(reference_data)
-    reference_data.map do |data|
-      MachineData.new(
-        hall_id: @hall.id,
-        date: @date,
-        machine_number: data.machine_number,
-        machine_name: data.machine_name,
-        game_count: 0,
-        difference_count: 0,
-        bb_count: 0,
-        rb_count: 0,
-        art_count: 0
-      )
     end
   end
 
@@ -745,16 +707,6 @@ class MachineDataController < ApplicationController
     end
 
     stats
-  end
-
-  def generate_daily_summary_for_current_date
-    daily_machines = @hall.machine_data.where(date: @date)
-    return [] if daily_machines.empty?
-
-    filtered_machines = apply_filter_for_summary(daily_machines, @date)
-    return [] if filtered_machines.empty?
-
-    [ calculate_daily_stats(@date, filtered_machines) ]
   end
 
   # 【最適化版】日別集計データを生成（全日付を1回のクエリで取得）

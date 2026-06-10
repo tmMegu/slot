@@ -81,6 +81,17 @@ module MachineDataFilterable
     params[key].present? ? params[key].to_i : nil
   end
 
+  # パラメータまたはセッションから値を取得（@session_key が設定されていること）
+  def get_param_or_session(key, default_value)
+    if params[key].present?
+      params[key]
+    elsif session[@session_key] && session[@session_key][key]
+      session[@session_key][key]
+    else
+      default_value
+    end
+  end
+
   # ============================================================
   # フィルター処理
   # ============================================================
@@ -187,28 +198,19 @@ module MachineDataFilterable
   def apply_past_diff_filter(machines_by_date, target_machines, base_date)
     return target_machines unless @filter_past_diff_days.present? && @filter_past_diff_ranks.any?
 
-    # 過去〇日間の範囲を計算
     start_date = base_date - @filter_past_diff_days.days
     end_date = base_date - 1.day
 
-    # 台番号ごとの過去差枚合計を計算
-    past_diff_totals = {}
-    target_machines.each do |machine|
-      total_diff = 0
-      (start_date..end_date).each do |date|
-        if machines_by_date[date]
-          machine_data = machines_by_date[date].find { |m| m.machine_number == machine.machine_number }
-          total_diff += machine_data.difference_count if machine_data
-        end
-      end
-      past_diff_totals[machine.machine_number] = total_diff
+    # 台番号ごとの過去差枚合計をハッシュで高速構築
+    past_diff_totals = Hash.new(0)
+    (start_date..end_date).each do |date|
+      next unless machines_by_date[date]
+      machines_by_date[date].each { |m| past_diff_totals[m.machine_number] += m.difference_count }
     end
 
-    # 機種名ごとにランキングを計算
     rank_type = @filter_past_diff_type == "best" ? :best : :worst
     past_diff_ranks = calculate_ranks_by_machine_name(target_machines, past_diff_totals, rank_type)
 
-    # 指定されたランクの台のみを返す（複数選択対応）
     target_machines.select do |machine|
       rank = past_diff_ranks[machine.machine_number]
       rank.present? && @filter_past_diff_ranks.include?(rank)
@@ -216,47 +218,36 @@ module MachineDataFilterable
   end
 
   # 過去差枚がマイナスの台フィルター
-  # 過去〇日間の差枚合計がマイナスの台のみを絞り込む
   def apply_past_negative_filter(machines_by_date, target_machines, base_date)
     return target_machines unless @filter_past_negative_days.present?
 
-    # 過去〇日間の範囲を計算
     start_date = base_date - @filter_past_negative_days.days
     end_date = base_date - 1.day
 
-    # 台番号ごとの過去差枚合計を計算し、マイナスの台のみを残す
-    target_machines.select do |machine|
-      total_diff = 0
-      (start_date..end_date).each do |date|
-        if machines_by_date[date]
-          machine_data = machines_by_date[date].find { |m| m.machine_number == machine.machine_number }
-          total_diff += machine_data.difference_count if machine_data
-        end
-      end
-      total_diff < 0
+    past_diff_totals = Hash.new(0)
+    (start_date..end_date).each do |date|
+      next unless machines_by_date[date]
+      machines_by_date[date].each { |m| past_diff_totals[m.machine_number] += m.difference_count }
     end
+
+    target_machines.select { |machine| past_diff_totals[machine.machine_number] < 0 }
   end
 
-  # 過去7日間でマイナスになった日数フィルター
-  # 過去〇日間でマイナスになった日数が指定範囲内の台のみを絞り込む
+  # 過去〇日間でマイナスになった日数フィルター
   def apply_negative_count_filter(machines_by_date, target_machines, base_date)
     return target_machines unless @filter_negative_count_days.present? && (@filter_negative_count_min.present? || @filter_negative_count_max.present?)
 
-    # 過去〇日間の範囲を計算
     start_date = base_date - @filter_negative_count_days.days
     end_date = base_date - 1.day
 
-    # 台番号ごとにマイナスになった日数をカウント
-    target_machines.select do |machine|
-      negative_days = 0
-      (start_date..end_date).each do |date|
-        if machines_by_date[date]
-          machine_data = machines_by_date[date].find { |m| m.machine_number == machine.machine_number }
-          negative_days += 1 if machine_data && machine_data.difference_count < 0
-        end
-      end
-      value_in_range?(negative_days, @filter_negative_count_min, @filter_negative_count_max)
+    # 台番号ごとのマイナス日数をハッシュで高速構築
+    negative_counts = Hash.new(0)
+    (start_date..end_date).each do |date|
+      next unless machines_by_date[date]
+      machines_by_date[date].each { |m| negative_counts[m.machine_number] += 1 if m.difference_count < 0 }
     end
+
+    target_machines.select { |machine| value_in_range?(negative_counts[machine.machine_number], @filter_negative_count_min, @filter_negative_count_max) }
   end
 
   # ============================================================
@@ -266,17 +257,18 @@ module MachineDataFilterable
   def calculate_daily_stats(date, machines)
     total_diff = machines.sum(&:difference_count)
     total_games = machines.sum(&:game_count)
-    win_count = machines.count { |m| m.difference_count > 0 }
+    plus_machines = machines.count { |m| m.difference_count > 0 }
     machine_count = machines.size
 
     {
       date: date,
       machine_count: machine_count,
-      total_difference: total_diff,
-      win_count: win_count,
-      win_rate: (win_count.to_f / machine_count * 100).round(1),
-      avg_games: (total_games.to_f / machine_count).round,
-      avg_difference: (total_diff.to_f / machine_count).round
+      total_diff: total_diff,
+      total_games: total_games,
+      avg_diff: machine_count > 0 ? (total_diff.to_f / machine_count).round : 0,
+      avg_games: machine_count > 0 ? (total_games.to_f / machine_count).round : 0,
+      plus_machines: plus_machines,
+      win_rate: machine_count > 0 ? (plus_machines.to_f / machine_count * 100).round(1) : 0.0
     }
   end
 
@@ -291,11 +283,7 @@ module MachineDataFilterable
         .select { |m| aggregated_data[m.machine_number] }
         .sort_by { |m| rank_type == :best ? -aggregated_data[m.machine_number] : aggregated_data[m.machine_number] }
 
-      ranks[sorted[0].machine_number] = 1 if sorted[0]
-      ranks[sorted[1].machine_number] = 2 if sorted[1]
-      ranks[sorted[2].machine_number] = 3 if sorted[2]
-      ranks[sorted[3].machine_number] = 4 if sorted[3]
-      ranks[sorted[4].machine_number] = 5 if sorted[4]
+      sorted.each_with_index { |m, i| ranks[m.machine_number] = i + 1 }
     end
 
     ranks
