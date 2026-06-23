@@ -92,7 +92,7 @@
 
 ## 11. 傾向分析 MCP の状況
 
-slot-analysis MCP（別リポジトリ `C:\MCP\slot`）には現在 **29ツール** が実装されている（2026-06 に拡張14ツール追加）。
+slot-analysis MCP（別リポジトリ `C:\MCP\slot`）には現在 **32ツール** が実装されている（2026-06 に拡張17ツール追加）。
 
 ### 11.1 ツール構成
 - 基本データ取得: 8ツール（halls / hall_info / machine_data 等）
@@ -108,7 +108,11 @@ slot-analysis MCP（別リポジトリ `C:\MCP\slot`）には現在 **29ツー�
   - `analyze_lineup_setting` — 並び単位の高設定クラスタリング
   - `analyze_corner_machine_bias` — 角台（並び両端）vs 中央 の高設定率比較
   - `analyze_anniversary_effect` — 周年日・グランドオープン日の効果検証
-- **既存ツール改良**: `analyze_*` 系に二項検定の p 値（正規近似）を追加
+- **拡張ツール Phase 3: 3ツール**（2026-06 追加）
+  - `discover_patterns` — **12軸条件を総当たりして仮説なしのパターンを発見**（AI 探索用）
+  - `analyze_lineup_consecutive_runs` — 並び内のN連続高設定走（角始まり/列全体）を検出
+  - `analyze_juggler_bb_rb_ratio` — **ジャグラー専用** BB:RB 比率/REG 占有率で設定推測
+- **既存ツール改良**: `analyze_*` 系に二項検定の p 値（正規近似）を追加。`analyze_cross_pattern` は履歴依存条件（past_7day_worst / prev_day_diff_at_most / consec_minus_at_least 等）もサポート
 
 ### 11.2 設計判断（確定済み）
 - 高設定判定: 「差枚+ かつ 機種内ゲーム数上位25%」で統一
@@ -131,6 +135,7 @@ slot-analysis MCP（別リポジトリ `C:\MCP\slot`）には現在 **29ツー�
 - 並び情報の視覚的編集 UI（マップ上で複数セル選択して並びを作成）
 - 並び色分け表示（マップ表示時に同一並びを同色枠線で）
 - イベント日（周年以外の任意の特別日）の登録と分析
+- 多重検定補正（Bonferroni/FDR）: `discover_patterns` の p 値に対する補正適用
 
 ## 12. 開発指針
 

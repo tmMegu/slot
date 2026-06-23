@@ -1,6 +1,6 @@
 # MCP拡張設計・実装ドキュメント（slot-analysis）
 
-> ⚠️ **同期注意**: 本ドキュメントは MCP リポジトリ側の `C:\MCP\slot\DESIGN.md` と内容を完全同期させています。一方を更新した際は必ずもう一方も更新してください。最終同期日: 2026-06-23
+> ⚠️ **同期注意**: 本ドキュメントは MCP リポジトリ側の `C:\MCP\slot\DESIGN.md` と内容を完全同期させています。一方を更新した際は必ずもう一方も更新してください。最終同期日: 2026-06-23（Phase 3 追加）
 
 ---
 
@@ -11,7 +11,7 @@ slot 本体アプリの開発者・将来の自分・AI（Claude）の全員が�
 
 ---
 
-## 2. 現状の MCP ツール（全29ツール）
+## 2. 現状の MCP ツール（全32ツール）
 
 すべて Supabase PostgreSQL へ直接接続し読取専用。stdio 経由で Claude Desktop / Claude Code に接続。
 
@@ -64,7 +64,17 @@ slot 本体アプリの開発者・将来の自分・AI（Claude）の全員が�
 | `analyze_corner_machine_bias` | 角台（並び両端）vs 中央台 の高設定率比較 |
 | `analyze_anniversary_effect` | 周年日・グランドオープン日 の効果検証 |
 
-### 2.5 既存ツールの改良（p 値追加、2026-06）
+### 2.5 拡張ツール Phase 3（3ツール、2026-06 追加）
+
+| ツール | 概要 |
+| --- | --- |
+| `discover_patterns` | **仮説なしの全探索**。12軸条件を単一・ペアで総当たりし、ベースラインから乖離するパターンを統計的に発見。多重検定の注意あり |
+| `analyze_lineup_consecutive_runs` | 並び内のN連続高設定走を検出。角始まり/中央始まり/列全体 を分類 |
+| `analyze_juggler_bb_rb_ratio` | **ジャグラー専用**。BB:RB 比率と REG 占有率 rb/(bb+rb) で設定推測。AT/ART 機には適用不可 |
+
+### 2.6 既存ツールの改良（2026-06）
+
+**p 値追加**:
 
 以下のツールに二項検定の両側 p 値（正規近似）を追加し、サンプル数の少ない検出をAI側が信頼度判定できるようにした:
 - `analyze_machine_number_pattern` (by_value 各行)
@@ -73,8 +83,17 @@ slot 本体アプリの開発者・将来の自分・AI（Claude）の全員が�
 - `analyze_consecutive_minus_pattern` (summary + by_machine_name)
 - `analyze_rotation_buckets` (各バケット)
 - `analyze_lineup_setting`, `analyze_corner_machine_bias`, `analyze_anniversary_effect` (新規・最初から付与)
+- `discover_patterns` (全 top_patterns 各行)
 
 p 値の解釈: `p_value_vs_baseline < 0.05` で統計的有意。`n < 30` では正規近似の信頼性が落ちる旨を `p_value_note` に明記。
+
+**`analyze_cross_pattern` の履歴依存条件サポート**: machine_conditions に下記の type を指定可能（lookback バッファ計算が走る）:
+- `past_7day_worst_in_series` — 機種内で過去7日差枚合計が最低（rank=1）
+- `past_3day_worst_in_series` — 機種内で過去3日差枚合計が最低（rank=1）
+- `prev_day_diff_at_most` — value で指定した値以下の前日差枚（既定 -1500）
+- `consec_minus_at_least` — value で指定した日数以上の連続マイナス（既定 3）
+
+これにより「**8のつく日 × 過去7日ワースト**」のようなコミュニティで広く語られる複合パターンを直接検証できる。
 
 ---
 
@@ -237,19 +256,85 @@ hall_maps の `lineups` カラムを読み取り、ホールの全マップ（�
 
 ---
 
-## 9. 次フェーズ候補（未実装）
+## 9. ツール詳細仕様（拡張 Phase 3）
+
+### 9.1 `discover_patterns`
+
+**目的**: 仮説なしの全探索。AI に「ホール固有の傾向で、まだ仮説化されていないもの」を発見させる。
+
+**12 axes**（軸内は相互排他、軸間でクロス）:
+1. date_last_digit (0-9)
+2. weekday (日-土)
+3. end_of_month
+4. day_zorome (11/22/33)
+5. machine_last_digit (0-9)
+6. machine_double_digit (11-99 のぞろ目台)
+7. machine_parity (偶数/奇数)
+8. month_day_match (EXTRACT(DAY)=台番号)
+9. past_7day_worst (機種内 rank=1)
+10. past_3day_worst (機種内 rank=1)
+11. prev_day_minus (-1500 以下 / -3000 以下)
+12. consec_minus (2日 / 3日)
+
+**生成される組合せ**:
+- 単一: ~37 個
+- ペア: 軸×軸の全組合せ（軸内排他のため軸間のみ）
+- トリプル: include_triples=true で有効化（処理重い）
+
+**出力**:
+- `top_patterns_by_score`: |lift_pct| × √n でソートした top max_results
+- `significant_patterns`: p_value ≤ significance_threshold のみ
+
+**多重検定注意**: 数百〜数千の組合せをテストするため、p<0.05 でも偶然の可能性あり。lift_pct と instance_count の両方を確認することを caveat に明記。
+
+### 9.2 `analyze_lineup_consecutive_runs`
+
+**目的**: 並び内で N 台以上の連続高設定が並ぶ「連続走」を検出。
+
+**分類**:
+- `runs_from_corner`: 並びの左角または右角始まり
+- `runs_from_middle`: 内側のみ
+- `runs_full_lineup`: 並び全体が高設定
+
+**出力**:
+- `by_lineup[]`: 並びごとの集計（total_runs, run_counts_by_length, 等）
+- `top_runs`: 長い順 → 新しい順の発生事例（最大30件）
+
+並び情報（hall_maps.lineups）が未登録なら空結果＋メッセージ。
+
+### 9.3 `analyze_juggler_bb_rb_ratio`
+
+**目的**: ジャグラー専用の設定推測。BB:RB 比率と REG 占有率 rb/(bb+rb) で判定。
+
+**⚠️ 適用範囲**:
+- 対象: ジャグラーシリーズ（マイジャグラー/ファンキー/アイム/ハッピー 等）
+- 不適用: AT/ART 機、スマスロ機（ボーナス役割が複雑）
+
+**原理**:
+- 高設定ほど BB と REG の差が小さく、BB:RB ≈ 1:1 に近づく
+- 設定6級マイジャグラーV: BB:RB ≈ 1.1:1、REG確率 ≈ 1/270
+- 設定1: BB:RB ≈ 1.6:1、REG確率 ≈ 1/450
+
+**出力**:
+- 各台×日に `reg_in_total_bonus_ratio`, `bb_to_rb_ratio`, `rb_inverse_estimate` を付与
+- `by_machine[]`: 台ごとの「閾値超え日数」とトータル平均
+
+---
+
+## 10. 次フェーズ候補（未実装）
 
 | 候補 | 想定工数 | メモ |
 | --- | --- | --- |
 | 並び情報の視覚的編集 UI | 中 | マップ上で複数セル選択→並びに追加する Stimulus UI |
 | 並び色分け表示 | 小 | マップ表示時、同一並びを同色枠線で表示 |
 | イベント日の登録と分析 | 中 | 周年以外の任意特別日（毎月のイベント、新装等）を Hall に複数登録できる仕組み |
+| 多重検定補正 | 中 | `discover_patterns` の p 値に Bonferroni/FDR 補正を追加 |
 | 統計的有意性の厳密検定 | 中 | 小サンプル時に二項検定の正確 p 値（exact）への切替 |
 | Rails アプリ → MCP 統合 UI | 大 | Rails 側で MCP 結果を画面表示 |
 
 ---
 
-## 10. 同期手順
+## 11. 同期手順
 
 slot/MCP_EXTENSION_DESIGN.md と C:\MCP\slot\DESIGN.md は同一内容を維持する。
 - どちらかを編集したら **必ず両方同じ内容にする**
