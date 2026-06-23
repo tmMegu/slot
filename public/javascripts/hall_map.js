@@ -716,6 +716,15 @@ document.addEventListener("turbo:frame-load", function () {
   initializeMapZoom();
 });
 
+// タブ切替時にマップタブが表示された後、外部から呼べる再初期化エントリ
+// （タブが非表示の状態で初期化されると getBoundingClientRect 等が 0 を返すため、
+//  表示された瞬間に必ず一度走らせる）
+window.reinitializeMap = function () {
+  window.mapIsInitialized = false;
+  initializeMapDisplay();
+  initializeMapZoom();
+};
+
 // ============================================================
 // マップズーム機能
 // PC: Ctrl + マウスホイール
@@ -771,6 +780,10 @@ function initializeMapZoom() {
   var mapTable = document.querySelector(".map-table");
 
   if (!mapContainer || !mapTable) return;
+
+  // ズーム用イベントの二重登録を防止
+  if (mapContainer.dataset.zoomInitialized === "true") return;
+  mapContainer.dataset.zoomInitialized = "true";
 
   var scale = 1;
   var minScale = 0.5;

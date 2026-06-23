@@ -1,9 +1,9 @@
 <div class="tabs-container">
     <!-- タブボタン -->
     <div class="tab-buttons">
-        <button class="tab-button <%= 'active' if params[:active_tab] == 'list' || params[:active_tab].blank? %>" onclick="switchTab('list')" data-tab="list">📋 一覧</button>
-        <button class="tab-button <%= 'active' if params[:active_tab] == 'machine-stats' %>" onclick="switchTab('machine-stats')" data-tab="machine-stats">📊 機種単位</button>
-        <button class="tab-button <%= 'active' if params[:active_tab] == 'map' %>" onclick="switchTab('map')" data-tab="map">🗺️ マップ</button>
+        <button class="tab-button <%= 'active' if params[:active_tab] == 'list' || params[:active_tab].blank? %>" onclick="switchTab('list', event)" data-tab="list">📋 一覧</button>
+        <button class="tab-button <%= 'active' if params[:active_tab] == 'machine-stats' %>" onclick="switchTab('machine-stats', event)" data-tab="machine-stats">📊 機種単位</button>
+        <button class="tab-button <%= 'active' if params[:active_tab] == 'map' %>" onclick="switchTab('map', event)" data-tab="map">🗺️ マップ</button>
     </div>
 
     <!-- 一覧タブ -->

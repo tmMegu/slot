@@ -1,0 +1,21 @@
+<div class="map-date-nav">
+    <div class="map-date-nav__buttons">
+        <%= link_to "« 前日", hall_machine_map_path(@hall, (@date - 1.day).to_s, map_id: params[:map_id]), class: "btn btn-secondary btn-small" %>
+        <% if @date != Date.today %>
+            <%= link_to "本日", hall_machine_map_path(@hall, Date.today.to_s, map_id: params[:map_id]), class: "btn btn-info btn-small" %>
+        <% end %>
+        <%= link_to "翌日 »", hall_machine_map_path(@hall, (@date + 1.day).to_s, map_id: params[:map_id]), class: "btn btn-secondary btn-small" %>
+    </div>
+
+    <div class="map-date-nav__current">
+        <% wday_ja = ['日', '月', '火', '水', '木', '金', '土'][@date.wday] %>
+        <span class="map-date-nav__date"><%= @date.strftime('%Y年%m月%d日') %>(<%= wday_ja %>)</span>
+    </div>
+
+    <div class="map-date-nav__picker">
+        <input type="date" value="<%= @date %>"
+               data-hall-id="<%= @hall.id %>"
+               data-map-id="<%= params[:map_id] %>"
+               onchange="if(this.value){ const mapId = this.dataset.mapId; const url = '/halls/' + this.dataset.hallId + '/dates/' + this.value + '/map' + (mapId ? '?map_id=' + mapId : ''); window.location.href = url; }">
+    </div>
+</div>

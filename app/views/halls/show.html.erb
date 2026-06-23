@@ -1,11 +1,12 @@
-<div class="container">
-    <!-- 戻るボタンとタイトル -->
-    <div class="flex-between mb-20">
-        <%= link_to "← 戻る", halls_path, class: "btn btn-secondary btn-small", style: "flex-shrink: 0; white-space: nowrap;" %>
-        <h2 style="margin: 0; color: #333; flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;"><%= @hall.name %> - 日付一覧</h2>
-        <div></div>
-    </div>
+<% content_for :header_title, "#{@hall.name} · 日付一覧" %>
+<% content_for :header_actions do %>
+    <%= link_to "傾向調査", hall_trend_analysis_path(@hall), class: "header-link" %>
+    <%= link_to "データ分析", hall_data_analysis_path(@hall), class: "header-link" %>
+    <%= link_to "🗂️ マップ管理", hall_maps_path(@hall), class: "header-link" %>
+    <%= link_to "編集", edit_hall_path(@hall), class: "header-link" %>
+<% end %>
 
+<div class="container">
     <!-- ホール情報カード -->
     <div class="card">
         <!-- 日付範囲フィルターと更新ボタン -->

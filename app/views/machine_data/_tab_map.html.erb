@@ -1,7 +1,5 @@
 <link rel="stylesheet" href="/stylesheets/hall_map.css">
-<link rel="stylesheet" href="/stylesheets/hall_map_print.css">
 <script src="/javascripts/hall_map.js"></script>
-<script src="/javascripts/hall_map_pdf.js"></script>
 
 <div class="map-tab-container">
     <% if @hall_maps.any? %>
@@ -16,13 +14,11 @@
                 <% end %>
             </select>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <%= link_to "📄 PDF出力", hall_export_map_pdf_path(@hall, @date, map_id: @current_map&.id), class: "btn-primary", style: "padding: 2px 10px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 11px; text-decoration: none; display: inline-block;" %>
-
-            <button onclick="exportMapToPDF()" class="btn-secondary" style="padding: 2px 10px; background: #6c757d; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                📄 PDF（旧）
-            </button>
+        <% unless action_name == "show_map" %>
+        <div>
+            <%= link_to "📐 マップだけを表示", hall_machine_map_path(@hall, @date, map_id: @current_map&.id), class: "btn btn-info btn-small" %>
         </div>
+        <% end %>
     </div>
 
     <%= render 'color_settings' %>

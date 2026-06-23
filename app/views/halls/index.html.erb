@@ -1,3 +1,8 @@
+<% content_for :header_title, "ホール一覧" %>
+<% content_for :header_actions do %>
+    <%= link_to "+ ホール追加", new_hall_path, class: "header-link header-link--primary" %>
+<% end %>
+
 <div class="container">
     <div class="card">
         <div class="card-header">データ一括取得</div>
@@ -43,7 +48,8 @@
                             <td>
                                 <div class="table-actions">
                                     <%= link_to "編集", edit_hall_path(hall), class: "btn btn-secondary btn-small" %>
-                                    <%= link_to "マップ", hall_maps_path(hall), class: "btn btn-success btn-small" %>
+                                    <%= link_to "📐 マップ", hall_machine_map_path(hall, Date.current), class: "btn btn-success btn-small" %>
+                                    <%= link_to "マップ管理", hall_maps_path(hall), class: "btn btn-secondary btn-small" %>
                                     <%= link_to "傾向調査", hall_trend_analysis_path(hall), class: "btn btn-info btn-small" %>
                                     <%= link_to "📊 分析", hall_data_analysis_path(hall), class: "btn btn-info btn-small" %>
                                     <%= link_to "削除", hall_path(hall), method: :delete, data: { turbo_method: :delete, turbo_confirm: "削除しますか?" }, class: "btn btn-danger btn-small" %>
@@ -59,9 +65,5 @@
                 <button type="submit" class="btn btn-success">選択したホールのデータを一括取得</button>
             </div>
         </form>
-    </div>
-
-    <div class="btn-group">
-        <%= link_to "ホール追加", new_hall_path, class: "btn btn-primary" %>
     </div>
 </div>

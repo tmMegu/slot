@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 
 <head>
     <title><%= content_for(:title) || "Slot" %></title>
@@ -10,22 +10,35 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <link rel="stylesheet" href="/stylesheets/common.css">
     <%= yield :head %>
-
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
-    <link rel="stylesheet" href="/stylesheets/common.css">
     <%= javascript_importmap_tags %>
 </head>
 
 <body>
+    <header class="app-header">
+        <div class="app-header__inner">
+            <%= link_to root_path, class: "app-header__brand" do %>
+                <span class="app-header__brand-icon">🎰</span>
+                <span class="app-header__brand-text">Slot</span>
+            <% end %>
+
+            <div class="app-header__title">
+                <%= yield :header_title %>
+            </div>
+
+            <nav class="app-header__actions">
+                <%= yield :header_actions %>
+            </nav>
+        </div>
+    </header>
+
     <% if flash[:notice] %>
     <div class="container">
         <div class="alert alert-success"><%= flash[:notice] %></div>
@@ -38,7 +51,9 @@
     </div>
     <% end %>
 
-    <%= yield %>
+    <main>
+        <%= yield %>
+    </main>
 </body>
 
 </html>

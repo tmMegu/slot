@@ -1,3 +1,9 @@
+<% content_for :header_title, "#{@hall.name} · 編集" %>
+<% content_for :header_actions do %>
+    <%= link_to "← 詳細", hall_path(@hall), class: "header-link" %>
+    <%= link_to "ホール一覧", halls_path, class: "header-link" %>
+<% end %>
+
 <div class="container">
     <div class="card">
         <div class="card-header">ホール編集</div>

@@ -2,14 +2,14 @@
     <link rel="stylesheet" href="/stylesheets/trend_analysis.css">
 <% end %>
 
+<% content_for :header_title, "#{@hall.name} · 傾向調査" %>
+<% content_for :header_actions do %>
+    <%= link_to "← 日付一覧", hall_path(@hall), class: "header-link" %>
+    <%= link_to "データ分析", hall_data_analysis_path(@hall), class: "header-link" %>
+    <%= link_to "🗂️ マップ管理", hall_maps_path(@hall), class: "header-link" %>
+<% end %>
+
 <div class="container">
-    <div class="flex-between mb-20">
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <%= link_to "← ホール一覧", halls_path, class: "btn btn-secondary btn-small" %>
-            <h2 style="margin: 0; color: #333;">🔍 <%= @hall.name %> - 傾向調査</h2>
-        </div>
-        <%= link_to "📊 データ分析", hall_data_analysis_path(@hall), class: "btn btn-success btn-small" %>
-    </div>
 
     <!-- フィルターパネル -->
     <%= render "filter_panel" %>

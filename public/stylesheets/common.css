@@ -66,6 +66,146 @@ body {
   font-weight: 600;
 }
 
+/* 共通アプリヘッダー（application.html.erb で常時描画） */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-white);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.app-header__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 48px;
+}
+
+.app-header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--color-white);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.app-header__brand:hover {
+  color: var(--color-white);
+  opacity: 0.85;
+}
+
+.app-header__brand-icon {
+  font-size: 20px;
+}
+
+.app-header__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.app-header__title:empty {
+  display: none;
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.app-header__actions .header-link,
+.app-header__actions a.header-link,
+.app-header__actions button.header-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--color-white);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.app-header__actions .header-link:hover {
+  background: rgba(255, 255, 255, 0.28);
+  color: var(--color-white);
+}
+
+.app-header__actions .header-link--primary {
+  background: var(--color-white);
+  color: var(--color-primary-dark);
+  border-color: var(--color-white);
+}
+
+.app-header__actions .header-link--primary:hover {
+  background: #f3f4f6;
+  color: var(--color-primary-dark);
+}
+
+/* マップ日付ナビ（マップ単独画面） */
+.map-date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  background: var(--color-bg-panel);
+  padding: 10px var(--space-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+  border: 1px solid var(--color-border);
+}
+
+.map-date-nav__buttons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.map-date-nav__current {
+  flex: 1;
+  min-width: 160px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.map-date-nav__date {
+  white-space: nowrap;
+}
+
+.map-date-nav__picker {
+  flex-shrink: 0;
+}
+
+.map-date-nav__picker input[type="date"] {
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
 /* カード */
 .card {
   background: white;
@@ -86,15 +226,20 @@ body {
 
 /* ボタン */
 .btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   padding: 10px 20px;
   border: none;
   border-radius: 6px;
   font-size: 15px;
   font-weight: 500;
+  line-height: 1.2;
   cursor: pointer;
   text-decoration: none;
   transition: all 0.3s ease;
+  vertical-align: middle;
 }
 
 .btn-primary {
@@ -426,6 +571,66 @@ a:hover {
   .page-header h1 {
     font-size: 14px;
     padding: 0 10px;
+  }
+
+  /* app-header モバイル */
+  .app-header__inner {
+    padding: 6px 10px;
+    gap: 6px;
+    min-height: 40px;
+  }
+
+  .app-header__brand {
+    font-size: 13px;
+  }
+
+  .app-header__brand-icon {
+    font-size: 15px;
+  }
+
+  .app-header__brand-text {
+    display: none;
+  }
+
+  .app-header__title {
+    font-size: 12px;
+  }
+
+  .app-header__actions {
+    gap: 3px;
+  }
+
+  .app-header__actions .header-link {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  /* マップ日付ナビ モバイル */
+  .map-date-nav {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .map-date-nav__current {
+    font-size: 12px;
+    order: -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .map-date-nav__date {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .map-date-nav__buttons {
+    gap: 4px;
+  }
+
+  .map-date-nav__picker input[type="date"] {
+    font-size: 10px;
+    padding: 3px 5px;
+    height: 22px;
   }
 
   .card {

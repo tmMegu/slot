@@ -1,12 +1,14 @@
+<% content_for :head do %>
 <link rel="stylesheet" href="/stylesheets/hall_map.css">
-<link rel="stylesheet" href="/stylesheets/common.css">
+<% end %>
+
+<% content_for :header_title, "#{@hall.name} · マップ管理" %>
+<% content_for :header_actions do %>
+    <%= link_to "← 日付一覧", hall_path(@hall), class: "header-link" %>
+    <%= link_to "+ 新規マップ", new_hall_map_path(@hall), class: "header-link header-link--primary" %>
+<% end %>
 
 <div class="container">
-    <div class="flex-between mb-20">
-        <%= link_to "← 戻る", halls_path, class: "btn btn-secondary btn-small" %>
-        <h2 style="margin: 0; color: #10b981;"><%= @hall.name %> - マップ管理</h2>
-        <%= link_to "+ 新規マップ作成", new_hall_map_path(@hall), class: "btn btn-success" %>
-    </div>
 
     <% if @maps.any? %>
     <div class="maps-grid">

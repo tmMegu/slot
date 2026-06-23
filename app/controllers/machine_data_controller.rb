@@ -4,7 +4,6 @@
 #   - show: 日別台データの表示（フィルタリング・ソート・色分け・ランキング付き）
 #   - import / batch_import: 外部URLからの台データ取込
 #   - manual_import: 手動データ入力
-#   - export_map_pdf: マップPDF出力
 #   - update_machine_memo(s): 台メモの個別・一括更新
 #   - machine_history: 台番号ごとの履歴表示
 #
@@ -156,69 +155,35 @@ class MachineDataController < ApplicationController
     end
   end
 
-  # PDF出力アクション（Prawn版）
-  # ホールマップをPDF形式でダウンロードする
-  def export_map_pdf
-    # パラメータから必要な情報を取得
+  # マップ単独表示アクション
+  # /halls/:hall_id/dates/:date/map
+  # 日別画面のマップタブを切り出した軽量版
+  # フィルター・集計は行わず、マップ描画に必要なデータのみロード
+  def show_map
     @hall = Hall.find_by(id: params[:hall_id])
     @date = Date.parse(params[:date])
 
-    # マップデータを取得
-    @hall_maps = HallMap.where(hall_id: @hall.id).order(:created_at)
-    @current_map = @hall_maps.first # デフォルトマップ
+    # 当日の台データ（必要な列のみ）
+    @machine_data = @hall.machine_data
+                         .where(date: @date)
+                         .select(:id, :machine_number, :machine_name, :game_count, :difference_count, :bb_count, :machine_memo)
+                         .order(:machine_number)
+                         .to_a
+    @machine_data_by_number = @machine_data.index_by(&:machine_number)
 
-    # 選択されたマップIDがあれば、そのマップを使用
-    if params[:map_id].present?
-      selected_map = @hall_maps.find_by(id: params[:map_id])
-      @current_map = selected_map if selected_map
+    # マップ選択
+    @hall_maps = @hall.hall_maps.order(:created_at)
+    @current_map = if params[:map_id].present?
+      @hall_maps.find_by(id: params[:map_id]) || @hall_maps.first
+    else
+      @hall_maps.first
     end
 
-    # 機種データを取得
-    machine_data = MachineData.where(hall_id: @hall.id, date: @date)
-    @machine_data_by_number = machine_data.index_by(&:machine_number)
-
-    # 色分け用データ（全条件対応）
+    # 色分け用データ（calculate_sum_for_period がキャッシュ付き）
     @color_worst_ranks = calculate_color_worst_ranks(7)
     @color_past_7days_diff = calculate_past_period_diff(7)
     @color_worst_machine_ranks = calculate_worst_machine_by_model(7)
     @color_today_diff_levels = calculate_today_diff_levels
-
-    # 表示設定パラメータ
-    display_settings = {
-      show_machine_name: params[:show_machine_name] != "0",
-      show_machine_number: params[:show_machine_number] != "0",
-      show_diff: params[:show_diff] == "1",
-      show_map_games: params[:show_map_games] == "1",
-      show_bb: params[:show_bb] == "1"
-    }
-    # 色分け有効/条件
-    color_settings = @current_map.get_color_settings.merge(
-      "enabled" => params[:color_enabled] != "0",
-      "condition" => params[:color_condition] || @current_map.get_color_settings["condition"]
-    )
-
-    # PDF生成サービスを呼び出し
-    pdf_service = HallMapPdfService.new(
-      hall: @hall,
-      date: @date.to_s,
-      hall_map: @current_map,
-      machine_data_by_number: @machine_data_by_number,
-      color_worst_ranks: @color_worst_ranks,
-      color_past_7days_diff: @color_past_7days_diff,
-      color_worst_machine_ranks: @color_worst_machine_ranks,
-      color_today_diff_levels: @color_today_diff_levels,
-      display_settings: display_settings,
-      color_settings: color_settings
-    )
-
-    # PDFを生成
-    pdf_binary = pdf_service.generate
-
-    # PDFファイルとしてダウンロードを開始
-    send_data pdf_binary,
-              filename: "#{@hall.name}_map_#{@date}.pdf",
-              type: "application/pdf",
-              disposition: "attachment" # ダウンロードダイアログを表示
   end
 
   # 台メモの更新（Ajax用）

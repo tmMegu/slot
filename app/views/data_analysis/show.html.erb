@@ -1,60 +1,44 @@
-﻿<!DOCTYPE html>
-<html>
+<% content_for :title, "#{@hall.name} - データ分析" %>
+<% content_for :head do %>
+<link rel="stylesheet" href="/stylesheets/data_analysis.css">
+<% end %>
 
-<head>
-    <title><%= @hall.name %> - データ分析</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <%= csrf_meta_tags %>
-    <%= csp_meta_tag %>
-    <link rel="stylesheet" href="/stylesheets/application.css">
-    <link rel="stylesheet" href="/stylesheets/data_analysis.css">
-</head>
+<% content_for :header_title, "#{@hall.name} · データ分析" %>
+<% content_for :header_actions do %>
+    <%= link_to "← 日付一覧", hall_path(@hall), class: "header-link" %>
+    <%= link_to "傾向調査", hall_trend_analysis_path(@hall), class: "header-link" %>
+    <%= link_to "🗂️ マップ管理", hall_maps_path(@hall), class: "header-link" %>
+<% end %>
 
-<body>
-    <div class="container">
-        <!-- ヘッダー -->
-        <div class="header">
-            <div style="flex: 1;">
-                <h1>📊 <%= @hall.name %> - データ分析</h1>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <%= link_to "← ホール一覧", halls_path, class: "btn btn-secondary btn-small" %>
-                <%= link_to "傾向調査へ", hall_trend_analysis_path(@hall), class: "btn btn-success btn-small" %>
-            </div>
+<div class="container">
+    <!-- 期間選択フォーム -->
+    <div class="filter-panel">
+        <%= form_with url: hall_data_analysis_path(@hall), method: :get, local: true do |form| %>
+        <div class="filter-controls">
+            <label>分析期間:</label>
+            <input type="date" name="start_date" value="<%= @start_date %>" />
+            <span>〜</span>
+            <input type="date" name="end_date" value="<%= @end_date %>" />
+            <button type="submit" class="btn-success">🔍 更新</button>
+            <span style="color: #666; font-size: 13px;">
+                （<%= (@end_date - @start_date).to_i + 1 %>日間）
+            </span>
         </div>
-
-        <!-- 期間選択フォーム -->
-        <div class="filter-panel">
-            <%= form_with url: hall_data_analysis_path(@hall), method: :get, local: true do |form| %>
-            <div class="filter-controls">
-                <label>分析期間:</label>
-                <input type="date" name="start_date" value="<%= @start_date %>" />
-                <span>〜</span>
-                <input type="date" name="end_date" value="<%= @end_date %>" />
-                <button type="submit" class="btn-success">🔍 更新</button>
-                <span style="color: #666; font-size: 13px;">
-                    （<%= (@end_date - @start_date).to_i + 1 %>日間）
-                </span>
-            </div>
-            <% end %>
-        </div>
-
-        <!-- カレンダーマトリクス -->
-        <%= render 'calendar_matrix' %>
-
-        <!-- 末尾日×末尾番台マトリクス -->
-        <%= render 'last_digit_machine_matrix' %>
-
-        <!-- 末尾日×曜日マトリクス -->
-        <%= render 'last_digit_weekday_matrix' %>
-
-        <!-- 第〇×曜日マトリクス -->
-        <%= render 'week_weekday_matrix' %>
-
-        <!-- 日付×機種名マトリクス -->
-        <%= render 'machine_date_matrix' %>
+        <% end %>
     </div>
 
-</body>
+    <!-- カレンダーマトリクス -->
+    <%= render 'calendar_matrix' %>
 
-</html>
+    <!-- 末尾日×末尾番台マトリクス -->
+    <%= render 'last_digit_machine_matrix' %>
+
+    <!-- 末尾日×曜日マトリクス -->
+    <%= render 'last_digit_weekday_matrix' %>
+
+    <!-- 第〇×曜日マトリクス -->
+    <%= render 'week_weekday_matrix' %>
+
+    <!-- 日付×機種名マトリクス -->
+    <%= render 'machine_date_matrix' %>
+</div>

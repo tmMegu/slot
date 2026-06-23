@@ -25,7 +25,7 @@ window.togglePanel = function (panelId) {
 };
 
 // タブ切り替え
-function switchTab(tabName) {
+function switchTab(tabName, evt) {
   // すべてのタブコンテンツを非表示
   const contents = document.querySelectorAll(".tab-content");
   contents.forEach((content) => {
@@ -44,21 +44,26 @@ function switchTab(tabName) {
     selectedContent.classList.add("active");
   }
 
-  // 選択されたボタンをアクティブ
-  const selectedButton = event?.target;
+  // 選択されたボタンをアクティブ（event 引数優先、なければ data-tab で復元）
+  const selectedButton =
+    (evt && evt.currentTarget) ||
+    document.querySelector(`.tab-button[data-tab="${tabName}"]`);
   if (selectedButton) {
     selectedButton.classList.add("active");
   }
 
-  // マップタブの場合、色分けを適用
+  // マップタブを開いた時：タブが非表示で測定できなかった初期化を再実行する
   if (tabName === "map") {
     setTimeout(() => {
-      if (typeof window.updateMapColors === "function") {
+      if (typeof window.reinitializeMap === "function") {
+        window.reinitializeMap();
+      } else if (typeof window.updateMapColors === "function") {
         window.updateMapColors();
       }
     }, 50);
   }
 }
+window.switchTab = switchTab;
 
 // ページロード時にハッシュがあればそのタブを開く
 document.addEventListener("DOMContentLoaded", function () {

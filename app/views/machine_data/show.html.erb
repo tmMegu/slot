@@ -3,6 +3,22 @@
 <% end %>
 <script src="/javascripts/machine_data.js"></script>
 
+<% content_for :header_title, "#{@hall.name} · #{@date.strftime('%Y年%m月%d日')}" %>
+<% content_for :header_actions do %>
+    <%
+      back_url = if request.referer && request.referer.include?('trend_analysis')
+                   hall_trend_analysis_path(@hall)
+                 else
+                   hall_path(@hall)
+                 end
+      back_text = request.referer && request.referer.include?('trend_analysis') ? "← 傾向調査" : "← 日付一覧"
+    %>
+    <%= link_to back_text, back_url, class: "header-link" %>
+    <%= link_to "📐 マップ", hall_machine_map_path(@hall, @date), class: "header-link" %>
+    <%= link_to "傾向調査", hall_trend_analysis_path(@hall), class: "header-link" %>
+    <%= link_to "データ分析", hall_data_analysis_path(@hall), class: "header-link" %>
+<% end %>
+
 <style>
     .modal-overlay {
         display: none;
@@ -129,21 +145,6 @@
 </style>
 
 <div class="container">
-    <div class="flex-between mb-10">
-        <% 
-          # referrerに応じて戻るリンク先を変更
-          back_url = if request.referer && request.referer.include?('trend_analysis')
-                       hall_trend_analysis_path(@hall)
-                     else
-                       hall_path(@hall)
-                     end
-          back_text = request.referer && request.referer.include?('trend_analysis') ? "← 傾向調査に戻る" : "← 戻る"
-        %>
-        <%= link_to back_text, back_url, class: "btn btn-secondary btn-small", style: "flex-shrink: 0; white-space: nowrap;" %>
-        <h2 style="margin: 0; color: #333; flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;"><%= @hall.name %> - <%= @date.strftime('%Y年%m月%d日') %></h2>
-        <div></div>
-    </div>
-
     <% if !@data_exists && @reference_date %>
     <div class="alert alert-info">
         ⚠️ この日のデータは存在しません。<%= @reference_date.strftime('%Y年%m月%d日') %>のデータから台番号と機種名を表示しています。

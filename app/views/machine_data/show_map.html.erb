@@ -1,0 +1,16 @@
+<% content_for :head do %>
+<link rel="stylesheet" href="/stylesheets/machine_data.css">
+<% end %>
+
+<% content_for :header_title, "#{@hall.name} · #{@date.strftime('%Y年%m月%d日')} マップ" %>
+<% content_for :header_actions do %>
+    <%= link_to "← 日付一覧", hall_path(@hall), class: "header-link" %>
+    <%= link_to "📋 一覧", hall_machine_data_path(@hall, @date, active_tab: "list"), class: "header-link" %>
+    <%= link_to "📊 機種", hall_machine_data_path(@hall, @date, active_tab: "machine-stats"), class: "header-link" %>
+    <%= link_to "🗂️ マップ管理", hall_maps_path(@hall), class: "header-link" %>
+<% end %>
+
+<div class="container">
+    <%= render 'map_date_nav' %>
+    <%= render 'tab_map' %>
+</div>
