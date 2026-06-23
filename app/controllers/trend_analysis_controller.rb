@@ -1,3 +1,5 @@
+require "benchmark"
+
 # 傾向分析を行うコントローラー
 #
 # 主な機能:
@@ -11,6 +13,11 @@
 # フィルタリング・集計の共通処理は MachineDataFilterable をincludeして利用
 class TrendAnalysisController < ApplicationController
   include MachineDataFilterable
+
+  # 既定の解析期間（日数）。重い処理になるため短めに。
+  DEFAULT_ANALYSIS_DAYS = 90
+  # 解析期間の最大日数（OOM 防止のためのハードキャップ）
+  MAX_ANALYSIS_DAYS = 365
 
   # 傾向調査画面の表示
   # 過去の全台データを参照して、高設定を入れる台の傾向を調査
@@ -38,14 +45,18 @@ class TrendAnalysisController < ApplicationController
     # セッションに保存
     save_to_session
 
-    # 分析対象期間のデータを取得
-    load_analysis_data
+    # 計測しながら各処理を実行
+    @perf_metrics = {}
+    @perf_metrics[:load_ms]          = (Benchmark.realtime { load_analysis_data } * 1000).round
+    @perf_metrics[:date_list_ms]     = (Benchmark.realtime { generate_date_list } * 1000).round
+    @perf_metrics[:daily_summary_ms] = (Benchmark.realtime { generate_filtered_daily_summary } * 1000).round
+    @perf_metrics[:total_records]    = @all_machine_data.length
+    @perf_metrics[:analysis_days]    = (@analysis_end_date - @analysis_start_date).to_i + 1
+    @perf_metrics[:target_dates]     = @target_dates.length
+    @perf_metrics[:result_days]      = @daily_summary.length
+    @perf_metrics[:total_ms]         = @perf_metrics[:load_ms] + @perf_metrics[:date_list_ms] + @perf_metrics[:daily_summary_ms]
 
-    # 日付一覧の生成
-    generate_date_list
-
-    # 各日付の集計データを生成（フィルター適用済み）
-    generate_filtered_daily_summary
+    Rails.logger.info "[TrendAnalysis hall=#{@hall&.id}] #{@perf_metrics.map { |k, v| "#{k}=#{v}" }.join(' ')}"
   end
 
   private
@@ -56,8 +67,15 @@ class TrendAnalysisController < ApplicationController
 
   def initialize_analysis_parameters
     # データ分析対象期間（どのデータを使って分析するか）
-    @analysis_start_date = get_param_or_session_date(:analysis_start_date, Date.today - 365.days)
+    @analysis_start_date = get_param_or_session_date(:analysis_start_date, Date.today - DEFAULT_ANALYSIS_DAYS.days)
     @analysis_end_date = get_param_or_session_date(:analysis_end_date, Date.today)
+
+    # ハードキャップ: 期間が長すぎる場合は開始日を引き戻して制限し、警告を出す
+    span_days = (@analysis_end_date - @analysis_start_date).to_i + 1
+    if span_days > MAX_ANALYSIS_DAYS
+      @analysis_start_date = @analysis_end_date - (MAX_ANALYSIS_DAYS - 1).days
+      flash.now[:notice] = "解析期間が長すぎたため、#{MAX_ANALYSIS_DAYS}日分（#{@analysis_start_date} 〜 #{@analysis_end_date}）に制限しました"
+    end
 
     # 表示日付範囲（どの日付を一覧に表示するか）
     @display_date_mode = get_param_or_session(:display_date_mode, "all") # all, last_digit, day_number, custom
@@ -183,12 +201,13 @@ class TrendAnalysisController < ApplicationController
   # ============================================================
 
   def load_analysis_data
-    # 分析対象期間の全データを1回のクエリで取得（最適化）
-    @all_machine_data = @hall.machine_data
-                             .where(date: @analysis_start_date..@analysis_end_date)
-                             .select(:id, :date, :machine_number, :machine_name, :game_count, :difference_count, :bb_count, :rb_count, :art_count)
-                             .order(:date, :machine_number)
-                             .to_a
+    # AR オブジェクトではなく pluck → 軽量 Struct に変換することでメモリ削減（約 1/7）
+    rows = @hall.machine_data
+                .where(date: @analysis_start_date..@analysis_end_date)
+                .order(:date, :machine_number)
+                .pluck(:id, :date, :machine_number, :machine_name, :game_count, :difference_count, :bb_count, :rb_count, :art_count)
+
+    @all_machine_data = rows.map { |r| MachineDataFilterable::MachineDatum.new(*r) }
 
     # 日付ごとにグループ化
     @machines_by_date = @all_machine_data.group_by(&:date)

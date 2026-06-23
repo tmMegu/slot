@@ -1,10 +1,23 @@
+<% if @perf_metrics %>
+<div class="perf-banner">
+    <span class="perf-banner__item">⏱ <strong><%= @perf_metrics[:total_ms] %>ms</strong></span>
+    <span class="perf-banner__sep">·</span>
+    <span class="perf-banner__item">📦 <%= number_with_delimiter(@perf_metrics[:total_records]) %>件</span>
+    <span class="perf-banner__sep">·</span>
+    <span class="perf-banner__item">期間 <%= @perf_metrics[:analysis_days] %>日</span>
+    <span class="perf-banner__sep">·</span>
+    <span class="perf-banner__item">表示 <%= @perf_metrics[:result_days] %>日</span>
+    <span class="perf-banner__detail" title="load <%= @perf_metrics[:load_ms] %>ms / dates <%= @perf_metrics[:date_list_ms] %>ms / summary <%= @perf_metrics[:daily_summary_ms] %>ms">⋯</span>
+</div>
+<% end %>
+
 <% if @daily_summary.empty? %>
 <div class="no-data">
     <p>📭 条件に一致するデータがありません</p>
     <p style="font-size: 14px; color: #999;">フィルター条件を変更してお試しください</p>
 </div>
 <% else %>
-<div style="margin-bottom: 10px; color: #666; font-size: 14px;">
+<div style="margin-bottom: 6px; color: #666; font-size: 13px;">
     📊 検索結果: <strong><%= @daily_summary.length %></strong>日分のデータ
     <% if @analysis_start_date && @analysis_end_date %>
     （分析期間: <%= @analysis_start_date.strftime('%Y/%m/%d') %> 〜 <%= @analysis_end_date.strftime('%Y/%m/%d') %>）

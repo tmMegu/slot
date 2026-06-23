@@ -1,5 +1,36 @@
 /* 傾向調査ページ専用スタイル */
 
+/* 計測バナー（ページ最上部、薄いグレーの1行） */
+.perf-banner {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 0 0 8px 0;
+    padding: 4px 10px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #475569;
+}
+
+.perf-banner__item strong {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.perf-banner__sep {
+    color: #cbd5e1;
+}
+
+.perf-banner__detail {
+    margin-left: auto;
+    color: #94a3b8;
+    cursor: help;
+    user-select: none;
+}
+
 /* フィルターパネル */
 .filter-panel {
     background-color: var(--color-bg-panel);

@@ -3,6 +3,10 @@
 module MachineDataFilterable
   extend ActiveSupport::Concern
 
+  # pluck 経由でメモリ削減して扱うための軽量 Struct
+  # ActiveRecord オブジェクトの代わりに使用することで、1台あたりのメモリ使用量を約 1/7 に削減
+  MachineDatum = Struct.new(:id, :date, :machine_number, :machine_name, :game_count, :difference_count, :bb_count, :rb_count, :art_count)
+
   private
 
   # ============================================================
