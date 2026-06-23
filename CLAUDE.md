@@ -90,12 +90,39 @@
 | --- | --- | --- |
 | マップPDF出力（`export_map_pdf` ルート / `HallMapPdfService` / `prawn`・`prawn-table` gem / `hall_map_print.css` / `hall_map_pdf.js`） | 2026-06 | 実使用されておらず、Render無料枠でメモリを圧迫していたため |
 
-## 11. 将来計画
+## 11. 傾向分析 MCP の状況
 
-### 傾向分析 MCP 拡張
-- 既存の slot-analysis MCP に、日付条件・機種条件・台番号末尾／ぞろ目などでスライスしたデータを返す関数を追加
-- 目的: 「特定の日付に特定条件の台に設定が入る」というホール傾向を AI に発見させる
-- 設計のみ先行し、実装は本体UI改修の後
+slot-analysis MCP（別リポジトリ `C:\MCP\slot`）には現在 **23ツール** が実装されている（2026-06 に8ツール追加）。
+
+### 11.1 ツール構成
+- 基本データ取得: 8ツール（halls / hall_info / machine_data 等）
+- 既存設定傾向分析: 7ツール（low_diff_7day / adjacent_setting / setting_tendency 等）
+- **拡張ツール: 8ツール**（2026-06 追加）
+  - `analyze_machine_number_pattern` — 末尾／ぞろ目／偶奇／月日合致 別の単一軸スライス
+  - `analyze_cross_pattern` — 日付条件 × 台番号条件 の汎用クロス集計
+  - `analyze_model_weekday_matrix` — 機種 × 曜日 マトリクス
+  - `analyze_prev_day_minus_pattern` — 前日大マイナス → 当日プラス検証
+  - `analyze_consecutive_minus_pattern` — N日連続マイナス → 翌日反発
+  - `analyze_rotation_buckets` — 最終高設定日からの経過日数バケット
+  - `find_hot_machines_today` — 本日候補のスコアリング（重み調整可）
+  - `get_data_inventory` — データ棚卸し（AI 探索の起点）
+
+### 11.2 設計判断（確定済み）
+- 高設定判定: 「差枚+ かつ 機種内ゲーム数上位25%」で統一
+- ぞろ目台の対象: **2桁のみ**（11〜99）。3桁台は含めない
+- 月日合致: `machine_number = EXTRACT(DAY FROM date)`
+- スコアリング重み: AI が動的に調整可能（`find_hot_machines_today` の `weights`）
+
+### 11.3 詳細仕様
+ツール一覧・入出力仕様・コミュニティ調査の根拠・次フェーズ候補は [MCP_EXTENSION_DESIGN.md](MCP_EXTENSION_DESIGN.md) を参照。
+**同ドキュメントは MCP リポジトリ側の `C:\MCP\slot\DESIGN.md` と完全同期させており、どちらを読んでも同じ情報が得られる。** 編集時は両方を必ず更新すること。
+
+### 11.4 次フェーズ候補（未実装）
+- 角台効果（HallMap 連携が必要）
+- 周年・グランドオープン日効果
+- 新台導入後N日目傾向
+- ジャグラーREG偏重判定
+- 統計的有意性（p値）追加
 
 ## 12. 開発指針
 
@@ -128,8 +155,11 @@
 
 1. CLAUDE.md 整備（このファイル）✅
 2. マップPDF廃止 ✅
-3. 共通ヘッダー実装
-4. マップ独立画面追加（タブも残す）＋ JSバグ修正
-5. 日別台データ画面 UX/UI 改善
-6. 傾向分析・データ分析の計測と改善
-7. MCP 拡張設計
+3. 共通ヘッダー実装 ✅
+4. マップ独立画面追加（タブも残す）＋ JSバグ修正 ✅
+5. 日別台データ画面 UX/UI 改善 ✅
+6. 傾向分析・データ分析の計測と改善 ✅
+7. MCP 拡張設計 ✅
+8. MCP 拡張ツール実装（8ツール追加） ✅
+
+次フェーズ候補は §11.4 参照。
