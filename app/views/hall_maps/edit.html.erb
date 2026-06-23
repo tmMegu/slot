@@ -90,6 +90,22 @@
             </div>
         </div>
 
+        <!-- 並び（島）管理パネル -->
+        <div class="lineup-panel" id="lineup-panel">
+            <div class="lineup-panel__header" onclick="toggleLineupPanel()">
+                <h3>🚂 並び（島）管理 <span id="lineup-count-badge">(<%= @map.safe_lineups.length %>)</span></h3>
+                <span class="lineup-panel__toggle" id="lineup-panel-toggle">▶</span>
+            </div>
+            <div class="lineup-panel__body" id="lineup-panel-body" style="display:none;">
+                <p class="lineup-help">
+                    同じ並び（島）の台をグループ化します。台番号をカンマ区切りで入力（例: <code>1,2,3,4,5,6</code>）。<br>
+                    並び情報は <strong>角台効果</strong>・<strong>並び設定</strong>の MCP 分析で利用されます。
+                </p>
+                <div id="lineup-list"></div>
+                <button type="button" onclick="addLineupRow()" class="btn btn-secondary btn-small">+ 新規並び</button>
+            </div>
+        </div>
+
         <div class="map-editor-container" data-hall-id="<%= @hall.id %>" data-map-id="<%= @map.id %>" style="padding: 20px;">
 
             <!-- マップグリッド -->
@@ -139,6 +155,7 @@
 <!-- フォーム（非表示） -->
 <%= form_with url: hall_map_path(@hall, @map), method: :patch, id: "map-save-form", style: "display: none;" do |f| %>
 <%= hidden_field_tag :layout_data, "", id: "layout-data-field" %>
+<%= hidden_field_tag :lineups, "", id: "lineups-field" %>
 <%= hidden_field_tag "hall_map[rows]", @map.rows, id: "rows-field" %>
 <%= hidden_field_tag "hall_map[cols]", @map.cols, id: "cols-field" %>
 <% end %>
@@ -147,5 +164,8 @@
 <div id="editor-initial-data" data-hall-id="<%= @hall.id %>" data-map-id="<%= @map.id %>" data-rows="<%= @map.rows %>" data-cols="<%= @map.cols %>" style="display: none;">
     <%= @map.safe_layout_data.to_json %>
 </div>
+
+<!-- 並び初期データ -->
+<div id="lineups-initial-data" data-lineups="<%= @map.safe_lineups.to_json %>" style="display: none;"></div>
 
 <script src="/javascripts/hall_map_editor.js"></script>

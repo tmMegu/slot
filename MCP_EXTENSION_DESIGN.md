@@ -11,7 +11,7 @@ slot 本体アプリの開発者・将来の自分・AI（Claude）の全員が�
 
 ---
 
-## 2. 現状の MCP ツール（全23ツール）
+## 2. 現状の MCP ツール（全29ツール）
 
 すべて Supabase PostgreSQL へ直接接続し読取専用。stdio 経由で Claude Desktop / Claude Code に接続。
 
@@ -40,18 +40,41 @@ slot 本体アプリの開発者・将来の自分・AI（Claude）の全員が�
 | `analyze_day_of_month_pattern` | 「Nのつく日」パターン検証 |
 | `get_low_diff_candidates_for_date` | 当日の高設定候補台予測 |
 
-### 2.3 【2026-06 追加】拡張ツール（8ツール）
+### 2.3 拡張ツール Phase 1（8ツール、2026-06 追加）
 
-| ツール | 由来 | 概要 |
-| --- | --- | --- |
-| `analyze_machine_number_pattern` | 設計提案 | 末尾／ぞろ目（2桁のみ）／偶奇／月日合致 別の単一軸スライス |
-| `analyze_cross_pattern` | 設計提案 | 日付条件 × 台番号条件 の汎用クロス集計（最重要） |
-| `analyze_model_weekday_matrix` | 調査P1-3位 | 機種 × 曜日 マトリクス（看板機種の曜日固定癖検出） |
-| `analyze_prev_day_minus_pattern` | 調査P1-2位 | 前日大マイナス → 当日プラスの単日反発検証 |
-| `analyze_consecutive_minus_pattern` | 調査P2 | N日連続マイナス → 翌日反発の確率 |
-| `analyze_rotation_buckets` | 設計提案 | 最終高設定からの経過日数バケット別の今回設定率 |
-| `find_hot_machines_today` | 設計提案 | 本日候補のスコアリング（4因子・**重み調整可**） |
-| `get_data_inventory` | 設計提案 | データ棚卸し（AI 探索の起点） |
+| ツール | 概要 |
+| --- | --- |
+| `analyze_machine_number_pattern` | 末尾／ぞろ目／偶奇／月日合致 別の単一軸スライス |
+| `analyze_cross_pattern` | 日付条件 × 台番号条件 の汎用クロス集計（最重要） |
+| `analyze_model_weekday_matrix` | 機種 × 曜日 マトリクス |
+| `analyze_prev_day_minus_pattern` | 前日大マイナス → 当日プラス検証 |
+| `analyze_consecutive_minus_pattern` | N日連続マイナス → 翌日反発 |
+| `analyze_rotation_buckets` | 最終高設定日からの経過日数バケット |
+| `find_hot_machines_today` | 本日候補のスコアリング（重み調整可） |
+| `get_data_inventory` | データ棚卸し（AI 探索の起点） |
+
+### 2.4 拡張ツール Phase 2（6ツール、2026-06 追加）
+
+| ツール | 概要 |
+| --- | --- |
+| `analyze_new_machine_lifecycle` | 新台導入後N日目別の高設定率（バケット集計） |
+| `analyze_juggler_rb_rate` | ジャグラー系REG確率偏重判定（rb_count/game_count） |
+| `get_machine_lineups` | ホールに登録された並び（島）情報の取得 |
+| `analyze_lineup_setting` | 並び単位の高設定クラスタリング分析 |
+| `analyze_corner_machine_bias` | 角台（並び両端）vs 中央台 の高設定率比較 |
+| `analyze_anniversary_effect` | 周年日・グランドオープン日 の効果検証 |
+
+### 2.5 既存ツールの改良（p 値追加、2026-06）
+
+以下のツールに二項検定の両側 p 値（正規近似）を追加し、サンプル数の少ない検出をAI側が信頼度判定できるようにした:
+- `analyze_machine_number_pattern` (by_value 各行)
+- `analyze_cross_pattern` (matrix 各セル)
+- `analyze_prev_day_minus_pattern` (summary)
+- `analyze_consecutive_minus_pattern` (summary + by_machine_name)
+- `analyze_rotation_buckets` (各バケット)
+- `analyze_lineup_setting`, `analyze_corner_machine_bias`, `analyze_anniversary_effect` (新規・最初から付与)
+
+p 値の解釈: `p_value_vs_baseline < 0.05` で統計的有意。`n < 30` では正規近似の信頼性が落ちる旨を `p_value_note` に明記。
 
 ---
 
@@ -60,11 +83,11 @@ slot 本体アプリの開発者・将来の自分・AI（Claude）の全員が�
 ### 3.1 高設定判定の統一定義
 **`差枚 > 0 かつ 機種内ゲーム数上位25%`**（既存ツールと一致）
 
-### 3.2 ぞろ目台の定義（2026-06 確定）
+### 3.2 ぞろ目台の定義
 **2桁のみ**（11, 22, 33, 44, 55, 66, 77, 88, 99）。3桁台（111, 222, ...）は含めない。
 SQL: `machine_number BETWEEN 11 AND 99 AND machine_number % 11 = 0`
 
-### 3.3 月日合致の定義（2026-06 確定）
+### 3.3 月日合致の定義
 **`machine_number = EXTRACT(DAY FROM date)::INTEGER`**
 例: 6月15日 → 台番号 15。月をまたぐ判定は不要（日付の「日」のみ）。
 
@@ -72,8 +95,11 @@ SQL: `machine_number BETWEEN 11 AND 99 AND machine_number % 11 = 0`
 全ツールで `exclude_machine_names`（部分一致配列）を統一実装。
 SQL: `AND NOT EXISTS (SELECT 1 FROM UNNEST($N::text[]) AS ex WHERE machine_name ILIKE '%' || ex || '%')`
 
-### 3.5 統計的有意性の確認
-`hit_rate_pct` 単独で判断するとサンプル数が少ない場合に誤判定する。すべての集計に **`instance_count` を必ず含める**ことで、AI 側が信頼度を判断できるようにしている。
+### 3.5 統計的有意性（p 値）
+- 二項検定の両側 p 値（正規近似）
+- ヘルパー: `binomialTwoTailedPValue(hits, n, baselineRate)`
+- erf 近似に Abramowitz & Stegun 7.1.26（誤差 ~1.5e-7）
+- n が小さいときの信頼性低下を `p_value_note` で警告
 
 ### 3.6 ベースライン比較
 `lift_pct` (= 条件下のヒット率 − 全体ベースライン) を主要ツールで出力。
@@ -81,11 +107,34 @@ SQL: `AND NOT EXISTS (SELECT 1 FROM UNNEST($N::text[]) AS ex WHERE machine_name 
 
 ---
 
-## 4. 調査結果サマリー（実装の根拠）
+## 4. 関連 DB スキーマ追加（2026-06）
 
-「スロット 傾向 設定」等の検索で集めた、コミュニティで広く語られているパターンを優先実装した。
+slot 本体アプリ側で以下のカラムを追加した。MCP はこれらを直接読み取る。
 
-### 優先実装した上位5パターン（実装→対応ツール）
+### 4.1 `hall_maps.lineups` (text/JSON)
+並び（島）情報を保持。マップ編集画面で人が設定する。
+構造:
+```json
+[
+  { "id": 1, "name": "ジャグラー左島", "machine_numbers": [1,2,3,4,5,6] },
+  { "id": 2, "name": "沖ドキ", "machine_numbers": [10,11,12,13] }
+]
+```
+
+### 4.2 `halls.anniversary_month_day` (string, MM-DD)
+毎年同じ日に発生する周年日。年は無視。空欄可。
+例: `"07-15"` → 毎年7月15日。
+
+### 4.3 `halls.grand_open_date` (date)
+グランドオープン日（特定の1日）。`analyze_anniversary_effect` で同月日を毎年マッチする用途。
+
+---
+
+## 5. 調査結果サマリー（実装の根拠）
+
+「スロット 傾向 設定」等の検索でスロッターコミュニティが整理しているパターンを横断調査し、優先実装した。
+
+### 優先実装した上位5パターン → 対応ツール
 
 | 順位 | パターン | 対応ツール |
 | --- | --- | --- |
@@ -95,175 +144,20 @@ SQL: `AND NOT EXISTS (SELECT 1 FROM UNNEST($N::text[]) AS ex WHERE machine_name 
 | 4 | ぞろ目日 / ゾロ目台 | `analyze_cross_pattern` + `analyze_machine_number_pattern` |
 | 5 | 機種内ワースト台の翌日順位 | （既存 `analyze_low_diff_7day_pattern`） |
 
-### 補足実装（汎用化のため）
+### 補足実装
 
 | パターン | ツール |
 | --- | --- |
 | N日連続マイナス反発 | `analyze_consecutive_minus_pattern` |
 | 設定ローテーション | `analyze_rotation_buckets` |
-| 当日候補スコアリング | `find_hot_machines_today`（重み調整可） |
+| 当日候補スコアリング（重み調整可） | `find_hot_machines_today` |
 | データ棚卸し | `get_data_inventory` |
-
-### 未実装（次フェーズ候補）
-
-| パターン | 理由 |
-| --- | --- |
-| 角台効果 | `HallMap.layout_data` から島端を判定する必要があり、MCP 単体では困難 |
-| 周年・グランドオープン日 | Hall に周年日カラムが必要（現状 `date_memo` で代替可能） |
-| 新台導入後N日目傾向 | 機種別「初登場日」を計算する CTE が必要 |
-| ジャグラーREG偏重判定 | `bb_count` / `rb_count` を使う機種特化分析（汎用ツールで未対応） |
-| 月初優位 / 月末回収 | `analyze_cross_pattern` の `specific_days` で代替可能 |
-
----
-
-## 5. ツール仕様詳細（拡張8ツール）
-
-### 5.1 `analyze_machine_number_pattern`
-```ts
-input: {
-  hall_id: number,
-  start_date: string,    // YYYY-MM-DD
-  end_date: string,
-  slice_type: "last_digit" | "double_digit" | "parity" | "month_day_match",
-  exclude_machine_names?: string[]
-}
-output: {
-  summary: { slice_type, slice_label, total_instances, total_hits, baseline_hit_rate_pct, high_setting_definition },
-  by_value: [{ value, instance_count, hit_count, hit_rate_pct }]
-}
-```
-
-### 5.2 `analyze_cross_pattern`
-```ts
-input: {
-  hall_id: number,
-  start_date: string, end_date: string,
-  date_conditions: Array<{
-    key: string,
-    type: "last_digit"|"specific_days"|"weekday"|"end_of_month"|"month_eq_day"|"day_zorome_2digit"|"all",
-    value?: number | number[]
-  }>,
-  machine_conditions: Array<{
-    key: string,
-    type: "last_digit"|"double_digit_2digit"|"parity"|"month_day_match"|"all",
-    value?: number | "even" | "odd"
-  }>,
-  exclude_machine_names?: string[],
-  include_zero_rate?: boolean  // 既定 true
-}
-output: {
-  summary: { description, total_machine_days, total_high_settings, baseline_hit_rate_pct, high_setting_definition },
-  matrix: [{ date_cond_key, machine_cond_key, instance_count, hit_count, hit_rate_pct }],
-  date_conditions, machine_conditions
-}
-```
-
-**呼び出し例（7のつく日 × 末尾7 検証）:**
-```json
-{
-  "date_conditions": [
-    { "key": "7のつく日", "type": "specific_days", "value": [7, 17, 27] },
-    { "key": "その他",    "type": "all" }
-  ],
-  "machine_conditions": [
-    { "key": "末尾7",   "type": "last_digit", "value": 7 },
-    { "key": "その他",  "type": "all" }
-  ]
-}
-```
-
-### 5.3 `analyze_model_weekday_matrix`
-```ts
-input: { hall_id, start_date, end_date, min_machine_count?: number, exclude_machine_names? }
-output: {
-  summary: { description, high_setting_definition, min_machine_count_per_day },
-  matrix: [{ machine_name, dow, weekday, instance_count, hit_count, hit_rate_pct }],
-  highlights: [{ machine_name, best_weekday, best_hit_rate_pct, best_instance_count }]
-}
-```
-
-### 5.4 `analyze_prev_day_minus_pattern`
-```ts
-input: { hall_id, start_date, end_date, min_prev_minus?: number, exclude_machine_names? }
-output: {
-  summary: {
-    description, min_prev_minus,
-    total_instances, hit_count, hit_rate_pct,
-    baseline_hit_rate_pct, lift_pct
-  }
-}
-```
-
-### 5.5 `analyze_consecutive_minus_pattern`
-```ts
-input: { hall_id, start_date, end_date, min_consecutive_minus_days?: number, exclude_machine_names? }
-output: {
-  summary: {
-    description, min_consecutive_minus_days,
-    total_instances, hit_count, hit_rate_pct,
-    baseline_hit_rate_pct, lift_pct
-  },
-  by_machine_name: [{ machine_name, instance_count, hit_count, hit_rate_pct }]
-}
-```
-
-### 5.6 `analyze_rotation_buckets`
-```ts
-input: {
-  hall_id, start_date, end_date,
-  buckets?: Array<[number, number]>,  // [[1,3],[4,7],[8,14],[15,30],[31,365]]
-  exclude_machine_names?
-}
-output: {
-  summary: { description, high_setting_definition, total_instances, overall_hit_rate_pct },
-  buckets: [{ range, min, max, instance_count, hit_count, hit_rate_pct }]
-}
-```
-
-### 5.7 `find_hot_machines_today`
-```ts
-input: {
-  hall_id: number,
-  target_date: string,
-  top_n?: number,           // 既定 10
-  weights?: {               // 各 0以上、合計は内部で1に正規化
-    prev_7day_minus?: number,
-    days_since_last_high?: number,
-    machine_high_rate?: number,
-    prev_day_minus?: number
-  },
-  exclude_machine_names?: string[]
-}
-output: {
-  target_date,
-  top_candidates: [{
-    machine_number, machine_name, score,
-    factor_scores: { prev_7day_minus, days_since_last_high, machine_high_rate, prev_day_minus },  // 各 [0,100]
-    factors:       { prev_7day_sum, days_since_last_high, high_count_30d, prev_day_diff, days_with_data_in_7d }
-  }],
-  weights_used,
-  scoring_note
-}
-```
-
-**スコアリング設計:**
-- 各因子を `[0, 100]` のスコアにスケール
-- `prev_7day_minus`: 0G→0点、-10000→100点（線形）
-- `days_since_last_high`: 1日→5点、21日以上→100点（NULL は 30 扱い）
-- `machine_high_rate`: 過去30日の高設定回数 0→0点、5回以上→100点
-- `prev_day_minus`: 0→0点、-3000→100点（線形）
-- 合計 = 各因子スコア × 正規化された重み の総和
-
-### 5.8 `get_data_inventory`
-```ts
-input: { hall_id: number }
-output: {
-  date_range: { oldest_date, latest_date, days_with_data, total_records },
-  machines: { total_unique, avg_per_day, series_count },
-  by_series: [{ machine_name, machine_count }],
-  analysis_tools: [{ name, purpose }]  // 全23ツールのカタログ
-}
-```
+| 新台導入後N日目傾向 | `analyze_new_machine_lifecycle` |
+| ジャグラーREG偏重 | `analyze_juggler_rb_rate` |
+| 並び（島）情報の利用 | `get_machine_lineups` |
+| 並び単位の高設定クラスタリング | `analyze_lineup_setting` |
+| 角台効果（並び両端） | `analyze_corner_machine_bias` |
+| 周年・グランドオープン日効果 | `analyze_anniversary_effect` |
 
 ---
 
@@ -271,30 +165,93 @@ output: {
 
 | 項目 | 決定 |
 | --- | --- |
-| 月日合致の定義 | `EXTRACT(DAY FROM date) = machine_number` で確定 |
+| 月日合致の定義 | `EXTRACT(DAY FROM date) = machine_number` |
 | ぞろ目の対象 | 2桁のみ（11〜99）。3桁台は含めない |
 | スコアリング重み | AI が `weights` パラメータで動的に調整可能 |
 | CLAUDE.md §11 | 本ドキュメントへの参照に置き換え済み |
 | 設計ドキュメントの保管場所 | slot/MCP_EXTENSION_DESIGN.md と C:\MCP\slot\DESIGN.md を**両方とも完全同期**で維持 |
+| 並び（島）情報の保管 | `hall_maps.lineups` (text/JSON 配列) |
+| 並び編集の UI | マップ編集画面下部の「並び（島）管理」パネル（テキスト入力ベース v1） |
+| 周年日のフォーマット | MM-DD（毎年同じ月日） |
+| p 値の計算手法 | 二項検定・正規近似（n<30 は警告） |
 
 ---
 
-## 7. 次フェーズ候補（実装未着手）
+## 7. ツール詳細仕様（拡張 Phase 1）
 
-| 候補 | 想定工数 | 検証可能性 |
+### 7.1 `analyze_machine_number_pattern`
+slice_type: `"last_digit" | "double_digit" | "parity" | "month_day_match"`
+返却 `by_value[]` 各行に `p_value_vs_baseline` を含む。
+
+### 7.2 `analyze_cross_pattern`
+任意の日付条件×台番号条件のクロス集計。例: 7のつく日 × 末尾7。
+- date_conditions: `[{key, type: last_digit|specific_days|weekday|end_of_month|month_eq_day|day_zorome_2digit|all, value?}]`
+- machine_conditions: `[{key, type: last_digit|double_digit_2digit|parity|month_day_match|all, value?}]`
+- 返却 `matrix[]` 各セルに `p_value_vs_baseline` を含む。
+
+### 7.3 `analyze_model_weekday_matrix`
+機種 × 曜日 のマトリクス。`highlights[]` に機種ごとのベスト曜日。
+
+### 7.4 `analyze_prev_day_minus_pattern`
+前日差枚 ≤ `min_prev_minus` (既定 -1500) の翌日プラス率と全体ベースラインの比較。
+
+### 7.5 `analyze_consecutive_minus_pattern`
+連続マイナス `min_consecutive_minus_days` (既定 3) 後の翌日反発率。
+
+### 7.6 `analyze_rotation_buckets`
+最終高設定からの経過日数バケット (`buckets`) 別の今回設定率。
+
+### 7.7 `find_hot_machines_today`
+4因子（prev_7day_minus / days_since_last_high / machine_high_rate / prev_day_minus）の重み付け合算で上位 `top_n` 件。`weights` で各因子の重みを上書き可（自動正規化）。
+
+### 7.8 `get_data_inventory`
+ホールのデータ概況＋利用可能な分析ツールカタログを返す。AI 探索の起点。
+
+---
+
+## 8. ツール詳細仕様（拡張 Phase 2）
+
+### 8.1 `analyze_new_machine_lifecycle`
+機種ごとの「初登場日」を基準に、新台導入後N日目の高設定率を `day_buckets` (既定 1日目, 2-3日目, 4-7日目, 8-14日目, 15-30日目, 31-60日目, 61-365日目) で集計。
+
+注意: ホールのデータ蓄積開始時点で既存だった機種は初登場日が不正確。`min_introduction_age_days` を上げると純粋な新台のみに絞れる。
+
+### 8.2 `analyze_juggler_rb_rate`
+- `machine_name_filter` (ILIKE, 既定 `'%ジャグラー%'`)
+- `threshold_rb_rate` (既定 1/270 ≒ 0.0037 = マイジャグラー系設定6 REG確率)
+- `min_game_count` (既定 3000G)
+
+REG確率が閾値超えの台×日を返す。`by_machine[]` に台ごとの「閾値超え日数」が入り、ホールの「ジャグラー強さ」の指標になる。
+
+### 8.3 `get_machine_lineups`
+hall_maps の `lineups` カラムを読み取り、ホールの全マップ（または指定マップ）の並び情報を返す。
+
+### 8.4 `analyze_lineup_setting`
+各「日 × 並び」内で `min_high_in_lineup` (既定 2) 以上の台が高設定だった日を「並び成立イベント」としてカウント。`by_lineup[]` に並びごとの成立率と並び内高設定率のベースライン比較 p 値。
+
+### 8.5 `analyze_corner_machine_bias`
+並びの両端（角台）と内側（中央台）の高設定率を比較。`comparison.corner / middle / solo` で各カテゴリ、`by_lineup[]` で並びごとの corner vs middle 比較。
+
+### 8.6 `analyze_anniversary_effect`
+`halls.anniversary_month_day` と `grand_open_date` の周辺日（`window_days` で前後N日）の高設定率を、その他の日と比較。`p_value_vs_other` で有意差判定。
+
+---
+
+## 9. 次フェーズ候補（未実装）
+
+| 候補 | 想定工数 | メモ |
 | --- | --- | --- |
-| 角台効果（島端台の高設定率） | 中 | HallMap 連携必要 |
-| 周年効果検証 | 中 | Hall に周年日カラム追加が望ましい |
-| 新台導入後N日目傾向 | 小 | 機種別「初登場日」CTE で実現可能 |
-| ジャグラーREG偏重判定 | 小 | `rb_count / game_count` の機種別計算 |
-| 統計的有意性（p値）追加 | 中 | 既存ツールの `instance_count` に加えて二項分布の p 値を返す |
-| Ruby アプリ → MCP 統合 UI | 大 | 別タスク。Rails 側で MCP 結果を画面表示 |
+| 並び情報の視覚的編集 UI | 中 | マップ上で複数セル選択→並びに追加する Stimulus UI |
+| 並び色分け表示 | 小 | マップ表示時、同一並びを同色枠線で表示 |
+| イベント日の登録と分析 | 中 | 周年以外の任意特別日（毎月のイベント、新装等）を Hall に複数登録できる仕組み |
+| 統計的有意性の厳密検定 | 中 | 小サンプル時に二項検定の正確 p 値（exact）への切替 |
+| Rails アプリ → MCP 統合 UI | 大 | Rails 側で MCP 結果を画面表示 |
 
 ---
 
-## 8. 同期手順
+## 10. 同期手順
 
 slot/MCP_EXTENSION_DESIGN.md と C:\MCP\slot\DESIGN.md は同一内容を維持する。
 - どちらかを編集したら **必ず両方同じ内容にする**
 - ヘッダーの「最終同期日」を更新する
-- 実装が変わった場合は §2.3 表と §5 の詳細仕様も同時に更新する
+- 実装が変わった場合は §2.x 表と §7-§8 の詳細仕様も同時に更新する

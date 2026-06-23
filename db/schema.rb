@@ -10,13 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_04_023504) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_23_084404) do
   create_table "hall_maps", force: :cascade do |t|
     t.text "color_settings"
     t.integer "cols", default: 20, null: false
     t.datetime "created_at", null: false
     t.integer "hall_id", null: false
     t.text "layout_data"
+    t.text "lineups"
     t.string "name", default: "メインフロア", null: false
     t.integer "rows", default: 10, null: false
     t.datetime "updated_at", null: false
@@ -25,6 +26,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_04_023504) do
   end
 
   create_table "halls", force: :cascade do |t|
+    t.string "anniversary_month_day"
     t.integer "code"
     t.datetime "created_at", null: false
     t.text "data_import_url1"
@@ -32,6 +34,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_04_023504) do
     t.text "data_import_url3"
     t.text "data_import_url4"
     t.text "data_import_url5"
+    t.date "grand_open_date"
     t.text "memo"
     t.string "name"
     t.datetime "updated_at", null: false

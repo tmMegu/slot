@@ -92,37 +92,45 @@
 
 ## 11. 傾向分析 MCP の状況
 
-slot-analysis MCP（別リポジトリ `C:\MCP\slot`）には現在 **23ツール** が実装されている（2026-06 に8ツール追加）。
+slot-analysis MCP（別リポジトリ `C:\MCP\slot`）には現在 **29ツール** が実装されている（2026-06 に拡張14ツール追加）。
 
 ### 11.1 ツール構成
 - 基本データ取得: 8ツール（halls / hall_info / machine_data 等）
 - 既存設定傾向分析: 7ツール（low_diff_7day / adjacent_setting / setting_tendency 等）
-- **拡張ツール: 8ツール**（2026-06 追加）
-  - `analyze_machine_number_pattern` — 末尾／ぞろ目／偶奇／月日合致 別の単一軸スライス
-  - `analyze_cross_pattern` — 日付条件 × 台番号条件 の汎用クロス集計
-  - `analyze_model_weekday_matrix` — 機種 × 曜日 マトリクス
-  - `analyze_prev_day_minus_pattern` — 前日大マイナス → 当日プラス検証
-  - `analyze_consecutive_minus_pattern` — N日連続マイナス → 翌日反発
-  - `analyze_rotation_buckets` — 最終高設定日からの経過日数バケット
-  - `find_hot_machines_today` — 本日候補のスコアリング（重み調整可）
-  - `get_data_inventory` — データ棚卸し（AI 探索の起点）
+- **拡張ツール Phase 1: 8ツール**（2026-06 追加・コミュニティ調査ベース）
+  - `analyze_machine_number_pattern`, `analyze_cross_pattern`, `analyze_model_weekday_matrix`
+  - `analyze_prev_day_minus_pattern`, `analyze_consecutive_minus_pattern`
+  - `analyze_rotation_buckets`, `find_hot_machines_today`, `get_data_inventory`
+- **拡張ツール Phase 2: 6ツール**（2026-06 追加）
+  - `analyze_new_machine_lifecycle` — 新台導入後N日目別の高設定率
+  - `analyze_juggler_rb_rate` — ジャグラー系REG確率偏重判定
+  - `get_machine_lineups` — 並び（島）情報の取得
+  - `analyze_lineup_setting` — 並び単位の高設定クラスタリング
+  - `analyze_corner_machine_bias` — 角台（並び両端）vs 中央 の高設定率比較
+  - `analyze_anniversary_effect` — 周年日・グランドオープン日の効果検証
+- **既存ツール改良**: `analyze_*` 系に二項検定の p 値（正規近似）を追加
 
 ### 11.2 設計判断（確定済み）
 - 高設定判定: 「差枚+ かつ 機種内ゲーム数上位25%」で統一
 - ぞろ目台の対象: **2桁のみ**（11〜99）。3桁台は含めない
 - 月日合致: `machine_number = EXTRACT(DAY FROM date)`
 - スコアリング重み: AI が動的に調整可能（`find_hot_machines_today` の `weights`）
+- p 値: 二項検定の両側 p 値（正規近似）。n<30 では信頼性低下を明記
+- 並び情報: `hall_maps.lineups` (JSON 配列)、マップ編集画面で人が設定
 
-### 11.3 詳細仕様
+### 11.3 関連DBスキーマ追加（2026-06）
+- `hall_maps.lineups` (text/JSON) — 並び（島）情報 `[{id, name, machine_numbers: [..]}]`
+- `halls.anniversary_month_day` (string, MM-DD) — 周年日（毎年同じ月日）
+- `halls.grand_open_date` (date) — グランドオープン日
+
+### 11.4 詳細仕様
 ツール一覧・入出力仕様・コミュニティ調査の根拠・次フェーズ候補は [MCP_EXTENSION_DESIGN.md](MCP_EXTENSION_DESIGN.md) を参照。
 **同ドキュメントは MCP リポジトリ側の `C:\MCP\slot\DESIGN.md` と完全同期させており、どちらを読んでも同じ情報が得られる。** 編集時は両方を必ず更新すること。
 
-### 11.4 次フェーズ候補（未実装）
-- 角台効果（HallMap 連携が必要）
-- 周年・グランドオープン日効果
-- 新台導入後N日目傾向
-- ジャグラーREG偏重判定
-- 統計的有意性（p値）追加
+### 11.5 次フェーズ候補（未実装）
+- 並び情報の視覚的編集 UI（マップ上で複数セル選択して並びを作成）
+- 並び色分け表示（マップ表示時に同一並びを同色枠線で）
+- イベント日（周年以外の任意の特別日）の登録と分析
 
 ## 12. 開発指針
 

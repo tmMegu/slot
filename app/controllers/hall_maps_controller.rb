@@ -66,6 +66,20 @@ class HallMapsController < ApplicationController
       updated = true
     end
 
+    # 並び情報の更新（JSON 文字列で送信される）
+    if params[:lineups].present?
+      begin
+        lineups_data = JSON.parse(params[:lineups])
+        @map.replace_lineups(lineups_data)
+        updated = true
+      rescue JSON::ParserError => e
+        Rails.logger.error "Lineups JSON parse error: #{e.message}"
+        flash[:alert] = "並び情報の保存に失敗しました"
+        render :edit, status: :unprocessable_entity
+        return
+      end
+    end
+
     if updated && @map.save
       redirect_to edit_hall_map_path(@hall, @map), notice: "マップを保存しました。"
     elsif updated
@@ -87,6 +101,7 @@ class HallMapsController < ApplicationController
     new_map.name = generate_unique_copy_name(@map.name)
     new_map.layout_data = @map.safe_layout_data.deep_dup
     new_map.color_settings = @map.safe_color_settings.deep_dup
+    new_map.lineups = @map.safe_lineups.deep_dup
 
     if new_map.save
       redirect_to edit_hall_map_path(@hall, new_map), notice: "マップを複製しました。"

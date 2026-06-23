@@ -22,6 +22,18 @@
             <textarea name="memo" class="form-control" placeholder="必要に応じてメモを入力してください"></textarea>
         </div>
 
+        <div class="form-group">
+            <label class="form-label">周年日（毎年の同日）</label>
+            <input type="text" name="anniversary_month_day" class="form-control" placeholder="MM-DD 形式（例 07-15）" pattern="\d{2}-\d{2}">
+            <small style="color:#6b7280; font-size:11px;">毎年同じ日に発生する周年日。年は無視されます。空欄でも構いません。</small>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">グランドオープン日</label>
+            <input type="date" name="grand_open_date" class="form-control">
+            <small style="color:#6b7280; font-size:11px;">ホールが開店した特定の1日。MCP の周年効果分析で使用。</small>
+        </div>
+
         <hr style="margin: 30px 0; border: none; border-top: 2px solid #10b981;">
         <h3 style="color: #333; margin-bottom: 20px;">📋 データ取込み先URL</h3>
 

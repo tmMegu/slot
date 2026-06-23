@@ -773,3 +773,149 @@ function reloadMapTable() {
   // ズームを再適用
   applyZoom();
 }
+
+// ============================================================
+// 並び（島）管理
+// ============================================================
+
+document.addEventListener("DOMContentLoaded", function () {
+  loadInitialLineups();
+});
+
+function loadInitialLineups() {
+  const data = document.getElementById("lineups-initial-data");
+  if (!data) return;
+  let lineups = [];
+  try {
+    lineups = JSON.parse(data.dataset.lineups || "[]");
+  } catch (e) {
+    console.error("lineups parse error:", e);
+    return;
+  }
+  if (!Array.isArray(lineups)) return;
+  for (const l of lineups) {
+    addLineupRow({
+      id: l.id ?? null,
+      name: l.name ?? "",
+      machine_numbers: l.machine_numbers ?? [],
+    });
+  }
+  updateLineupCountBadge();
+}
+
+function toggleLineupPanel() {
+  const body = document.getElementById("lineup-panel-body");
+  const toggle = document.getElementById("lineup-panel-toggle");
+  if (!body || !toggle) return;
+  if (body.style.display === "none") {
+    body.style.display = "block";
+    toggle.textContent = "▼";
+  } else {
+    body.style.display = "none";
+    toggle.textContent = "▶";
+  }
+}
+
+function addLineupRow(data) {
+  const list = document.getElementById("lineup-list");
+  if (!list) return;
+  const row = document.createElement("div");
+  row.className = "lineup-row";
+  if (data && data.id) row.dataset.lineupId = data.id;
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.className = "lineup-name";
+  nameInput.placeholder = "並び名（任意）";
+  nameInput.value = data?.name ?? "";
+
+  const numbersInput = document.createElement("input");
+  numbersInput.type = "text";
+  numbersInput.className = "lineup-machines";
+  numbersInput.placeholder = "1,2,3,4,5,6";
+  numbersInput.value = (data?.machine_numbers ?? []).join(",");
+
+  const countLabel = document.createElement("span");
+  countLabel.className = "lineup-machine-count";
+  numbersInput.addEventListener("input", () => updateRowCount(row));
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.className = "btn btn-danger btn-small";
+  deleteBtn.textContent = "削除";
+  deleteBtn.onclick = () => removeLineupRow(row);
+
+  row.appendChild(nameInput);
+  row.appendChild(numbersInput);
+  row.appendChild(countLabel);
+  row.appendChild(deleteBtn);
+  list.appendChild(row);
+
+  updateRowCount(row);
+  updateLineupCountBadge();
+}
+
+function removeLineupRow(row) {
+  if (!row) return;
+  row.remove();
+  updateLineupCountBadge();
+}
+
+function updateRowCount(row) {
+  const input = row.querySelector(".lineup-machines");
+  const label = row.querySelector(".lineup-machine-count");
+  if (!input || !label) return;
+  const nums = parseLineupNumbers(input.value);
+  label.textContent = nums.length > 0 ? `${nums.length}台` : "—";
+  label.classList.toggle("empty", nums.length === 0);
+}
+
+function updateLineupCountBadge() {
+  const badge = document.getElementById("lineup-count-badge");
+  if (!badge) return;
+  const rows = document.querySelectorAll("#lineup-list .lineup-row");
+  let nonEmpty = 0;
+  rows.forEach((r) => {
+    const input = r.querySelector(".lineup-machines");
+    if (input && parseLineupNumbers(input.value).length > 0) nonEmpty++;
+  });
+  badge.textContent = `(${nonEmpty})`;
+}
+
+function parseLineupNumbers(str) {
+  if (!str) return [];
+  return [...new Set(
+    str.split(/[,\s]+/).map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isInteger(n) && n > 0)
+  )].sort((a, b) => a - b);
+}
+
+function serializeLineups() {
+  const rows = document.querySelectorAll("#lineup-list .lineup-row");
+  const result = [];
+  rows.forEach((r) => {
+    const name = r.querySelector(".lineup-name")?.value || "";
+    const nums = parseLineupNumbers(r.querySelector(".lineup-machines")?.value || "");
+    if (nums.length === 0) return;
+    const id = parseInt(r.dataset.lineupId, 10);
+    result.push({
+      id: Number.isInteger(id) && id > 0 ? id : null,
+      name: name,
+      machine_numbers: nums,
+    });
+  });
+  return result;
+}
+
+// 既存 saveMapData を拡張: 並び情報を hidden field にセット
+// 関数宣言（function saveMapData() {...}）は巻き上げ済みなのでファイル末尾でラップしても安全
+(function patchSaveMapData() {
+  const original = window.saveMapData;
+  if (typeof original !== "function") return;
+  window.saveMapData = function () {
+    const lineupsField = document.getElementById("lineups-field");
+    if (lineupsField) {
+      lineupsField.value = JSON.stringify(serializeLineups());
+    }
+    return original.apply(this, arguments);
+  };
+})();
