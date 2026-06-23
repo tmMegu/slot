@@ -11,6 +11,19 @@
 <% end %>
 
 <div class="container">
+    <% if @perf_metrics %>
+    <div class="perf-banner">
+        <span class="perf-banner__item">⏱ <strong><%= @perf_metrics[:total_ms] %>ms</strong></span>
+        <span class="perf-banner__sep">·</span>
+        <span class="perf-banner__item">📦 <%= number_with_delimiter(@perf_metrics[:total_records]) %>件</span>
+        <span class="perf-banner__sep">·</span>
+        <span class="perf-banner__item">期間 <%= @perf_metrics[:analysis_days] %>日</span>
+        <span class="perf-banner__sep">·</span>
+        <span class="perf-banner__item">機種 <%= @perf_metrics[:machine_kinds] %></span>
+        <span class="perf-banner__detail" title="load <%= @perf_metrics[:load_ms] %>ms / matrices <%= @perf_metrics[:matrices_ms] %>ms">⋯</span>
+    </div>
+    <% end %>
+
     <!-- 期間選択フォーム -->
     <div class="filter-panel">
         <%= form_with url: hall_data_analysis_path(@hall), method: :get, local: true do |form| %>

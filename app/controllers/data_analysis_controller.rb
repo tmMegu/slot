@@ -1,26 +1,47 @@
+require "benchmark"
+
 class DataAnalysisController < ApplicationController
+  # 既定の分析期間（日数）。マトリクス分析にはある程度の期間が必要。
+  DEFAULT_ANALYSIS_DAYS = 180
+  # 分析期間の最大日数（OOM 防止のためのハードキャップ）
+  MAX_ANALYSIS_DAYS = 365
+
   # データ分析画面の表示
-  # 過去1年間のデータを1回のクエリで取得し、各種マトリクスを生成
+  # 過去N日間のデータを1回のクエリで取得し、各種マトリクスを生成
   def show
     @hall = Hall.find_by(id: params[:hall_id])
-    
-    # 分析期間の設定（デフォルト1年間）
+
+    # 分析期間の設定
     @end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today
-    @start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : (@end_date - 1.year)
-    
+    @start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : (@end_date - DEFAULT_ANALYSIS_DAYS.days)
+
+    # ハードキャップ
+    span_days = (@end_date - @start_date).to_i + 1
+    if span_days > MAX_ANALYSIS_DAYS
+      @start_date = @end_date - (MAX_ANALYSIS_DAYS - 1).days
+      flash.now[:notice] = "分析期間が長すぎたため、#{MAX_ANALYSIS_DAYS}日分（#{@start_date} 〜 #{@end_date}）に制限しました"
+    end
+
     # カレンダー表示用の年月（デフォルトは最新月）
     @calendar_year = params[:calendar_year].present? ? params[:calendar_year].to_i : @end_date.year
     @calendar_month = params[:calendar_month].present? ? params[:calendar_month].to_i : @end_date.month
-    
-    # 全データを1回のクエリで取得（SQL最適化）
-    load_analysis_data
-    
-    # 各マトリクス用のデータを生成
-    generate_calendar_data
-    generate_last_digit_matrices
-    generate_weekday_matrices
-    generate_week_number_matrix
-    generate_machine_date_matrix
+
+    # 計測しながら各処理を実行
+    @perf_metrics = {}
+    @perf_metrics[:load_ms]        = (Benchmark.realtime { load_analysis_data } * 1000).round
+    @perf_metrics[:matrices_ms]    = (Benchmark.realtime do
+      generate_calendar_data
+      generate_last_digit_matrices
+      generate_weekday_matrices
+      generate_week_number_matrix
+      generate_machine_date_matrix
+    end * 1000).round
+    @perf_metrics[:total_records]  = @all_machine_data.length
+    @perf_metrics[:analysis_days]  = (@end_date - @start_date).to_i + 1
+    @perf_metrics[:machine_kinds]  = @machine_names.length
+    @perf_metrics[:total_ms]       = @perf_metrics[:load_ms] + @perf_metrics[:matrices_ms]
+
+    Rails.logger.info "[DataAnalysis hall=#{@hall&.id}] #{@perf_metrics.map { |k, v| "#{k}=#{v}" }.join(' ')}"
   end
 
   private
@@ -29,17 +50,20 @@ class DataAnalysisController < ApplicationController
   # データ読み込み（SQL最適化）
   # ============================================================
 
+  # ActiveRecord オブジェクトでなく軽量 Struct で扱うことでメモリ削減
+  AnalysisDatum = Struct.new(:date, :machine_number, :machine_name, :game_count, :difference_count)
+
   def load_analysis_data
-    # 分析期間の全データを1回のクエリで取得
-    @all_machine_data = @hall.machine_data
-                             .where(date: @start_date..@end_date)
-                             .select(:date, :machine_number, :machine_name, :game_count, :difference_count)
-                             .order(:date, :machine_number)
-                             .to_a
-    
+    rows = @hall.machine_data
+                .where(date: @start_date..@end_date)
+                .order(:date, :machine_number)
+                .pluck(:date, :machine_number, :machine_name, :game_count, :difference_count)
+
+    @all_machine_data = rows.map { |r| AnalysisDatum.new(*r) }
+
     # 日付ごとにグループ化（メモリ上で処理）
     @data_by_date = @all_machine_data.group_by(&:date)
-    
+
     # 機種名一覧を取得
     @machine_names = @all_machine_data.map(&:machine_name).uniq.sort
   end
