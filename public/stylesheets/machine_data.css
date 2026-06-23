@@ -1,3 +1,239 @@
+/* ====================================================
+   データテーブル（一覧タブ・機種ランキングタブ共通）
+   ==================================================== */
+.data-table {
+  border-collapse: collapse;
+  width: 100%;
+  background: var(--color-white);
+}
+
+.data-table th,
+.data-table td {
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.data-table thead th {
+  background-color: #d1f5e8;
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: center;
+  position: sticky;
+  top: 0;
+}
+
+.cell-center { text-align: center; }
+.cell-right  { text-align: right; }
+.cell-bold   { font-weight: 700; }
+
+.value-positive { color: var(--color-primary); font-weight: 600; }
+.value-negative { color: var(--color-danger);  font-weight: 600; }
+
+/* ====================================================
+   一覧タブツールバー（サマリー+メモ更新を1行に）
+   ==================================================== */
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+  margin: 4px 0;
+  padding: 5px 10px;
+  background: #f8fafc;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+/* フィルターパネル直下のときは隙間を詰める（:has 対応ブラウザのみ） */
+.filter-controls:has(+ .list-toolbar) { margin-bottom: 4px; }
+/* ツールバー直下のテーブルとも詰める */
+.list-toolbar + .list-table-wrapper { margin-top: 4px; }
+
+.list-summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.list-summary__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.list-summary__label {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.list-summary__item strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.list-summary__sub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-left: 2px;
+}
+
+@media (max-width: 600px) {
+  .list-toolbar { padding: 4px 8px; gap: 4px 8px; }
+  .list-summary { gap: 2px 8px; font-size: 12px; }
+  .list-summary__item strong { font-size: 13px; }
+  .list-summary__label { font-size: 10px; }
+}
+
+/* ====================================================
+   機種ランキングタブ（台数別グループ）
+   ==================================================== */
+.rank-section {
+  margin-bottom: 16px;
+}
+
+.rank-section__header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 14px;
+  transition: opacity 0.15s;
+}
+
+.rank-section__header:hover { opacity: 0.85; }
+.rank-section__header--green { background-color: #d1f5e8; color: #047857; border-left: 4px solid var(--color-primary); }
+.rank-section__header--blue  { background-color: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+.rank-section__header--amber { background-color: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+
+.rank-section__toggle {
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.rank-section__body {
+  margin-top: 6px;
+}
+
+.rank-section.collapsed .rank-section__body { display: none; }
+.rank-section.collapsed .rank-section__toggle { transform: rotate(-90deg); }
+
+.rank-row__rank-cell {
+  font-weight: 700;
+  text-align: center;
+}
+
+.rank-medal {
+  font-size: 18px;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* 全体集計（機種ランキング下部） */
+.overall-summary {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #e8f9f3;
+  border-left: 4px solid var(--color-primary);
+  border-radius: 3px;
+}
+
+.overall-summary h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.overall-summary ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+}
+
+.machine-number-link {
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.machine-number-link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+.memo-cell {
+  padding: 4px;
+}
+
+.memo-input {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+}
+
+.memo-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+
+.machine-stats-container {
+  margin-top: var(--space-md);
+}
+
+/* フィルターコントロール（_filter_controls.html.erb から移動） */
+.fc-section { padding: 5px 0; border-bottom: 1px solid #e5e7eb; }
+.fc-section--date { border-bottom: 2px solid #0066cc; }
+.fc-grid { display: grid; gap: 6px; }
+.fc-grid--2col { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.fc-grid--3col { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.fc-group { display: flex; flex-direction: column; gap: 3px; }
+.fc-label { font-size: 12px; font-weight: 600; color: #444; }
+.fc-label--danger { color: var(--color-danger); }
+.fc-label--purple { color: #6f42c1; }
+.fc-label--gold { color: #d97706; }
+.fc-label--green { color: var(--color-primary); }
+.fc-range { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.fc-range-sep { color: #888; }
+.fc-range-text { font-size: 12px; color: #555; white-space: nowrap; }
+.fc-rank-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fc-input { padding: 3px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; }
+.fc-input--num { width: 70px; }
+.fc-select { padding: 3px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; }
+.fc-select--days { width: 62px; }
+.fc-check-label { display: flex; align-items: center; gap: 3px; font-size: 12px; cursor: pointer; }
+.fc-days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 2px; padding: 5px; background: white; border: 1px solid #d1d5db; border-radius: 5px; max-height: 120px; overflow-y: auto; }
+.fc-btn-nav { padding: 2px 7px; font-size: 11px; background: var(--color-primary); color: white; border-radius: 4px; text-decoration: none; white-space: nowrap; }
+.fc-btn-nav--today { background: var(--color-primary-dark); }
+.fc-btn-preset { padding: 2px 7px; font-size: 11px; background: #f5f5f5; border: 1px solid #aaa; border-radius: 3px; cursor: pointer; }
+.fc-btn-preset--orange { background: #fff3e0; border-color: #ff9800; }
+.fc-btn-preset--yellow { background: #fff8e1; border-color: #ffc107; }
+.fc-btn-preset--red { background: var(--color-danger); color: white; border-color: var(--color-danger); }
+
+@media (max-width: 600px) {
+  .fc-grid--2col, .fc-grid--3col { grid-template-columns: 1fr; }
+  .fc-rank-row { gap: 4px; }
+  .fc-days-grid { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); }
+  .fc-input--num { width: 60px; }
+  .filter-controls .collapsible-inner { padding: 6px 8px !important; }
+}
+
+/* ====================================================
+   ワースト/ベストランク（過去差枚セルの背景色）
+   ==================================================== */
 .worst-1 {
   background-color: #ffcccc;
 }
@@ -64,30 +300,6 @@ th.sort-desc::after {
   content: " ↓";
   opacity: 1;
   color: #10b981;
-}
-
-.sort-controls {
-  margin: 10px 0;
-  padding: 10px 15px;
-  background-color: #f0f0f0;
-  border-radius: 5px;
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.sort-controls label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.sort-controls select,
-.sort-controls input {
-  padding: 5px 10px;
-  border-radius: 3px;
-  border: 1px solid #ccc;
 }
 
 .filter-controls {
@@ -470,65 +682,6 @@ th {
 
   .collapsible-inner {
     padding: 6px;
-  }
-
-  /* ソートコントロール */
-  .sort-controls {
-    padding: 4px 6px;
-    gap: 3px;
-    flex-direction: column;
-    align-items: stretch;
-    margin: 4px 0;
-  }
-
-  .sort-controls > div {
-    display: flex;
-    gap: 3px;
-    align-items: center;
-    width: 100%;
-    flex-wrap: nowrap;
-  }
-
-  .sort-controls > div > div {
-    display: none;
-  }
-
-  .sort-controls label {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 2px;
-    font-size: 9px;
-    margin: 0;
-    flex: 0 1 auto;
-    white-space: nowrap;
-  }
-
-  .sort-controls label strong {
-    font-size: 9px;
-    white-space: nowrap;
-  }
-
-  .sort-controls select {
-    padding: 3px 3px;
-    font-size: 9px;
-    min-width: 60px;
-  }
-
-  .sort-controls button {
-    width: auto;
-    padding: 4px 6px;
-    font-size: 9px;
-    border: 1px solid #ccc;
-    background: white;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .sort-controls .btn-success {
-    background-color: #28a745 !important;
-    border-color: #28a745 !important;
-    color: white !important;
   }
 
   /* フィルターコントロール */

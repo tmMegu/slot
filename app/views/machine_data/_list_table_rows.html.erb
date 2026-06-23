@@ -1,17 +1,19 @@
 <!-- データ行 -->
 <% @machine_data.each do |data| %>
 <tr class="<%= @data_exists ? '' : 'no-data-row' %>">
-    <td style="text-align: center; padding: 8px;">
-        <%= link_to data.machine_number, hall_machine_history_path(@hall, data.machine_number), style: "color: #10b981; font-weight: bold; text-decoration: none;" %>
+    <td class="cell-center cell-bold">
+        <%= link_to data.machine_number, hall_machine_history_path(@hall, data.machine_number), class: "machine-number-link" %>
     </td>
     <td class="machine-name-cell"><%= data.machine_name %></td>
-    <td style="text-align: right; padding: 8px;"><%= @data_exists ? number_with_delimiter(data.game_count) : '-' %></td>
-    <td style="text-align: right; padding: 8px;"><%= @data_exists ? number_with_delimiter(data.difference_count) : '-' %></td>
-    <% if @show_bb %><td style="text-align: center; padding: 8px;"><%= @data_exists ? data.bb_count : '-' %></td><% end %>
-    <% if @show_rb %><td style="text-align: center; padding: 8px;"><%= @data_exists ? data.rb_count : '-' %></td><% end %>
-    <% if @show_art %><td style="text-align: center; padding: 8px;"><%= @data_exists ? data.art_count : '-' %></td><% end %>
+    <td class="cell-right"><%= @data_exists ? number_with_delimiter(data.game_count) : '-' %></td>
+    <td class="cell-right <%= @data_exists && data.difference_count != 0 ? (data.difference_count > 0 ? 'value-positive' : 'value-negative') : '' %>">
+        <%= @data_exists ? number_with_delimiter(data.difference_count) : '-' %>
+    </td>
+    <% if @show_bb %><td class="cell-center"><%= @data_exists ? data.bb_count : '-' %></td><% end %>
+    <% if @show_rb %><td class="cell-center"><%= @data_exists ? data.rb_count : '-' %></td><% end %>
+    <% if @show_art %><td class="cell-center"><%= @data_exists ? data.art_count : '-' %></td><% end %>
 
-    <!-- 過去差枚のセル（表示が有効な場合のみ） -->
+    <!-- 過去差枚のセル -->
     <% if @show_difference && @display_days.any? %>
     <% @display_days.each do |days| %>
     <%
@@ -37,13 +39,13 @@
                      ''
                    end
     %>
-    <td style="text-align: right; padding: 8px;" class="<%= cell_class %>">
+    <td class="cell-right <%= cell_class %>">
         <%= diff ? number_with_delimiter(diff) : '-' %>
     </td>
     <% end %>
     <% end %>
 
-    <!-- 過去回転数のセル（表示が有効な場合のみ） -->
+    <!-- 過去回転数のセル -->
     <% if @show_games && @display_days.any? %>
     <% @display_days.each do |days| %>
     <%
@@ -57,15 +59,15 @@
                   else ''
                   end
     %>
-    <td style="text-align: right; padding: 8px;" class="<%= cell_class %>">
+    <td class="cell-right <%= cell_class %>">
         <%= game_count ? number_with_delimiter(game_count) : '-' %>
     </td>
     <% end %>
     <% end %>
 
     <!-- メモ入力 -->
-    <td style="padding: 5px;">
-        <input type="text" data-machine-number="<%= data.machine_number %>" data-date="<%= @date %>" data-original-value="<%= data.machine_memo %>" class="memo-input form-control" style="width: 100%; font-size: 12px;" value="<%= data.machine_memo %>">
+    <td class="memo-cell">
+        <input type="text" data-machine-number="<%= data.machine_number %>" data-date="<%= @date %>" data-original-value="<%= data.machine_memo %>" class="memo-input" value="<%= data.machine_memo %>">
     </td>
 </tr>
 <% end %>
