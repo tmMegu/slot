@@ -1,0 +1,135 @@
+# Slot — パチンコ店スロット台データ管理・分析アプリ
+
+このファイルは Claude（および新規開発者）が本プロジェクトの全体像を素早く把握するためのリファレンス。
+詳細な実装メモは各コントローラー冒頭のコメント、`PERFORMANCE_OPTIMIZATION.md` を参照。
+
+---
+
+## 1. プロジェクト概要
+
+パチンコ店ごとにスロット台の日次実績データを取り込み、高設定の傾向を見つけるための分析アプリ。
+
+- **目的**: 「どの店舗で、どんな日に、どんな台に設定が入りやすいか」を可視化・分析する
+- **利用者**: 開発者本人（メイン）＋ ごく稀に1名（合計2名想定）
+- **規模感**: 1ホールあたり数十〜数百台 × 日数。1年分で数万〜十数万レコード／ホール
+
+## 2. インフラ・運用
+
+| 項目 | 内容 |
+| --- | --- |
+| 本番ホスティング | Render（無料枠） |
+| DB | Supabase（PostgreSQL） |
+| 開発DB | SQLite（`storage/development.sqlite3`） |
+| デプロイ | Kamal + Docker（`Dockerfile`, `config/deploy.yml`） |
+| 制約 | Render 無料枠のメモリ上限（実質512MB）に収まる必要あり。重い集計はメモリ不足で落ちる |
+
+## 3. 技術スタック
+
+- Ruby 3.x / Rails 8.1
+- Hotwire（Turbo, Stimulus）, ImportMap
+- Propshaft（アセットパイプライン）
+- Solid Queue / Solid Cache / Solid Cable（Rails 8.1 デフォルト、DB バックエンド）
+- Nokogiri / HTTParty（外部サイトからのスクレイピングインポート）
+- Prawn（マップPDF出力 — **廃止予定**、§10 参照）
+
+## 4. 画面構成
+
+ルートは `config/routes.rb` 参照。画面は大きく7種類。
+
+| 画面 | パス | コントローラー | 概要 |
+| --- | --- | --- | --- |
+| ホール一覧 | `/` | `halls#index` | ホール一覧、一括インポート |
+| ホール詳細／日付一覧 | `/halls/:id` | `halls#show` | 日付ごとの集計サマリと日付メモ |
+| ホール作成/編集 | `/halls/new`, `/halls/:id/edit` | `halls#new/edit` | ホール基本情報の登録 |
+| 日別台データ | `/halls/:hall_id/dates/:date` | `machine_data#show` | **タブ構成**: 一覧 / 機種ランキング / マップ |
+| 台履歴 | `/halls/:hall_id/machines/:machine_number` | `machine_data#machine_history` | 特定台番号の過去推移 |
+| フロアマップ編集 | `/halls/:hall_id/maps/...` | `hall_maps#index/new/edit` | レイアウトエディタ |
+| 傾向分析 | `/halls/:id/trend_analysis` | `trend_analysis#show` | フィルター＋日別集計 |
+| データ分析 | `/halls/:id/data_analysis` | `data_analysis#show` | 5種マトリクス分析 |
+| データインポート | `/import` | `machine_data#import` / `batch_import` | URL指定・一括取込 |
+
+## 5. データモデル
+
+`app/models/` 配下。
+
+- **Hall** — ホール（店舗）。`name`, `code`, `memo`, `data_import_url1..5`
+- **MachineData** — 1日1台分の実績。`hall_id`, `date`, `machine_number`, `machine_name`, `game_count`, `difference_count`, `bb_count`, `rb_count`, `art_count`, `machine_memo`, `date_memo`
+  - 全カウント=0 のレコードは「メモ専用レコード」として扱う（`memo_only_record?`）
+- **HallMap** — フロアマップ。`rows`, `cols`, JSON の `layout_data`（`"行_列"` キー）と `color_settings`
+
+## 6. コントローラー共通処理
+
+- **`MachineDataFilterable` Concern** (`app/controllers/concerns/`)
+  - `MachineDataController` / `TrendAnalysisController` で include
+  - 共通: パラメータ／セッション復元、フィルター適用、日別集計、ランキング計算
+  - キー名統一（2026-06リファクタリングで `total_diff`, `avg_diff`, `plus_machines` に統一）
+
+## 7. サービス層
+
+`app/services/`
+
+- `MachineDataImporter` — 外部サイト（slo-navi.com 等）からのスクレイピングインポート
+- `TabSeparatedDataParser` — タブ区切りテキストの手動インポート
+
+## 8. データインポート方法
+
+1. **URL指定インポート** — `Hall#data_import_url1..5` を起点に1日分を取得
+2. **一括インポート** — 日付範囲×複数ホールを指定して連続実行（0.5秒sleepで負荷分散）
+3. **手動インポート** — タブ区切りテキストを貼り付け
+
+## 9. MCP 連携
+
+- 外部MCPサーバー: `C:\MCP\slot\src\index.js`（**別リポジトリ**、Node.js 製）
+- 接続: `.vscode/mcp.json` で stdio 経由。Supabase に直接接続して読取
+- 現状機能: DB からのデータ参照（読取専用）
+- 将来計画: 「設定推測のためのデータ供給関数群」を追加し、AI が傾向分析できるようにする（§11）
+
+## 10. 廃止履歴
+
+| 対象 | 廃止時期 | 理由 |
+| --- | --- | --- |
+| マップPDF出力（`export_map_pdf` ルート / `HallMapPdfService` / `prawn`・`prawn-table` gem / `hall_map_print.css` / `hall_map_pdf.js`） | 2026-06 | 実使用されておらず、Render無料枠でメモリを圧迫していたため |
+
+## 11. 将来計画
+
+### 傾向分析 MCP 拡張
+- 既存の slot-analysis MCP に、日付条件・機種条件・台番号末尾／ぞろ目などでスライスしたデータを返す関数を追加
+- 目的: 「特定の日付に特定条件の台に設定が入る」というホール傾向を AI に発見させる
+- 設計のみ先行し、実装は本体UI改修の後
+
+## 12. 開発指針
+
+### コード方針（2026-06 大規模リファクタリングで確立）
+- **重複は Concern に集約**（`MachineDataFilterable`）
+- **N回クエリ → 1回 + メモリ集計**を徹底（`PERFORMANCE_OPTIMIZATION.md`）
+- **`SELECT` は必要な列のみ**（特に集計用）
+- **ハードコード回避**（`each_with_index` ループ等）
+- **インラインCSSは外部化**（`public/stylesheets/` の用途別ファイルへ）
+
+### CSS構造
+- `common.css` — CSS変数（`:root` で `--color-*`, `--space-*`, `--radius-*`）と共通スタイル
+- 用途別ファイル: `machine_data.css`, `hall_map.css`, `trend_analysis.css`, `data_analysis.css`
+- レイアウト `application.html.erb` は最小限。各画面でヘッダーを独自描画している（**改修予定 — 共通ヘッダー化**）
+
+### JavaScript
+- ImportMap + Stimulus 構成だが、現状ほぼ素のJS（`onclick=...`）
+- 改修方針: タブ／マップ／日付ナビなどは Stimulus controller 化する
+
+### パフォーマンス意識
+- Render 無料枠で動かすため、メモリ消費の大きい一括ロード→メモリ集計は注意
+- 大量データを扱う画面（trend_analysis, data_analysis）はキャッシュ／件数制限／遅延ロードを検討
+
+### コミット粒度
+- 画面単位／機能単位で PR を分ける（段階的改修方針）
+
+## 13. 進行中の改修
+
+全体改修を進行中。タスクは `TaskList` で管理。主要フェーズ:
+
+1. CLAUDE.md 整備（このファイル）✅
+2. マップPDF廃止 ✅
+3. 共通ヘッダー実装
+4. マップ独立画面追加（タブも残す）＋ JSバグ修正
+5. 日別台データ画面 UX/UI 改善
+6. 傾向分析・データ分析の計測と改善
+7. MCP 拡張設計

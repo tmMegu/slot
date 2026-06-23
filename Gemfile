@@ -43,10 +43,6 @@ gem "image_processing", "~> 1.2"
 gem "nokogiri"
 gem "httparty"
 
-# PDF生成用ライブラリ
-gem "prawn"       # PDF生成の基本機能
-gem "prawn-table" # テーブル描画機能
-
 group :production do
   # Supabase(Postgres)用（本番のみ）
   gem "pg", "~> 1.5"
