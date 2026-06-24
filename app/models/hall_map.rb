@@ -97,7 +97,8 @@ class HallMap < ApplicationRecord
   end
 
   # 並び情報を上書き保存する。lineups_data は配列 [{id, name, machine_numbers: [..]}]
-  # id が無い要素には自動採番、machine_numbers は重複除去・ソート、空並びは破棄する
+  # 入力順は物理的順序（島の端→端）として意味があるため保持する。重複は除去するが並び替えはしない。
+  # id が無い要素には自動採番、空並びは破棄する。
   def replace_lineups(lineups_data)
     return unless lineups_data.is_a?(Array)
     existing_ids = lineups_data.map { |e| (e.is_a?(Hash) || e.is_a?(ActionController::Parameters)) ? (e["id"] || e[:id]).to_i : 0 }.select { |i| i > 0 }
@@ -105,7 +106,15 @@ class HallMap < ApplicationRecord
     cleaned = lineups_data.map do |entry|
       next unless entry.is_a?(Hash) || entry.is_a?(ActionController::Parameters)
       entry = entry.to_unsafe_h if entry.respond_to?(:to_unsafe_h)
-      nums = (entry["machine_numbers"] || entry[:machine_numbers] || []).map(&:to_i).uniq.sort
+      raw = entry["machine_numbers"] || entry[:machine_numbers] || []
+      nums = []
+      seen = {}
+      raw.each do |v|
+        n = v.to_i
+        next if n <= 0 || seen[n]
+        seen[n] = true
+        nums << n
+      end
       next if nums.empty?
       id = (entry["id"] || entry[:id]).to_i
       if id <= 0

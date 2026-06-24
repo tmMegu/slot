@@ -61,8 +61,28 @@ class HallMapsController < ApplicationController
     end
 
     # 名前などの基本情報の更新（フォームから送信される場合）
+    # rows/cols が空文字や 0 / layout_data の中身と矛盾する値のときは上書きを拒否
+    # （JS のキャッシュバグや誤動作によるデータ破壊を防ぐための防御）
     if params[:hall_map].present?
-      @map.assign_attributes(map_params)
+      safe_attrs = map_params.to_h
+      max_row = 0
+      max_col = 0
+      @map.safe_layout_data.each_key do |key|
+        r, c = key.split("_").map(&:to_i)
+        max_row = r if r > max_row
+        max_col = c if c > max_col
+      end
+
+      ["rows", "cols"].each do |k|
+        v = safe_attrs[k].to_i
+        max_required = (k == "rows") ? max_row : max_col
+        if v <= 0 || v < max_required
+          safe_attrs.delete(k)
+        else
+          safe_attrs[k] = v
+        end
+      end
+      @map.assign_attributes(safe_attrs)
       updated = true
     end
 
@@ -96,17 +116,23 @@ class HallMapsController < ApplicationController
   end
 
   # POST /halls/:hall_id/maps/:id/duplicate
+  # @map.dup は serialize 属性との相互作用で rows/cols/layout_data が抜けて
+  # DB default が適用されるケースがあるため、明示的に全属性を build に渡す
   def duplicate
-    new_map = @map.dup
-    new_map.name = generate_unique_copy_name(@map.name)
-    new_map.layout_data = @map.safe_layout_data.deep_dup
-    new_map.color_settings = @map.safe_color_settings.deep_dup
-    new_map.lineups = @map.safe_lineups.deep_dup
+    new_map = @hall.hall_maps.new(
+      hall_id: @hall.id,
+      name: generate_unique_copy_name(@map.name),
+      rows: @map.rows,
+      cols: @map.cols,
+      layout_data: @map.safe_layout_data.deep_dup,
+      color_settings: @map.safe_color_settings.deep_dup,
+      lineups: @map.safe_lineups.deep_dup,
+    )
 
     if new_map.save
       redirect_to edit_hall_map_path(@hall, new_map), notice: "マップを複製しました。"
     else
-      redirect_to hall_maps_path(@hall), alert: "マップの複製に失敗しました。"
+      redirect_to hall_maps_path(@hall), alert: "マップの複製に失敗しました: #{new_map.errors.full_messages.join(', ')}"
     end
   end
 

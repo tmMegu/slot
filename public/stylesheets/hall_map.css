@@ -1670,7 +1670,90 @@
 
 .lineup-machine-count.empty { color: #cbd5e1; }
 
+.lineup-row.editing {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px #f59e0b inset;
+}
+
 @media (max-width: 700px) {
   .lineup-row { flex-wrap: wrap; }
   .lineup-row input.lineup-name { flex: 1 1 100%; }
+}
+
+/* ========================================
+   直線連番の起点ハイライト
+   ======================================== */
+.editor-cell.line-start {
+  outline: 3px dashed #f59e0b !important;
+  outline-offset: -3px;
+  background: #fef3c7 !important;
+}
+
+.line-status {
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* ========================================
+   並び編集モード用バナーとセル装飾
+   ======================================== */
+.lineup-edit-banner {
+  background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 8px;
+  margin: 12px 20px;
+  padding: 12px 16px;
+}
+
+.lineup-edit-banner__inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.lineup-edit-banner__icon {
+  font-size: 20px;
+}
+
+.lineup-edit-banner__text {
+  font-size: 14px;
+  color: #78350f;
+  font-weight: 500;
+}
+
+.lineup-edit-banner__count {
+  color: #92400e;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.lineup-edit-banner__modes {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.lineup-edit-banner__hint {
+  font-size: 12px;
+  color: #78350f;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* 並び編集モード中、現在の並びに属する台セル */
+.editor-cell.in-current-lineup {
+  background: #dbeafe !important;
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+.editor-cell.in-current-lineup.line-start {
+  outline: 3px dashed #f59e0b !important;
+}
+
+@media (max-width: 700px) {
+  .lineup-edit-banner__inner { flex-direction: column; align-items: flex-start; }
+  .lineup-edit-banner__modes { flex-direction: column; }
 }

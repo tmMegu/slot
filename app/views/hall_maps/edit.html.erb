@@ -5,11 +5,10 @@
 <% content_for :header_title, "マップ編集: #{@map.name}" %>
 <% content_for :header_actions do %>
     <%= link_to "← マップ一覧", hall_maps_path(@hall), class: "header-link" %>
-    <button onclick="saveMapData()" class="header-link header-link--primary" id="save-btn" type="button">💾 保存</button>
+    <button data-action="save-map" class="header-link header-link--primary" id="save-btn" type="button">💾 保存</button>
 <% end %>
 
 <div class="container">
-
     <div class="card" style="padding: 0;">
         <div style="padding: 20px; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
             <div style="text-align: center;">
@@ -17,38 +16,54 @@
             </div>
         </div>
 
+        <!-- 並び編集モードバナー（モード中のみ表示） -->
+        <div id="lineup-edit-banner" class="lineup-edit-banner" style="display:none;">
+            <div class="lineup-edit-banner__inner">
+                <span class="lineup-edit-banner__icon">🎯</span>
+                <span class="lineup-edit-banner__text">
+                    <strong id="lineup-edit-target-name">―</strong>
+                    を編集中
+                    <span id="lineup-edit-current-count" class="lineup-edit-banner__count">(0台)</span>
+                </span>
+                <div class="lineup-edit-banner__modes">
+                    <label class="radio-option">
+                        <input type="radio" name="lineup-mode" value="single" checked>
+                        <span>ワンクリック追加</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="lineup-mode" value="line">
+                        <span>直線範囲</span>
+                    </label>
+                </div>
+                <button type="button" data-action="clear-lineup-selection" class="btn btn-secondary btn-small">この並びを空に</button>
+                <button type="button" data-action="exit-lineup-edit" class="btn btn-primary btn-small">✓ 完了</button>
+            </div>
+            <div class="lineup-edit-banner__hint" id="lineup-edit-hint">
+                マップで台セルをクリックすると並びに追加されます。同じ台をクリックすると削除。
+            </div>
+        </div>
+
         <!-- ツールパレット（画面上部） -->
-        <div class="tool-palette-top">
+        <div class="tool-palette-top" id="main-tool-palette">
             <div class="tool-buttons-horizontal">
-                <button class="tool-btn active" data-tool="select" onclick="selectTool('select')">
-                    👆 選択
-                </button>
-                <button class="tool-btn" data-tool="machine" onclick="selectTool('machine')">
-                    🎰 台を配置
-                </button>
-                <button class="tool-btn" data-tool="wall" onclick="selectTool('wall')">
-                    🧱 壁
-                </button>
-                <button class="tool-btn" data-tool="counter" onclick="selectTool('counter')">
-                    🏪 カウンター
-                </button>
-                <button class="tool-btn" data-tool="empty" onclick="selectTool('empty')">
-                    ⬜ 空白
-                </button>
-                <button class="tool-btn" data-tool="eraser" onclick="selectTool('eraser')">
-                    🗑️ 消しゴム
-                </button>
+                <button class="tool-btn active" data-tool="select" data-action="set-tool" type="button">👆 選択</button>
+                <button class="tool-btn" data-tool="machine" data-action="set-tool" type="button">🎰 台（単発）</button>
+                <button class="tool-btn" data-tool="machine-line" data-action="set-tool" type="button">📏 台（直線連番）</button>
+                <button class="tool-btn" data-tool="wall" data-action="set-tool" type="button">🧱 壁</button>
+                <button class="tool-btn" data-tool="counter" data-action="set-tool" type="button">🏪 カウンター</button>
+                <button class="tool-btn" data-tool="empty" data-action="set-tool" type="button">⬜ 空白</button>
+                <button class="tool-btn" data-tool="eraser" data-action="set-tool" type="button">🗑️ 消しゴム</button>
             </div>
         </div>
 
         <!-- 操作パネル -->
-        <div class="editor-control-panel">
-            <!-- 台番号入力 -->
-            <div id="machine-input-panel" class="control-section">
+        <div class="editor-control-panel" id="main-control-panel">
+            <!-- 台番号入力（単発配置用 / 直線連番起点用） -->
+            <div id="machine-input-panel" class="control-section" style="display:none;">
                 <label class="control-label">台番号:</label>
                 <input type="number" id="machine-number-input" placeholder="例: 101" class="control-input" style="width: 100px;">
-                <button onclick="applyMachineNumber()" class="btn btn-secondary btn-small">適用</button>
-                <div style="display: inline-flex; gap: 8px; margin-left: 15px;">
+                <button type="button" data-action="apply-machine-number" class="btn btn-secondary btn-small">適用</button>
+                <div style="display: inline-flex; gap: 8px; margin-left: 15px;" id="auto-increment-group">
                     <label class="radio-option">
                         <input type="radio" name="auto-increment" value="0" checked>
                         <span>増減なし</span>
@@ -64,6 +79,27 @@
                 </div>
             </div>
 
+            <!-- 直線連番のパス指定（machine-line ツール時のみ） -->
+            <div id="line-path-panel" class="control-section" style="display:none;">
+                <label class="control-label">経路:</label>
+                <div style="display: inline-flex; gap: 8px;">
+                    <label class="radio-option">
+                        <input type="radio" name="line-path" value="l-h" checked>
+                        <span>L字（横→縦）</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="line-path" value="l-v">
+                        <span>L字（縦→横）</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="line-path" value="diagonal">
+                        <span>斜め</span>
+                    </label>
+                </div>
+                <span id="line-status" class="line-status">起点を選択してください</span>
+                <button type="button" data-action="cancel-line-start" id="line-cancel-btn" class="btn btn-secondary btn-small" style="display:none;">起点取消</button>
+            </div>
+
             <!-- 選択情報 -->
             <div class="control-section">
                 <label class="control-label">選択中:</label>
@@ -73,41 +109,40 @@
             <!-- 行列編集 -->
             <div id="row-col-edit-panel" class="control-section">
                 <label class="control-label">行列編集:</label>
-                <button onclick="addRowAtSelection('above')" class="btn btn-secondary btn-small">↑ 行追加</button>
-                <button onclick="addRowAtSelection('below')" class="btn btn-secondary btn-small">↓ 行追加</button>
-                <button onclick="addColumnAtSelection('left')" class="btn btn-secondary btn-small">← 列追加</button>
-                <button onclick="addColumnAtSelection('right')" class="btn btn-secondary btn-small">→ 列追加</button>
-                <button onclick="removeRowAtSelection('current')" class="btn btn-danger btn-small">行削除</button>
-                <button onclick="removeColumnAtSelection('current')" class="btn btn-danger btn-small">列削除</button>
+                <button type="button" data-action="add-row" data-position="above" class="btn btn-secondary btn-small">↑ 行追加</button>
+                <button type="button" data-action="add-row" data-position="below" class="btn btn-secondary btn-small">↓ 行追加</button>
+                <button type="button" data-action="add-col" data-position="left" class="btn btn-secondary btn-small">← 列追加</button>
+                <button type="button" data-action="add-col" data-position="right" class="btn btn-secondary btn-small">→ 列追加</button>
+                <button type="button" data-action="remove-row" class="btn btn-danger btn-small">行削除</button>
+                <button type="button" data-action="remove-col" class="btn btn-danger btn-small">列削除</button>
             </div>
 
             <!-- ズーム操作 -->
             <div class="control-section">
                 <label class="control-label" style="font-size: 12px;">ズーム:</label>
-                <button onclick="zoomIn()" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;">+</button>
-                <button onclick="zoomOut()" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;">-</button>
-                <button onclick="resetZoom()" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;">100%</button>
+                <button type="button" data-action="zoom-in" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;">+</button>
+                <button type="button" data-action="zoom-out" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;">-</button>
+                <button type="button" data-action="zoom-reset" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;">100%</button>
             </div>
         </div>
 
         <!-- 並び（島）管理パネル -->
         <div class="lineup-panel" id="lineup-panel">
-            <div class="lineup-panel__header" onclick="toggleLineupPanel()">
-                <h3>🚂 並び（島）管理 <span id="lineup-count-badge">(<%= @map.safe_lineups.length %>)</span></h3>
+            <div class="lineup-panel__header" data-action="toggle-lineup-panel">
+                <h3>🚂 並び（島）管理 <span id="lineup-count-badge">(0)</span></h3>
                 <span class="lineup-panel__toggle" id="lineup-panel-toggle">▶</span>
             </div>
             <div class="lineup-panel__body" id="lineup-panel-body" style="display:none;">
                 <p class="lineup-help">
-                    同じ並び（島）の台をグループ化します。台番号をカンマ区切りで入力（例: <code>1,2,3,4,5,6</code>）。<br>
-                    並び情報は <strong>角台効果</strong>・<strong>並び設定</strong>の MCP 分析で利用されます。
+                    同じ並び（島）の台をグループ化します。<strong>マップから選択</strong>するか、台番号をカンマ区切りで入力（例: <code>1,2,3,4,5,6</code>）。<br>
+                    並び情報は <strong>角台効果</strong>・<strong>並び設定</strong>・<strong>連続走分析</strong> の MCP 分析で利用されます。台番号の並び順は島の端→端の順序として保存されます。
                 </p>
                 <div id="lineup-list"></div>
-                <button type="button" onclick="addLineupRow()" class="btn btn-secondary btn-small">+ 新規並び</button>
+                <button type="button" data-action="add-lineup-row" class="btn btn-secondary btn-small">+ 新規並びを追加</button>
             </div>
         </div>
 
         <div class="map-editor-container" data-hall-id="<%= @hall.id %>" data-map-id="<%= @map.id %>" style="padding: 20px;">
-
             <!-- マップグリッド -->
             <div class="editor-grid-container">
                 <div class="grid-scroll-area">
@@ -117,28 +152,18 @@
                             <tr>
                                 <% (1..@map.cols).each do |col| %>
                                 <%
-                          cell = @map.get_cell(row, col)
-                          machine_number = cell['machine_number']
-                          cell_type = cell['type'] || 'empty'
-                          label = cell['label']
-                        %>
-                                <td class="editor-cell <%= cell_type %>" data-row="<%= row %>" data-col="<%= col %>" data-type="<%= cell_type %>" data-machine-number="<%= machine_number %>" data-label="<%= label %>" onclick="selectCell(<%= row %>, <%= col %>)">
-
+                                  cell = @map.get_cell(row, col)
+                                  machine_number = cell['machine_number']
+                                  cell_type = cell['type'] || 'empty'
+                                  label = cell['label']
+                                %>
+                                <td class="editor-cell <%= cell_type %>" data-row="<%= row %>" data-col="<%= col %>" data-type="<%= cell_type %>" data-machine-number="<%= machine_number %>" data-label="<%= label %>">
                                     <% if cell_type == 'machine' %>
-                                    <div class="cell-content">
-                                        <span class="cell-number"><%= machine_number %></span>
-                                    </div>
-
+                                    <div class="cell-content"><span class="cell-number"><%= machine_number %></span></div>
                                     <% elsif cell_type == 'wall' %>
-                                    <div class="cell-content wall">
-                                        <%= label || '■' %>
-                                    </div>
-
+                                    <div class="cell-content wall"><%= label || '■' %></div>
                                     <% elsif cell_type == 'counter' %>
-                                    <div class="cell-content counter">
-                                        <%= label || 'カウンター' %>
-                                    </div>
-
+                                    <div class="cell-content counter"><%= label || 'カウンター' %></div>
                                     <% end %>
                                 </td>
                                 <% end %>
@@ -160,12 +185,14 @@
 <%= hidden_field_tag "hall_map[cols]", @map.cols, id: "cols-field" %>
 <% end %>
 
-<!-- データ保持用のhiddenフィールド -->
-<div id="editor-initial-data" data-hall-id="<%= @hall.id %>" data-map-id="<%= @map.id %>" data-rows="<%= @map.rows %>" data-cols="<%= @map.cols %>" style="display: none;">
-    <%= @map.safe_layout_data.to_json %>
-</div>
+<!-- 初期データ（data 属性として JSON を埋め込み、textContent ベースの脆さを回避） -->
+<div id="editor-initial-data"
+     data-hall-id="<%= @hall.id %>"
+     data-map-id="<%= @map.id %>"
+     data-rows="<%= @map.rows %>"
+     data-cols="<%= @map.cols %>"
+     data-layout="<%= @map.safe_layout_data.to_json %>"
+     data-lineups="<%= @map.safe_lineups.to_json %>"
+     style="display:none;"></div>
 
-<!-- 並び初期データ -->
-<div id="lineups-initial-data" data-lineups="<%= @map.safe_lineups.to_json %>" style="display: none;"></div>
-
-<script src="/javascripts/hall_map_editor.js"></script>
+<script src="/javascripts/hall_map_editor.js?v=<%= File.mtime(Rails.root.join('public/javascripts/hall_map_editor.js')).to_i rescue Time.now.to_i %>"></script>
