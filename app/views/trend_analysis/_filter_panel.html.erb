@@ -225,6 +225,36 @@
         </div>
     </div>
 
+    <!-- 過去N日の差枚合計（閾値範囲）フィルター -->
+    <div class="accordion-section">
+        <button type="button" class="accordion-header" onclick="toggleAccordion(this)">
+            <span>📈 過去N日の差枚合計（枚数範囲）</span>
+            <span class="accordion-icon">▼</span>
+        </button>
+        <div class="accordion-content">
+            <div class="filter-controls">
+                <label>
+                    過去:
+                    <input type="number" name="filter_past_total_days" value="<%= @filter_past_total_days %>" placeholder="日数" style="width: 60px;" />
+                    日間の差枚合計
+                </label>
+            </div>
+            <div class="filter-controls" style="margin-top: 8px;">
+                <label>
+                    <input type="number" name="filter_past_total_min" value="<%= @filter_past_total_min %>" placeholder="最小 例:-20000" style="width: 110px;" />
+                    ～
+                    <input type="number" name="filter_past_total_max" value="<%= @filter_past_total_max %>" placeholder="最大 例:-5000" style="width: 110px;" />
+                    枚
+                </label>
+            </div>
+            <div style="margin-top: 8px; padding: 8px; background-color: #d1ecf1; border-radius: 4px; font-size: 11px; color: #0c5460;">
+                💡 例：日数7、最大-10000 → 過去7日合計が -10,000枚以下（凹み台）<br>
+                　　 日数30、最小-30000、最大-10000 → 過去30日合計が -30,000〜-10,000枚<br>
+                　　 日数14、最小5000 → 過去14日合計が +5,000枚以上（好調台）
+            </div>
+        </div>
+    </div>
+
     <!-- 過去マイナスになった日数フィルター -->
     <div class="accordion-section">
         <button type="button" class="accordion-header" onclick="toggleAccordion(this)">

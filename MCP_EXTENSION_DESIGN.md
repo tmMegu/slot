@@ -88,12 +88,33 @@ slot 本体アプリの開発者・将来の自分・AI（Claude）の全員が�
 p 値の解釈: `p_value_vs_baseline < 0.05` で統計的有意。`n < 30` では正規近似の信頼性が落ちる旨を `p_value_note` に明記。
 
 **`analyze_cross_pattern` の履歴依存条件サポート**: machine_conditions に下記の type を指定可能（lookback バッファ計算が走る）:
-- `past_7day_worst_in_series` — 機種内で過去7日差枚合計が最低（rank=1）
 - `past_3day_worst_in_series` — 機種内で過去3日差枚合計が最低（rank=1）
+- `past_7day_worst_in_series` — 機種内で過去7日差枚合計が最低（rank=1）
+- `past_14day_worst_in_series` — 機種内で過去14日差枚合計が最低（rank=1）
+- `past_30day_worst_in_series` — 機種内で過去30日差枚合計が最低（rank=1）
+- `past_n_day_worst_in_series` — **任意 N 日ワースト**（value で日数を指定。例 `value: 21` で 21日ワースト）【2026-07 追加】
 - `prev_day_diff_at_most` — value で指定した値以下の前日差枚（既定 -1500）
 - `consec_minus_at_least` — value で指定した日数以上の連続マイナス（既定 3）
 
-これにより「**8のつく日 × 過去7日ワースト**」のようなコミュニティで広く語られる複合パターンを直接検証できる。
+これにより「**8のつく日 × 過去7日ワースト**」のようなコミュニティで広く語られる複合パターンを直接検証できる。任意 N 対応により「過去21日」「過去60日」のような探索的な日数指定も可能。
+
+### 2.7 機種台数フィルタ（2026-07 追加）
+
+`analyze_cross_pattern` と `discover_patterns` に下記オプションを追加:
+- `min_machines_per_series` — この台数未満の機種を分析対象から除外（例: 3 で「1〜2台の機種を除外」）
+- `max_machines_per_series` — この台数を超える機種を分析対象から除外（例: 15 で「16台以上の機種を除外」）
+
+**目的**: 1〜2台しかない機種は統計的に意味が薄く、逆に台数が極端に多い機種（ジャグラー大量設置など）はホール全体の傾向を歪める。レンジ指定で「素直に傾向が出る中規模機種だけ」に絞った分析が可能になる。
+
+**実装**: SQL 取得後に JS でカウント → フィルタ。`computeMachineCounts` で機種ごとの unique machine_number 数を集計し、`filterByMachineCount` で対象を絞る。`discover_patterns` の場合はベースライン計算も絞った母集団で行う（同じ母集団内での lift を見る）。
+
+### 2.8 `discover_patterns` の過去ワースト軸を任意 N 対応（2026-07）
+
+`past_worst_days` パラメータで、過去ワースト軸として総当たりに含める日数リストを指定可能。既定は `[3, 7, 14, 30]`。
+
+例: `past_worst_days: [5, 10, 21]` で 5日/10日/21日ワースト軸が AXES に組み込まれ、他の軸とのクロスも全て試行される。
+
+内部実装: `enrichRowsWithHistory(rows, allRows, pastNs)` の第3引数で動的に N リストを受け取り、各 row に `past_sums: Map<N, sum>` と `past_ranks: Map<N, rank>` を付与する。lookback バッファは `max(30, max(pastNs))` 日確保。後方互換のため `past3_sum/past3_rank` 等の固定プロパティも併設。
 
 ---
 

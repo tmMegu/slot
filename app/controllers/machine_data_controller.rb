@@ -932,6 +932,15 @@ class MachineDataController < ApplicationController
       end
     end
 
+    # 過去N日の差枚合計フィルター（閾値ベース。マイナス側もプラス側も対応）
+    if @filter_past_total_days.present? && (@filter_past_total_min.present? || @filter_past_total_max.present?)
+      total_diff_data = calculate_sum_for_period(@filter_past_total_days, :difference_count)
+      filtered = filtered.select do |m|
+        total = total_diff_data[m.machine_number] || 0
+        value_in_range?(total, @filter_past_total_min, @filter_past_total_max)
+      end
+    end
+
     # 過去マイナスになった日数フィルター
     if @filter_negative_count_days.present? && (@filter_negative_count_min.present? || @filter_negative_count_max.present?)
       negative_count_data = calculate_negative_days_count(@filter_negative_count_days)
@@ -1093,6 +1102,15 @@ class MachineDataController < ApplicationController
       end
     end
 
+    # 過去N日の差枚合計フィルター（閾値ベース。リアルタイム計算）
+    if @filter_past_total_days.present? && (@filter_past_total_min.present? || @filter_past_total_max.present?)
+      total_diff_data = calculate_aggregated_data_for_date(target_date, @filter_past_total_days, :difference_count)
+      filtered = filtered.select do |m|
+        total = total_diff_data[m.machine_number] || 0
+        value_in_range?(total, @filter_past_total_min, @filter_past_total_max)
+      end
+    end
+
     # 過去マイナスになった日数フィルター（リアルタイム計算）
     if @filter_negative_count_days.present? && (@filter_negative_count_min.present? || @filter_negative_count_max.present?)
       negative_count_data = calculate_negative_days_count_for_date(target_date, @filter_negative_count_days)
@@ -1132,6 +1150,15 @@ class MachineDataController < ApplicationController
       filtered = filtered.select do |m|
         diff_value = negative_diff_data[m.machine_number] || 0
         diff_value < 0
+      end
+    end
+
+    # 過去N日の差枚合計フィルター（閾値ベース）
+    if @filter_past_total_days.present? && (@filter_past_total_min.present? || @filter_past_total_max.present?)
+      total_diff_data = calculate_aggregated_data_for_date(target_date, @filter_past_total_days, :difference_count)
+      filtered = filtered.select do |m|
+        total = total_diff_data[m.machine_number] || 0
+        value_in_range?(total, @filter_past_total_min, @filter_past_total_max)
       end
     end
 

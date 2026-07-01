@@ -51,6 +51,14 @@ module MachineDataFilterable
     @filter_negative_count_min = parse_int_param(:filter_negative_count_min)
     @filter_negative_count_max = parse_int_param(:filter_negative_count_max)
 
+    # 過去N日の差枚合計フィルター（閾値ベース。マイナス側もプラス側も対応）
+    # 例: N=7, min=-20000, max=-5000 で「過去7日合計が -20,000〜-5,000 枚」
+    # 例: N=14, max=-10000 で「過去14日合計が -10,000枚以下」
+    # 例: N=30, min=5000 で「過去30日合計が +5,000枚以上」
+    @filter_past_total_days = parse_int_param(:filter_past_total_days)
+    @filter_past_total_min = parse_int_param(:filter_past_total_min)
+    @filter_past_total_max = parse_int_param(:filter_past_total_max)
+
     # ベストランクフィルター（文字列または配列に対応）
     if params[:filter_best_ranks].present?
       @filter_best_ranks = params[:filter_best_ranks].is_a?(String) ?
@@ -235,6 +243,26 @@ module MachineDataFilterable
     end
 
     target_machines.select { |machine| past_diff_totals[machine.machine_number] < 0 }
+  end
+
+  # 過去N日の差枚合計が指定範囲内の台のみに絞る（閾値ベース）
+  # min/max のどちらか片方だけでも指定可能
+  def apply_past_total_diff_filter(machines_by_date, target_machines, base_date)
+    return target_machines unless @filter_past_total_days.present? &&
+                                   (@filter_past_total_min.present? || @filter_past_total_max.present?)
+
+    start_date = base_date - @filter_past_total_days.days
+    end_date = base_date - 1.day
+
+    past_diff_totals = Hash.new(0)
+    (start_date..end_date).each do |date|
+      next unless machines_by_date[date]
+      machines_by_date[date].each { |m| past_diff_totals[m.machine_number] += m.difference_count }
+    end
+
+    target_machines.select do |machine|
+      value_in_range?(past_diff_totals[machine.machine_number], @filter_past_total_min, @filter_past_total_max)
+    end
   end
 
   # 過去〇日間でマイナスになった日数フィルター

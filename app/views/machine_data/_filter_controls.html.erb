@@ -169,6 +169,23 @@
               </div>
             </div>
             <div class="fc-group">
+              <label class="fc-label">過去N日の差枚合計（枚数範囲）</label>
+              <div class="fc-range">
+                <span class="fc-range-text">過去</span>
+                <select name="filter_past_total_days" class="fc-select fc-select--days">
+                  <option value="">--</option>
+                  <% (1..60).each do |days| %>
+                  <option value="<%= days %>" <%= 'selected' if @filter_past_total_days == days %>><%= days %>日</option>
+                  <% end %>
+                </select>
+                <span class="fc-range-text">合計</span>
+                <input type="number" name="filter_past_total_min" placeholder="最小 例:-20000" value="<%= @filter_past_total_min %>" class="fc-input fc-input--num" style="width: 110px;">
+                <span class="fc-range-sep">～</span>
+                <input type="number" name="filter_past_total_max" placeholder="最大 例:-5000" value="<%= @filter_past_total_max %>" class="fc-input fc-input--num" style="width: 110px;">
+                <span class="fc-range-text">枚</span>
+              </div>
+            </div>
+            <div class="fc-group">
               <label class="fc-label">マイナスになった日数</label>
               <div class="fc-range">
                 <span class="fc-range-text">過去</span>

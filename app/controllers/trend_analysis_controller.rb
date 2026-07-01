@@ -310,6 +310,11 @@ class TrendAnalysisController < ApplicationController
       filtered = apply_past_negative_filter(@machines_by_date, filtered, date)
     end
 
+    # 過去N日の差枚合計フィルター（閾値ベース）
+    if date && @filter_past_total_days.present?
+      filtered = apply_past_total_diff_filter(@machines_by_date, filtered, date)
+    end
+
     # 過去マイナスになった日数フィルター
     if date && @filter_negative_count_days.present?
       filtered = apply_negative_count_filter(@machines_by_date, filtered, date)
