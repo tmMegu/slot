@@ -142,6 +142,36 @@
         border-left: 3px solid #10b981;
         border-radius: 3px;
     }
+
+    .reimport-bar {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 8px;
+    }
+
+    .btn-reimport {
+        padding: 4px 12px;
+        background-color: white;
+        color: #10b981;
+        border: 1px solid #10b981;
+        border-radius: 5px;
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    .btn-reimport:hover {
+        background-color: #ecfdf5;
+    }
+
+    .reimport-warning {
+        font-size: 12px;
+        color: #b45309;
+        margin-bottom: 10px;
+        padding: 8px 10px;
+        background-color: #fffbeb;
+        border-left: 3px solid #f59e0b;
+        border-radius: 3px;
+    }
 </style>
 
 <div class="container">
@@ -154,6 +184,10 @@
     <div class="alert alert-danger">
         ⚠️ この日およびそれ以前のデータが存在しません。
         <a href="javascript:void(0);" onclick="openManualImportModal()" style="color: #dc3545; font-weight: bold; text-decoration: underline; margin-left: 10px;">手動で追加</a>
+    </div>
+    <% else %>
+    <div class="reimport-bar">
+        <button type="button" class="btn-reimport" onclick="openReimportModal()">🔄 再取込</button>
     </div>
     <% end %>
 
@@ -168,6 +202,12 @@
             <h2>データを手動で追加</h2>
             <button type="button" class="modal-close" onclick="closeManualImportModal()">×</button>
         </div>
+
+        <% if @data_exists %>
+        <div class="reimport-warning">
+            ⚠️ この日のデータは既に存在します。取り込むと<%= @date.strftime('%Y年%m月%d日') %>の既存データはすべて置き換わります（台メモ・日付メモは引き継がれます）。
+        </div>
+        <% end %>
 
         <form id="manualImportForm">
             <input type="hidden" name="hall_id" value="<%= @hall.id %>">
@@ -224,6 +264,13 @@ L東京喰種	1477	15,845	8,624
 <script>
     function openManualImportModal() {
         document.getElementById('manualImportModal').classList.add('active');
+    }
+
+    function openReimportModal() {
+        if (!confirm('この日のデータを再取込します。既存データはすべて置き換わります（メモは引き継がれます）。よろしいですか？')) {
+            return;
+        }
+        openManualImportModal();
     }
 
     function closeManualImportModal() {
